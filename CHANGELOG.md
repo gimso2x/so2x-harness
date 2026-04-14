@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2026-04-14
 
+### added
+- `review-cycle` skill for artifact-first code review using `.review-artifacts/{branch-name}/`
+
+### changed
+- `review` skill now points broad or risky changes to `/review-cycle`
+- `review` now checks `design-intent.md`, `code-quality-guide.md`, and explicit side effects/tradeoffs when present
+- README, CLAUDE template, preset, and architecture docs now document the review-cycle flow
+- integration tests now verify review-cycle installation and documentation coverage
+
 ### changed
 - preset 구조를 단순화하고 `general` 단일 preset으로 정리
 
