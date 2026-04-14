@@ -37,6 +37,71 @@ so2x-cli run specify "OAuth2 로그인 추가"
 
 ---
 
+## How to Use
+
+### 1. 처음 설치 (프로젝트당 한 번)
+
+```bash
+# harness 설치
+python3 so2x-harness/scripts/apply.py --project . --preset general
+
+# 상태 확인
+python3 so2x-harness/scripts/doctor.py --project .
+```
+
+이후 Claude Code에서 rules, skills, agents가 자동으로 인식됩니다.
+
+### 2. 큰 기능 작업 (spec engine 사용)
+
+```bash
+# 1. spec 생성 → 에이전트가 6단계로 파생
+so2x-cli run specify "OAuth2 Google/GitHub 로그인 추가"
+
+# 2. 파이프라인이 각 단계마다 에이전트 지시를 출력
+#    → Claude Code에 지시를 전달하며 spec.json을 채움
+#    → 각 단계 사이 게이트 자동 검증
+
+# 3. spec이 완성되면 구현 실행
+so2x-cli run execute --file spec.json
+
+# 4. 구현 중 배운 것 기록
+so2x-cli learn add \
+  --problem "callback URL이 배포마다 다름" \
+  --rule "callback URL은 항상 환경 변수로" \
+  --category anti-pattern --tags "oauth,config"
+```
+
+### 3. 간단한 작업 (spec 없이)
+
+spec engine 없이도 기본 스킬을 바로 사용할 수 있습니다.
+
+```
+# Claude Code에서 직접 호출
+/planning                    # 작업 전 계획 수립
+/implementation              # 범위 제한 구현
+/debugging                   # 버그 원인 분석
+/review                      # 변경 사항 리뷰
+/safe-commit                 # 커밋 전 검증
+```
+
+spec 없이 가벼운 요구사항 정리만 할 때:
+
+```
+/specify-lite                # markdown 형태 요구사항 정리
+/spec-validate               # 구조/완결성 검증
+```
+
+### 4. 업데이트 (harness 새 버전 나왔을 때)
+
+```bash
+python3 so2x-harness/scripts/update.py --project .
+```
+
+rules, skills, agents, hooks가 최신으로 교체됩니다.
+CLAUDE.md의 로컬 내용과 config.json은 보존됩니다.
+
+---
+
 ## Why This Exists
 
 | 문제 | 해결 |
