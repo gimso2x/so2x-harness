@@ -50,7 +50,7 @@ def install_skip_if_exists(template_path: Path, target_path: Path) -> str:
 def load_preset(preset_name: str) -> dict:
     preset_path = ROOT_DIR / f"templates/project/.ai-harness/presets/{preset_name}.json"
     if not preset_path.exists():
-        raise SystemExit(f"unknown preset: {preset_name}")
+        raise SystemExit(f"unknown preset: {preset_name} (supported: general)")
     return json.loads(preset_path.read_text(encoding="utf-8"))
 
 

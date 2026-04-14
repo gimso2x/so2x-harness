@@ -152,7 +152,6 @@ Claude Code 전용 파일입니다.
 
 - `config.json.tmpl` — 프로젝트 설정 템플릿
 - `manifest.json.tmpl` — 매니페스트 템플릿
-- `presets/` — 프리셋 정의 (general, nextjs)
 
 ## 테스트 전략
 

@@ -169,27 +169,3 @@ def test_apply_unsupported_platform(tmp_project: Path) -> None:
         check=False,
     )
     assert result.returncode != 0
-
-
-def test_apply_nextjs_preset(tmp_project: Path) -> None:
-    import subprocess
-
-    result = subprocess.run(
-        [
-            "python3",
-            str(ROOT_DIR / "scripts/apply.py"),
-            "--project",
-            str(tmp_project),
-            "--platform",
-            "claude",
-            "--preset",
-            "nextjs",
-        ],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    assert result.returncode == 0
-    config = tmp_project / ".ai-harness" / "config.json"
-    data = json.loads(config.read_text(encoding="utf-8"))
-    assert data["preset"] == "nextjs"

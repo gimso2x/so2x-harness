@@ -69,8 +69,8 @@ case "$PLATFORM" in
 esac
 
 case "$PRESET" in
-  general|nextjs) ;;
-  *) fail "현재 지원하지 않는 preset입니다: $PRESET (지원: general, nextjs)" ;;
+  general) ;;
+  *) fail "현재 지원하지 않는 preset입니다: $PRESET (지원: general)" ;;
 esac
 
 ROOT_DIR="$(resolve_root_dir)"

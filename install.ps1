@@ -53,8 +53,8 @@ if ($Platform -ne "claude") {
   Fail "현재 지원하지 않는 platform입니다: $Platform (지원: claude)"
 }
 
-if (($Preset -ne "general") -and ($Preset -ne "nextjs")) {
-  Fail "현재 지원하지 않는 preset입니다: $Preset (지원: general, nextjs)"
+if ($Preset -ne "general") {
+  Fail "현재 지원하지 않는 preset입니다: $Preset (지원: general)"
 }
 
 $ResolvedRoot = Resolve-RootDir

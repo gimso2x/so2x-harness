@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2026-04-14
 
+### changed
+- preset 구조를 단순화하고 `general` 단일 preset으로 정리
+
 ### added
 - Agent orchestration pipeline runner (so2x-cli run specify/execute)
 - Sequential pipeline: Interviewer → Code Explorer → Spec Writer → Planner → Reviewer → Verifier

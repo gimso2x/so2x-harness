@@ -16,7 +16,7 @@ python3 scripts/apply.py --project <경로> [--platform claude] [--preset genera
 |---|---|---|---|
 | `--project` | O | - | 대상 프로젝트 경로 |
 | `--platform` | X | `claude` | 설치 플랫폼 (현재 `claude`만 지원) |
-| `--preset` | X | `general` | 프리셋 (`general`, `nextjs`) |
+| `--preset` | X | `general` | 프리셋 (`general`) |
 
 ### 동작
 
@@ -32,9 +32,6 @@ python3 scripts/apply.py --project <경로> [--platform claude] [--preset genera
 ```bash
 # 기본 설치
 python3 scripts/apply.py --project /path/to/my-project
-
-# Next.js 프로젝트
-python3 scripts/apply.py --project /path/to/nextjs-app --preset nextjs
 ```
 
 ## update.py

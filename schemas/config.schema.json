@@ -10,7 +10,7 @@
     },
     "preset": {
       "type": "string",
-      "enum": ["general", "nextjs"]
+      "enum": ["general"]
     },
     "platforms": {
       "type": "array",

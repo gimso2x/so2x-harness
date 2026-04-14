@@ -18,10 +18,9 @@
 ```bash
 # macOS / Linux
 curl -sSfL https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.sh | sh
+```
 
-# nextjs preset
-env PRESET=nextjs sh -c "$(curl -sSfL https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.sh)"
-
+```powershell
 # Windows (PowerShell)
 powershell -c "irm https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.ps1 | iex"
 ```
@@ -223,9 +222,6 @@ so2x-cli learn search "oauth"
 # Bootstrap (macOS / Linux)
 curl -sSfL https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.sh | sh
 
-# preset 지정
-env PRESET=nextjs sh -c "$(curl -sSfL https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.sh)"
-
 # CLI 설치 (spec engine 사용 시)
 git clone https://github.com/gimso2x/so2x-harness.git
 cd so2x-harness && pip install -e .
@@ -263,7 +259,6 @@ my-project/
 | [CONTRIBUTING.md](CONTRIBUTING.md) | 기여 가이드, 개발 환경, PR 프로세스 |
 | [CHANGELOG.md](CHANGELOG.md) | 버전별 변경 이력 |
 | [docs/cli-reference.md](docs/cli-reference.md) | 전체 명령 참조 |
-| [docs/preset-guide.md](docs/preset-guide.md) | 프리셋 작성 가이드 |
 
 ---
 
