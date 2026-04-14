@@ -46,7 +46,7 @@ resolve_root_dir() {
 
   command -v git >/dev/null 2>&1 || fail "raw 설치에는 git이 필요합니다. git을 설치하거나 repo를 clone한 뒤 로컬 install.sh를 실행해 주세요."
   TEMP_ROOT="$(mktemp -d)"
-  info "bootstrap source를 임시 디렉터리에 내려받습니다."
+  printf '[so2x-harness] %s\n' "bootstrap source를 임시 디렉터리에 내려받습니다." >&2
   git clone --depth 1 --branch "$REPO_REF" "$REPO_URL" "$TEMP_ROOT/repo" >/dev/null 2>&1 || fail "repo를 내려받지 못했습니다: $REPO_URL@$REPO_REF"
   printf '%s\n' "$TEMP_ROOT/repo"
 }
