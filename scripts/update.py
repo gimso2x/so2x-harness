@@ -106,6 +106,15 @@ def build_updated_manifest(project_dir: Path) -> dict:
             "checksum": install_copy_file(src, project_dir / rel),
         }
 
+    agents_src = ROOT_DIR / "templates/claude/agents"
+    if agents_src.exists():
+        for src in sorted(agents_src.glob("*.md")):
+            rel = paths["agents_dir"] / src.name
+            files[str(rel)] = {
+                "mode": "overwrite",
+                "checksum": install_copy_file(src, project_dir / rel),
+            }
+
     hooks_src = ROOT_DIR / "templates/claude/hooks"
     for src in sorted(hooks_src.iterdir()):
         if src.is_file():

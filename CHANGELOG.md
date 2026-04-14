@@ -5,6 +5,17 @@ All notable changes to so2x-harness will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-04-14
+
+### added
+- spec.json JSON Schema (6-layer derivation chain: L0~L5)
+- so2x-cli Python CLI: spec init, check --gate, validate, status, guide
+- 6 core agent templates: Interviewer, Code Explorer, Spec Writer, Planner, Reviewer, Verifier
+- /specify skill: automated derivation pipeline with gated validation
+- /execute skill: spec-driven implementation with scenario verification
+- pyproject.toml for pip install -e .
+- agents directory in platform_map and apply/update scripts
+
 ## [0.1.1] - 2026-04-14
 
 ### added
