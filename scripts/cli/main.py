@@ -33,6 +33,16 @@ def main() -> None:
     status_p = spec_sub.add_parser("status", help="Show derivation status")
     status_p.add_argument("file", help="Path to spec.json")
 
+    set_task_status_p = spec_sub.add_parser(
+        "set-task-status", help="Update a task status and optional summary"
+    )
+    set_task_status_p.add_argument("file", help="Path to spec.json")
+    set_task_status_p.add_argument("--task-id", required=True, help="Task ID (e.g. T1)")
+    set_task_status_p.add_argument(
+        "--status", required=True, choices=["pending", "in_progress", "blocked", "done"]
+    )
+    set_task_status_p.add_argument("--summary", help="Latest task summary")
+
     guide_p = spec_sub.add_parser("guide", help="Show layer field structure")
     guide_p.add_argument("layer", help="Layer name (e.g. l3_requirements)")
 
