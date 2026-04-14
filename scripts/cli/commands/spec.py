@@ -135,6 +135,18 @@ def cmd_status(args: argparse.Namespace) -> None:
         status = gates.get(g, {}).get("status", "pending")
         print(f"  {g}: {status}")
 
+    tasks = chain.get("l4_tasks", [])
+    if tasks:
+        print()
+        print("Tasks:")
+        for task in tasks:
+            tid = task.get("id", "?")
+            status = task.get("status", "pending")
+            action = task.get("action", "")
+            print(f"  {tid}: {status} - {action}")
+            if task.get("summary"):
+                print(f"    summary: {task['summary']}")
+
 
 def cmd_guide(args: argparse.Namespace) -> None:
     guides = {
@@ -165,7 +177,8 @@ def cmd_guide(args: argparse.Namespace) -> None:
             "  action: string - what to implement\n"
             "  requirement_refs: string[] (R1, R2, ...) - traceability\n"
             "  acceptance_criteria?: string\n"
-            "  status?: pending | in_progress | done"
+            "  summary?: string - latest task status summary\n"
+            "  status?: pending | in_progress | blocked | done"
         ),
         "l5_review": (
             "Object:\n"

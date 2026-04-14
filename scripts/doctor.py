@@ -26,6 +26,50 @@ def detect_python() -> tuple[str, str]:
     return ("ERROR", "python3/python not found in PATH")
 
 
+def _load_spec(project_dir: Path) -> dict | None:
+    spec_file = project_dir / "spec.json"
+    if not spec_file.exists():
+        return None
+    try:
+        return json.loads(spec_file.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+
+def _execution_items(project_dir: Path) -> list[tuple[str, str, str]]:
+    spec = _load_spec(project_dir)
+    if not spec:
+        return []
+
+    tasks = spec.get("chain", {}).get("l4_tasks", [])
+    if not tasks:
+        return [("WARN", "execution_status", "spec.json present but no l4_tasks found")]
+
+    blocked = [task for task in tasks if task.get("status") == "blocked"]
+    in_progress = [task for task in tasks if task.get("status") == "in_progress"]
+    pending = [task for task in tasks if task.get("status") == "pending"]
+
+    if blocked:
+        current = blocked[0]
+        summary = current.get("summary", "blocked without summary")
+        items = [
+            ("WARN", "execution_status", f"blocked:{current.get('id', '?')}"),
+            ("WARN", "execution_summary", summary),
+        ]
+    elif in_progress:
+        current = in_progress[0]
+        summary = current.get("summary", "in progress")
+        items = [
+            ("OK", "execution_status", f"in_progress:{current.get('id', '?')}"),
+            ("OK", "execution_summary", summary),
+        ]
+    else:
+        items = [("OK", "execution_status", "no blocked or in_progress tasks")]
+
+    items.append(("OK", "pending_tasks", str(len(pending))))
+    return items
+
+
 def check_project(project_dir: Path) -> list[tuple[str, str, str]]:
     items: list[tuple[str, str, str]] = []
 
@@ -110,6 +154,8 @@ def check_project(project_dir: Path) -> list[tuple[str, str, str]]:
         items.append(("OK", "plugin_dir", str(plugin_dir)))
     else:
         items.append(("WARN", "plugin_dir", f"missing: {plugin_dir}"))
+
+    items.extend(_execution_items(project_dir))
 
     return items
 
