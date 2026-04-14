@@ -213,7 +213,7 @@ def main() -> None:
     project.mkdir(parents=True, exist_ok=True)
 
     if args.platform != "claude":
-        raise SystemExit(f"unsupported platform: {args.platform}")
+        raise SystemExit(f"unsupported platform: {args.platform} (currently supported: claude)")
 
     manifest = apply_claude(project, args.preset)
     print(

@@ -44,7 +44,11 @@ def main() -> None:
     add_p.add_argument("--problem", required=True, help="What went wrong or was discovered")
     add_p.add_argument("--cause", help="Root cause")
     add_p.add_argument("--rule", required=True, help="Rule to follow next time")
-    add_p.add_argument("--category", default="pattern", help="pattern|anti-pattern|edge-case|decision")
+    add_p.add_argument(
+        "--category",
+        default="pattern",
+        help="pattern|anti-pattern|edge-case|decision",
+    )
     add_p.add_argument("--tags", help="Comma-separated tags")
     add_p.add_argument("--severity", default="info", help="info|warning|critical")
     add_p.add_argument("--spec", help="Source spec ID")

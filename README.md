@@ -1,6 +1,6 @@
 # so2x-harness
 
-**여러 프로젝트에 공통 AI harness를 설치해서 쓰는 가벼운 GitHub-managed kit.**
+**Claude Code 중심으로 여러 프로젝트에 공통 AI harness를 설치해서 쓰는 가벼운 GitHub-managed kit.**
 
 [![CI](https://github.com/gimso2x/so2x-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/gimso2x/so2x-harness/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -14,6 +14,8 @@
 > _하나의 repo에서 공통 규칙을 관리하고, 여러 프로젝트에 안전하게 설치하고, 필요할 때 갱신한다._
 
 ## Quick Start
+
+현재 설치 엔진이 공식 지원하는 대상 플랫폼은 Claude Code입니다. 멀티플랫폼 확장은 열어 두고 있지만, 지금 리포에서 바로 검증된 설치 경로는 `claude` 하나입니다.
 
 ```bash
 # macOS / Linux
@@ -218,6 +220,8 @@ so2x-cli learn search "oauth"
 
 ## Install
 
+현재 설치 엔진은 Claude Code용 하네스 배포를 기준으로 동작합니다. `scripts/apply.py`의 공식 지원 플랫폼도 `claude` 하나이며, 다른 플랫폼 이름을 넘기면 에러를 반환합니다.
+
 ```bash
 # Bootstrap (macOS / Linux)
 curl -sSfL https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.sh | sh
@@ -227,7 +231,7 @@ git clone https://github.com/gimso2x/so2x-harness.git
 cd so2x-harness && pip install -e .
 
 # 수동 설치
-python3 scripts/apply.py --project /path/to/project --preset general
+python3 scripts/apply.py --project /path/to/project --platform claude --preset general
 ```
 
 설치 후 프로젝트 구조:
@@ -290,4 +294,4 @@ Spec engine, 6 agents, CLI, knowledge system, orchestration pipeline
 
 ## License
 
-MIT
+This repository is licensed under the [MIT License](./LICENSE).

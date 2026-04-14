@@ -51,7 +51,7 @@ def cmd_specify(args: object) -> None:
 
         instruction = _build_instruction(agent_template, spec_file, label)
         print(instruction)
-        print(f"[run] ↑ 위 지시를 Claude Code에 전달하세요")
+        print("[run] ↑ 위 지시를 Claude Code에 전달하세요")
 
         # Check gate
         if gate:
@@ -61,7 +61,10 @@ def cmd_specify(args: object) -> None:
                 text=True,
             )
             if result.returncode != 0:
-                print(f"[run] GATE {gate} FAILED — 위 에이전트 지시로 spec.json을 보완한 후 다시 실행하세요")
+                print(
+                    f"[run] GATE {gate} FAILED — "
+                    "위 에이전트 지시로 spec.json을 보완한 후 다시 실행하세요"
+                )
                 print(result.stdout)
                 sys.exit(1)
             print(f"[run] GATE {gate} PASSED")
@@ -93,7 +96,7 @@ def cmd_execute(args: object) -> None:
 
         print(f"\n[run] === {tid}: {action} ===")
         print(f"[run] Requirements: {', '.join(req_refs)}")
-        print(f"[run] ↑ 이 태스크를 구현하고 관련 시나리오를 검증하세요")
+        print("[run] ↑ 이 태스크를 구현하고 관련 시나리오를 검증하세요")
 
         # Mark task as in_progress
         _update_task_status(spec_file, tid, "in_progress")
@@ -102,7 +105,7 @@ def cmd_execute(args: object) -> None:
     # Verifier step
     verifier_template = AGENT_DIR / "verifier.md"
     if verifier_template.exists():
-        print(f"\n[run] === Verification ===")
+        print("\n[run] === Verification ===")
         instruction = _build_instruction(verifier_template, spec_file, "Verification")
         print(instruction)
         print("[run] ↑ 모든 시나리오를 독립적으로 검증하세요")
@@ -128,7 +131,8 @@ def _build_instruction(agent_template: Path, spec_file: Path, phase: str) -> str
     spec_summary = ""
     if spec_file.exists():
         spec = json.loads(spec_file.read_text(encoding="utf-8"))
-        spec_summary = f"\nCurrent spec.json status: {json.dumps(spec.get('meta', {}), ensure_ascii=False, indent=2)}"
+        meta_json = json.dumps(spec.get("meta", {}), ensure_ascii=False, indent=2)
+        spec_summary = f"\nCurrent spec.json status: {meta_json}"
 
     return f"[{phase}] 에이전트 지시:\n{content}\n\nSpec file: {spec_file}{spec_summary}"
 
@@ -170,4 +174,5 @@ def _check_l4(spec: dict) -> tuple[bool, list[str]]:
 
 def _check_l5(spec: dict) -> tuple[bool, list[str]]:
     review = spec.get("chain", {}).get("l5_review", {})
-    return review.get("status") == "pass", [] if review.get("status") == "pass" else ["Review not passed"]
+    review_passed = review.get("status") == "pass"
+    return review_passed, [] if review_passed else ["Review not passed"]
