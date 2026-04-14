@@ -102,11 +102,27 @@ def cmd_status(args: argparse.Namespace) -> None:
 
     layers = [
         ("L0 Goal", "l0_goal", lambda v: "defined" if v else "empty"),
-        ("L1 Context", "l1_context", lambda v: f"{len(v.get('assumptions', []))} assumptions" if v else "empty"),
-        ("L2 Decisions", "l2_decisions", lambda v: f"{len(v)} decisions" if v else "empty"),
-        ("L3 Requirements", "l3_requirements", lambda v: f"{len(v)} requirements" if v else "empty"),
+        (
+            "L1 Context",
+            "l1_context",
+            lambda v: f"{len(v.get('assumptions', []))} assumptions" if v else "empty",
+        ),
+        (
+            "L2 Decisions",
+            "l2_decisions",
+            lambda v: f"{len(v)} decisions" if v else "empty",
+        ),
+        (
+            "L3 Requirements",
+            "l3_requirements",
+            lambda v: f"{len(v)} requirements" if v else "empty",
+        ),
         ("L4 Tasks", "l4_tasks", lambda v: f"{len(v)} tasks" if v else "empty"),
-        ("L5 Review", "l5_review", lambda v: v.get("status", "pending") if v else "empty"),
+        (
+            "L5 Review",
+            "l5_review",
+            lambda v: v.get("status", "pending") if v else "empty",
+        ),
     ]
 
     for label, key, fmt in layers:
@@ -199,7 +215,7 @@ def check_gate(spec: dict, gate: str) -> tuple[bool, list[str]]:
             errors.append("L2: no decisions derived")
         for i, d in enumerate(decisions):
             if not d.get("rationale"):
-                errors.append(f"L2: D{i+1} missing rationale")
+                errors.append(f"L2: D{i + 1} missing rationale")
 
     elif gate == "l2_to_l3":
         decisions = chain.get("l2_decisions", [])

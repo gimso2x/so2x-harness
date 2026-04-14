@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
 import json
-from pathlib import Path
 import sys
+from datetime import datetime, timezone
+from pathlib import Path
 
 CURRENT_DIR = Path(__file__).resolve().parent
 ROOT_DIR = CURRENT_DIR.parent
@@ -72,9 +72,9 @@ def build_extra_fields_json(preset: dict) -> str:
         return ""
     rendered = ",\n"
     for idx, (key, value) in enumerate(extras.items()):
-        rendered += f'  "{key}": ' + json.dumps(
-            value, ensure_ascii=False, indent=2
-        ).replace("\n", "\n  ")
+        rendered += f'  "{key}": ' + json.dumps(value, ensure_ascii=False, indent=2).replace(
+            "\n", "\n  "
+        )
         if idx < len(extras) - 1:
             rendered += ",\n"
         else:
@@ -92,9 +92,7 @@ def install_project_config(
         {
             "project_name": project_name,
             "preset": preset_name,
-            "enabled_rules_json": json.dumps(
-                preset["enabled_rules"], ensure_ascii=False, indent=2
-            ),
+            "enabled_rules_json": json.dumps(preset["enabled_rules"], ensure_ascii=False, indent=2),
             "enabled_skills_json": json.dumps(
                 preset["enabled_skills"], ensure_ascii=False, indent=2
             ),

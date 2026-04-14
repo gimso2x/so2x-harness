@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
 import shutil
 import sys
+from pathlib import Path
 
 CURRENT_DIR = Path(__file__).resolve().parent
 ROOT_DIR = CURRENT_DIR.parent
@@ -41,9 +41,7 @@ def check_project(project_dir: Path) -> list[tuple[str, str, str]]:
     if package_json.exists():
         items.append(("OK", "project_signal", "package.json found"))
     else:
-        items.append(
-            ("WARN", "project_signal", "package.json not found — generic project mode")
-        )
+        items.append(("WARN", "project_signal", "package.json not found — generic project mode"))
 
     claude_md = project_dir / paths["claude_md_path"]
     if claude_md.exists():
@@ -62,27 +60,19 @@ def check_project(project_dir: Path) -> list[tuple[str, str, str]]:
         items.append(("OK", "manifest", str(manifest)))
         try:
             data = json.loads(manifest.read_text(encoding="utf-8"))
-            items.append(
-                ("OK", "manifest_version", str(data.get("version", "unknown")))
-            )
+            items.append(("OK", "manifest_version", str(data.get("version", "unknown"))))
             items.append(("OK", "manifest_files", str(len(data.get("files", {})))))
         except Exception as exc:
-            items.append(
-                ("ERROR", "manifest_parse", f"failed to parse manifest: {exc}")
-            )
+            items.append(("ERROR", "manifest_parse", f"failed to parse manifest: {exc}"))
     else:
-        items.append(
-            ("WARN", "manifest", "manifest not found — harness may not be installed")
-        )
+        items.append(("WARN", "manifest", "manifest not found — harness may not be installed"))
 
     config_path = project_dir / paths["config_path"]
     if config_path.exists():
         items.append(("OK", "config", str(config_path)))
         try:
             config_data = json.loads(config_path.read_text(encoding="utf-8"))
-            items.append(
-                ("OK", "config_preset", str(config_data.get("preset", "unknown")))
-            )
+            items.append(("OK", "config_preset", str(config_data.get("preset", "unknown"))))
         except Exception as exc:
             items.append(("ERROR", "config_parse", f"failed to parse config: {exc}"))
     else:

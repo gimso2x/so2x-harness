@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-
 PROJECT_PATHS = {
     "claude": {
         "rules_dir": Path(".claude/rules/so2x-harness"),

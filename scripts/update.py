@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
-import sys
 
 CURRENT_DIR = Path(__file__).resolve().parent
 ROOT_DIR = CURRENT_DIR.parent
@@ -136,9 +136,7 @@ def build_updated_manifest(project_dir: Path) -> dict:
     config_rel = str(paths["config_path"])
     files[config_rel] = {
         "mode": "skip_if_exists",
-        "checksum": update_project_config(
-            project_dir, project_dir / paths["config_path"]
-        ),
+        "checksum": update_project_config(project_dir, project_dir / paths["config_path"]),
     }
 
     return {
@@ -162,9 +160,9 @@ def main() -> None:
 
     new_manifest = build_updated_manifest(project)
     write_manifest(project, new_manifest)
-    print(
-        f"[so2x-harness] updated version {old_manifest.get('version', 'unknown')} -> {new_manifest['version']} project={project}"
-    )
+    old_version = old_manifest.get("version", "unknown")
+    new_version = new_manifest["version"]
+    print(f"[so2x-harness] updated version {old_version} -> {new_version} project={project}")
     print(f"[so2x-harness] wrote {len(new_manifest['files'])} managed file entries")
 
 

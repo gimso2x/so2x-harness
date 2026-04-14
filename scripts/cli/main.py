@@ -23,7 +23,9 @@ def main() -> None:
 
     check_p = spec_sub.add_parser("check", help="Check gate status")
     check_p.add_argument("file", help="Path to spec.json")
-    check_p.add_argument("--gate", help="Specific gate to check (e.g. l0_to_l1). 'all' for all gates")
+    check_p.add_argument(
+        "--gate", help="Specific gate to check (e.g. l0_to_l1). 'all' for all gates"
+    )
 
     validate_p = spec_sub.add_parser("validate", help="Validate spec.json structure")
     validate_p.add_argument("file", help="Path to spec.json")
