@@ -1,0 +1,6 @@
+{
+  "project_name": "example-project",
+  "platforms": ["claude"],
+  "language": "ko",
+  "comment_language": "en"
+}

@@ -1,0 +1,9 @@
+{
+  "hooks": [
+    {
+      "type": "PostToolUse",
+      "matcher": "Task|Skill",
+      "script": ".claude/hooks/validate-output.sh"
+    }
+  ]
+}

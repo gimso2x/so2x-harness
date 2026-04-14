@@ -1,0 +1,7 @@
+{
+  "project_name": "nextjs-project",
+  "platforms": ["claude"],
+  "language": "ko",
+  "comment_language": "en",
+  "preset": "nextjs"
+}

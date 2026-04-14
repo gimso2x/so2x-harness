@@ -1,0 +1,23 @@
+name: so2x-harness
+version: 0.1.0
+default_platforms:
+  - claude
+
+policies:
+  marker_tag: SO2X-HARNESS
+  default_overwrite_mode: overwrite
+
+default_rules:
+  - language-policy
+  - scope-control
+  - file-size-limit
+  - testing-policy
+  - verification-policy
+
+default_skills:
+  - planning
+  - implementation
+  - debugging
+  - review
+  - specify-lite
+  - check-harness
