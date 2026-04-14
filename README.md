@@ -19,6 +19,9 @@ Quick Start · Why · Spec Engine · Agents · CLI · Install · Docs
 # macOS / Linux
 curl -sSfL https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.sh | sh
 
+# nextjs preset으로 설치하려면
+env PRESET=nextjs sh -c "$(curl -sSfL https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.sh)"
+
 # Windows (PowerShell)
 powershell -c "irm https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.ps1 | iex"
 ```
