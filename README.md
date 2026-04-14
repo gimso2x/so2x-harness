@@ -321,6 +321,36 @@ validate_prompt: |
 hook는 완료 후 이 형식을 다시 상기시켜
 검토 없이 넘어가는 걸 줄입니다.
 
+## Quick start
+
+로컬 clone 기준 가장 단순한 시작 방법입니다.
+
+```bash
+git clone https://github.com/gimso2x/so2x-harness.git
+cd so2x-harness
+
+# 임의의 프로젝트에 설치
+python3 scripts/apply.py --project /path/to/my-project --platform claude
+```
+
+설치가 끝나면 프로젝트 안에 대략 아래 구조가 생깁니다.
+
+```text
+my-project/
+├─ CLAUDE.md
+├─ AGENTS.md
+├─ .claude/
+│  ├─ rules/so2x-harness/
+│  ├─ skills/so2x-harness/
+│  └─ hooks/
+├─ .claude-plugin/
+└─ .ai-harness/
+   ├─ config.json
+   ├─ manifest.json
+   ├─ docs/
+   └─ snippets/
+```
+
 ## Installation
 
 ### Recommended
@@ -329,6 +359,27 @@ hook는 완료 후 이 형식을 다시 상기시켜
 ```bash
 python3 /path/to/so2x-harness/scripts/apply.py --project . --platform claude
 ```
+
+### Tested example
+실제 테스트는 아래 샘플 프로젝트로 확인했습니다.
+
+- harness repo: `/home/sgkim/ssuk/so2x-harness`
+- sample project: `/home/sgkim/ssuk/so2x-sandbox`
+
+실행 예:
+
+```bash
+python3 /home/sgkim/ssuk/so2x-harness/scripts/apply.py \
+  --project /home/sgkim/ssuk/so2x-sandbox \
+  --platform claude
+```
+
+예상 결과:
+- `CLAUDE.md` 생성 또는 marker 구간 삽입
+- `.claude/rules/so2x-harness/` 생성
+- `.claude/skills/so2x-harness/` 생성
+- `.ai-harness/config.json` 생성
+- `.ai-harness/manifest.json` 생성
 
 ### Future convenience install
 향후 지원 예정:
