@@ -7,7 +7,7 @@
 [![Platform: Claude Code](https://img.shields.io/badge/Platform-Claude_Code-blueviolet)](https://docs.anthropic.com/en/docs/claude-code)
 [![Version](https://img.shields.io/badge/Version-0.4.0-green)](https://github.com/gimso2x/so2x-harness/blob/main/VERSION)
 
-Quick Start · Why · Spec Engine · Agents · CLI · Install · Docs
+[Quick Start](#quick-start) · [Usage](#usage) · [Spec Engine](#spec-engine) · [Agents](#agents) · [Skills](#skills) · [CLI](#cli) · [Install](#install) · [Docs](#docs)
 
 ---
 
@@ -19,44 +19,20 @@ Quick Start · Why · Spec Engine · Agents · CLI · Install · Docs
 # macOS / Linux
 curl -sSfL https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.sh | sh
 
-# nextjs preset으로 설치하려면
+# nextjs preset
 env PRESET=nextjs sh -c "$(curl -sSfL https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.sh)"
 
 # Windows (PowerShell)
 powershell -c "irm https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.ps1 | iex"
 ```
 
-```bash
-# CLI 설치 (spec engine 사용 시)
-git clone https://github.com/gimso2x/so2x-harness.git
-cd so2x-harness && pip install -e .
-
-# spec 생성
-so2x-cli spec init "다크모드 토글 추가"
-
-# 에이전트 파이프라인 실행
-so2x-cli run specify "OAuth2 로그인 추가"
-```
-
 ---
 
-## How to Use
+## Usage
 
 harness를 설치하면 Claude Code에서 slash 명령으로 바로 사용할 수 있습니다.
 
-### 처음 설치 (프로젝트당 한 번)
-
-```bash
-# 설치
-curl -sSfL https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.sh | sh
-
-# 또는 직접
-python3 so2x-harness/scripts/apply.py --project . --preset general
-```
-
-### 새 기능 추가할 때
-
-Claude Code 대화창에 그냥 입력하세요.
+### 새 기능 추가
 
 ```
 /specify "OAuth2 Google/GitHub 로그인 추가"
@@ -81,34 +57,15 @@ spec이 완성되면:
 
 태스크별로 구현 → 시나리오 검증 → 완료.
 
-### 간단한 작업은 그냥 하면 됩니다
-
-spec 없이도 됩니다.
+### 일상 작업
 
 ```
 /planning              # 작업 전 계획
 /debugging             # 버그 원인 분석
 /review                # 변경 리뷰
-/safe-commit           # 커mits 전 검증
-```
-
-요구사항만 가볍게 정리하고 싶을 때:
-
-```
-/specify-lite          # markdown 요구사항 정리
+/safe-commit           # 커밋 전 검증
+/specify-lite          # 요구사항 가볍게 정리
 /spec-validate         # 누락 없는지 확인
-```
-
-### 프로젝트 상태 확인
-
-```bash
-python3 so2x-harness/scripts/doctor.py --project .
-```
-
-### harness 업데이트
-
-```bash
-python3 so2x-harness/scripts/update.py --project .
 ```
 
 ### 빠른 참조
@@ -119,10 +76,20 @@ python3 so2x-harness/scripts/update.py --project .
 | 계획 실행 | `/execute` |
 | 버그 수정 | `/debugging` 후 설명 |
 | 커밋 전 검증 | `/safe-commit` |
-| 요구사항만 정리 | `/specify-lite` |
+| 요구사항 정리 | `/specify-lite` |
 | 변경 리뷰 | `/review` |
 | 작업 계획 | `/planning` |
 | harness 상태 | `doctor.py` |
+
+### 상태 확인 및 업데이트
+
+```bash
+# 프로젝트 상태 점검
+python3 scripts/doctor.py --project .
+
+# harness 업데이트
+python3 scripts/update.py --project .
+```
 
 ---
 
@@ -166,7 +133,9 @@ so2x-cli spec status spec.json
 
 ---
 
-## 6 Agents
+## Agents
+
+에이전트는 `so2x-cli run`으로 순차 파이프라인에서 자동 실행됩니다.
 
 | Agent | Role | Phase |
 |---|---|---|
@@ -177,12 +146,29 @@ so2x-cli spec status spec.json
 | **Reviewer** | 품질/일관성/위험 검토 | L5 |
 | **Verifier** | 시나리오별 독립 검증 | 실행 후 |
 
-에이전트는 `so2x-cli run`으로 순차 파이프라인에서 자동 실행됩니다.
-
 ```bash
-so2x-cli run specify "기능 설명"   # Interviewer → Explorer → Writer → Planner → Reviewer
-so2x-cli run execute --file spec.json  # Task별 구현 → Verifier 검증
+so2x-cli run specify "기능 설명"        # Interviewer → Explorer → Writer → Planner → Reviewer
+so2x-cli run execute --file spec.json   # Task별 구현 → Verifier 검증
 ```
+
+---
+
+## Skills
+
+| Skill | When |
+|---|---|
+| `planning` | 큰 작업 전 계획 구조화 |
+| `implementation` | 범위 제한, 작은 단위 구현 |
+| `debugging` | root cause 중심 디버깅 |
+| `review` | 요구사항/위험/검증 기준 기반 리뷰 |
+| `specify-lite` | 요구 → 결정 → 구현 순서 정리 |
+| `check-harness` | harness 성숙도 점검 |
+| `spec-validate` | spec-lite 문서 완결성 검증 |
+| `setup-context` | 프로젝트 분석 → 컨텍스트 문서 생성 |
+| `changelog` | 변경 이력 구조화 기록 |
+| `safe-commit` | 커밋 전 검증 (시크릿, 크기, 범위) |
+| **`specify`** | **6단계 파생 체인 + 게이트 검증** |
+| **`execute`** | **spec 기반 구현 + 시나리오 검증** |
 
 ---
 
@@ -190,11 +176,11 @@ so2x-cli run execute --file spec.json  # Task별 구현 → Verifier 검증
 
 ```bash
 # Spec 관리
-so2x-cli spec init "목표"              # spec.json 생성
+so2x-cli spec init "목표"               # spec.json 생성
 so2x-cli spec check spec.json --gate all # 게이트 검증
-so2x-cli spec validate spec.json        # 전체 구조 검증
-so2x-cli spec status spec.json          # 파생 상태 조회
-so2x-cli spec guide l3_requirements     # 레이어 필드 안내
+so2x-cli spec validate spec.json         # 전체 구조 검증
+so2x-cli spec status spec.json           # 파생 상태 조회
+so2x-cli spec guide l3_requirements      # 레이어 필드 안내
 
 # 학습 관리
 so2x-cli learn add --problem "..." --rule "..."   # 학습 기록
@@ -202,8 +188,8 @@ so2x-cli learn search "키워드"                      # 검색
 so2x-cli learn summary                              # 요약
 
 # 파이프라인 실행
-so2x-cli run specify "목표"       # 지정 파이프라인
-so2x-cli run execute --file spec.json  # 실행 파이프라인
+so2x-cli run specify "목표"              # 지정 파이프라인
+so2x-cli run execute --file spec.json    # 실행 파이프라인
 ```
 
 ---
@@ -234,21 +220,18 @@ so2x-cli learn search "oauth"
 ## Install
 
 ```bash
-# Bootstrap
+# Bootstrap (macOS / Linux)
 curl -sSfL https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.sh | sh
 
-# Local Clone + CLI
+# preset 지정
+env PRESET=nextjs sh -c "$(curl -sSfL https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.sh)"
+
+# CLI 설치 (spec engine 사용 시)
 git clone https://github.com/gimso2x/so2x-harness.git
 cd so2x-harness && pip install -e .
 
-# 프로젝트에 설치
+# 수동 설치
 python3 scripts/apply.py --project /path/to/project --preset general
-
-# 상태 점검
-python3 scripts/doctor.py --project /path/to/project
-
-# 업데이트
-python3 scripts/update.py --project /path/to/project
 ```
 
 설치 후 프로젝트 구조:
@@ -269,25 +252,6 @@ my-project/
     ├── learnings.jsonl
     └── specs/
 ```
-
----
-
-## 12 Skills
-
-| Skill | When |
-|---|---|
-| `planning` | 큰 작업 전 계획 구조화 |
-| `implementation` | 범위 제한, 작은 단위 구현 |
-| `debugging` | root cause 중심 디버깅 |
-| `review` | 요구사항/위험/검증 기준 기반 리뷰 |
-| `specify-lite` | 요구 → 결정 → 구현 순서 정리 |
-| `check-harness` | harness 성숙도 점검 |
-| `spec-validate` | spec-lite 문서 완결성 검증 |
-| `setup-context` | 프로젝트 분석 → 컨텍스트 문서 생성 |
-| `changelog` | 변경 이력 구조화 기록 |
-| `safe-commit` | 커밋 전 검증 (시크릿, 크기, 범위) |
-| **`specify`** | **6단계 파생 체인 + 게이트 검증** |
-| **`execute`** | **spec 기반 구현 + 시나리오 검증** |
 
 ---
 
