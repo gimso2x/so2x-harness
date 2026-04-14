@@ -139,8 +139,8 @@ def check_project(project_dir: Path) -> list[tuple[str, str, str]]:
 
     skills_dir = project_dir / paths["skills_dir"]
     if skills_dir.exists():
-        count = len(list(skills_dir.glob("*.md")))
-        items.append(("OK", "skills_dir", f"{skills_dir} ({count} files)"))
+        count = len(list(skills_dir.glob("*/SKILL.md")))
+        items.append(("OK", "skills_dir", f"{skills_dir} ({count} skills)"))
     else:
         items.append(("WARN", "skills_dir", f"missing: {skills_dir}"))
 

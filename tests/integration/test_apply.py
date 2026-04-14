@@ -98,7 +98,7 @@ def test_apply_creates_skills(tmp_project: Path) -> None:
     )
     skills_dir = tmp_project / ".claude" / "skills" / "so2x-harness"
     assert skills_dir.exists()
-    skills = list(skills_dir.glob("*.md"))
+    skills = list(skills_dir.glob("*/SKILL.md"))
     assert len(skills) >= 6
 
 

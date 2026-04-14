@@ -148,11 +148,16 @@ def apply_claude(project_dir: Path, preset_name: str) -> dict:
         }
 
     skills_src = ROOT_DIR / "templates/claude/skills"
-    for src in sorted(skills_src.glob("*.md")):
-        rel = paths["skills_dir"] / src.name
+    for skill_dir in sorted(skills_src.iterdir()):
+        if not skill_dir.is_dir():
+            continue
+        skill_file = skill_dir / "SKILL.md"
+        if not skill_file.exists():
+            continue
+        rel = paths["skills_dir"] / skill_dir.name / "SKILL.md"
         files[str(rel)] = {
             "mode": "overwrite",
-            "checksum": install_copy_file(src, project_dir / rel),
+            "checksum": install_copy_file(skill_file, project_dir / rel),
         }
 
     agents_src = ROOT_DIR / "templates/claude/agents"

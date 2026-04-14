@@ -99,12 +99,25 @@ def build_updated_manifest(project_dir: Path) -> dict:
         }
 
     skills_src = ROOT_DIR / "templates/claude/skills"
-    for src in sorted(skills_src.glob("*.md")):
-        rel = paths["skills_dir"] / src.name
+    for skill_dir in sorted(skills_src.iterdir()):
+        if not skill_dir.is_dir():
+            continue
+        skill_file = skill_dir / "SKILL.md"
+        if not skill_file.exists():
+            continue
+        rel = paths["skills_dir"] / skill_dir.name / "SKILL.md"
         files[str(rel)] = {
             "mode": "overwrite",
-            "checksum": install_copy_file(src, project_dir / rel),
+            "checksum": install_copy_file(skill_file, project_dir / rel),
         }
+
+    # 이전 플랫 포맷(.claude/skills/so2x-harness/*.md) 정리
+    skills_installed = paths["skills_dir"]
+    old_flat_dir = project_dir / skills_installed
+    if old_flat_dir.exists():
+        for old_file in old_flat_dir.glob("*.md"):
+            old_file.unlink()
+            print(f"[so2x-harness] removed old-format skill: {old_file.name}")
 
     agents_src = ROOT_DIR / "templates/claude/agents"
     if agents_src.exists():
