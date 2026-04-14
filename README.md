@@ -42,66 +42,87 @@ so2x-cli run specify "OAuth2 로그인 추가"
 
 ## How to Use
 
-### 1. 처음 설치 (프로젝트당 한 번)
+harness를 설치하면 Claude Code에서 slash 명령으로 바로 사용할 수 있습니다.
+
+### 처음 설치 (프로젝트당 한 번)
 
 ```bash
-# harness 설치
-python3 so2x-harness/scripts/apply.py --project . --preset general
+# 설치
+curl -sSfL https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.sh | sh
 
-# 상태 확인
+# 또는 직접
+python3 so2x-harness/scripts/apply.py --project . --preset general
+```
+
+### 새 기능 추가할 때
+
+Claude Code 대화창에 그냥 입력하세요.
+
+```
+/specify "OAuth2 Google/GitHub 로그인 추가"
+```
+
+에이전트가 6단계로 요구사항을 파생합니다:
+
+```
+L0: Goal        ← Interviewer가 숨겨진 가정 질문
+L1: Context     ← Code Explorer가 코드 분석
+L2: Decisions   ← 결정 도출 (선택지와 이유)
+L3: Requirements ← 검증 가능한 요구사항 + 시나리오
+L4: Tasks       ← 구현 단계 분해
+L5: Review      ← 계획 검증
+```
+
+spec이 완성되면:
+
+```
+/execute
+```
+
+태스크별로 구현 → 시나리오 검증 → 완료.
+
+### 간단한 작업은 그냥 하면 됩니다
+
+spec 없이도 됩니다.
+
+```
+/planning              # 작업 전 계획
+/debugging             # 버그 원인 분석
+/review                # 변경 리뷰
+/safe-commit           # 커mits 전 검증
+```
+
+요구사항만 가볍게 정리하고 싶을 때:
+
+```
+/specify-lite          # markdown 요구사항 정리
+/spec-validate         # 누락 없는지 확인
+```
+
+### 프로젝트 상태 확인
+
+```bash
 python3 so2x-harness/scripts/doctor.py --project .
 ```
 
-이후 Claude Code에서 rules, skills, agents가 자동으로 인식됩니다.
-
-### 2. 큰 기능 작업 (spec engine 사용)
-
-```bash
-# 1. spec 생성 → 에이전트가 6단계로 파생
-so2x-cli run specify "OAuth2 Google/GitHub 로그인 추가"
-
-# 2. 파이프라인이 각 단계마다 에이전트 지시를 출력
-#    → Claude Code에 지시를 전달하며 spec.json을 채움
-#    → 각 단계 사이 게이트 자동 검증
-
-# 3. spec이 완성되면 구현 실행
-so2x-cli run execute --file spec.json
-
-# 4. 구현 중 배운 것 기록
-so2x-cli learn add \
-  --problem "callback URL이 배포마다 다름" \
-  --rule "callback URL은 항상 환경 변수로" \
-  --category anti-pattern --tags "oauth,config"
-```
-
-### 3. 간단한 작업 (spec 없이)
-
-spec engine 없이도 기본 스킬을 바로 사용할 수 있습니다.
-
-```
-# Claude Code에서 직접 호출
-/planning                    # 작업 전 계획 수립
-/implementation              # 범위 제한 구현
-/debugging                   # 버그 원인 분석
-/review                      # 변경 사항 리뷰
-/safe-commit                 # 커밋 전 검증
-```
-
-spec 없이 가벼운 요구사항 정리만 할 때:
-
-```
-/specify-lite                # markdown 형태 요구사항 정리
-/spec-validate               # 구조/완결성 검증
-```
-
-### 4. 업데이트 (harness 새 버전 나왔을 때)
+### harness 업데이트
 
 ```bash
 python3 so2x-harness/scripts/update.py --project .
 ```
 
-rules, skills, agents, hooks가 최신으로 교체됩니다.
-CLAUDE.md의 로컬 내용과 config.json은 보존됩니다.
+### 빠른 참조
+
+| 하고 싶은 것 | 명령 |
+|---|---|
+| 새 기능 계획 | `/specify "기능 설명"` |
+| 계획 실행 | `/execute` |
+| 버그 수정 | `/debugging` 후 설명 |
+| 커밋 전 검증 | `/safe-commit` |
+| 요구사항만 정리 | `/specify-lite` |
+| 변경 리뷰 | `/review` |
+| 작업 계획 | `/planning` |
+| harness 상태 | `doctor.py` |
 
 ---
 
