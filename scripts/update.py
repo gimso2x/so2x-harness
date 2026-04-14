@@ -137,15 +137,6 @@ def build_updated_manifest(project_dir: Path) -> dict:
                 "checksum": install_copy_file(src, project_dir / rel),
             }
 
-    plugin_src = ROOT_DIR / "templates/claude/plugin"
-    for src in sorted(plugin_src.iterdir()):
-        if src.is_file():
-            rel = paths["plugin_dir"] / src.name
-            files[str(rel)] = {
-                "mode": "overwrite",
-                "checksum": install_copy_file(src, project_dir / rel),
-            }
-
     config_rel = str(paths["config_path"])
     files[config_rel] = {
         "mode": "skip_if_exists",

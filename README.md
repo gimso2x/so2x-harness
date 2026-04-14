@@ -264,7 +264,6 @@ my-project/
 │   ├── skills/                  # 13개 스킬 폴더 (각각 SKILL.md)
 │   ├── agents/so2x-harness/    # 6개 에이전트
 │   └── hooks/                  # 5개 hook
-├── .claude-plugin/
 └── .ai-harness/
     ├── config.json
     ├── manifest.json

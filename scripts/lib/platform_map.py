@@ -8,7 +8,6 @@ PROJECT_PATHS = {
         "skills_dir": Path(".claude/skills"),
         "agents_dir": Path(".claude/agents/so2x-harness"),
         "hooks_dir": Path(".claude/hooks"),
-        "plugin_dir": Path(".claude-plugin"),
         "shared_docs_dir": Path(".ai-harness/docs"),
         "shared_snippets_dir": Path(".ai-harness/snippets"),
         "agents_path": Path("AGENTS.md"),

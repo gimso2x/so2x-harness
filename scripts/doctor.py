@@ -151,12 +151,6 @@ def check_project(project_dir: Path) -> list[tuple[str, str, str]]:
     else:
         items.append(("WARN", "hooks_dir", f"missing: {hooks_dir}"))
 
-    plugin_dir = project_dir / paths["plugin_dir"]
-    if plugin_dir.exists():
-        items.append(("OK", "plugin_dir", str(plugin_dir)))
-    else:
-        items.append(("WARN", "plugin_dir", f"missing: {plugin_dir}"))
-
     items.extend(_execution_items(project_dir))
 
     return items

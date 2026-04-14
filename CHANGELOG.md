@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### changed
 - preset 구조를 단순화하고 `general` 단일 preset으로 정리
+- plugin 배포를 쓰지 않도록 `plugin.json`과 `.claude-plugin` 설치/점검 경로 제거
 
 ### added
 - Agent orchestration pipeline runner (so2x-cli run specify/execute)

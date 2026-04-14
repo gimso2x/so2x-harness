@@ -15,7 +15,6 @@ def test_claude_has_required_paths() -> None:
         "rules_dir",
         "skills_dir",
         "hooks_dir",
-        "plugin_dir",
         "config_path",
         "shared_docs_dir",
         "shared_snippets_dir",

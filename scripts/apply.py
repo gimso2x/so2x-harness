@@ -178,15 +178,6 @@ def apply_claude(project_dir: Path, preset_name: str) -> dict:
                 "checksum": install_copy_file(src, project_dir / rel),
             }
 
-    plugin_src = ROOT_DIR / "templates/claude/plugin"
-    for src in sorted(plugin_src.iterdir()):
-        if src.is_file():
-            rel = paths["plugin_dir"] / src.name
-            files[str(rel)] = {
-                "mode": "overwrite",
-                "checksum": install_copy_file(src, project_dir / rel),
-            }
-
     config_rel = paths["config_path"]
     project_name = project_dir.name
     files[str(config_rel)] = {
