@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 
 
@@ -11,7 +9,16 @@ def _apply(project: Path) -> None:
     import subprocess
 
     subprocess.run(
-        ["python3", str(ROOT_DIR / "scripts/apply.py"), "--project", str(project), "--platform", "claude", "--preset", "general"],
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(project),
+            "--platform",
+            "claude",
+            "--preset",
+            "general",
+        ],
         capture_output=True,
         text=True,
         check=True,

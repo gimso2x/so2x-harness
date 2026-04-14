@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 from __future__ import annotations
 
 import argparse
@@ -76,39 +77,59 @@ def build_updated_manifest(project_dir: Path) -> dict:
     shared_docs_src = ROOT_DIR / "templates/shared/docs"
     for src in sorted(shared_docs_src.glob("*.md")):
         rel = paths["shared_docs_dir"] / src.name
-        files[str(rel)] = {"mode": "overwrite", "checksum": install_copy_file(src, project_dir / rel)}
+        files[str(rel)] = {
+            "mode": "overwrite",
+            "checksum": install_copy_file(src, project_dir / rel),
+        }
 
     shared_snippets_src = ROOT_DIR / "templates/shared/snippets"
     for src in sorted(shared_snippets_src.glob("*.md")):
         rel = paths["shared_snippets_dir"] / src.name
-        files[str(rel)] = {"mode": "overwrite", "checksum": install_copy_file(src, project_dir / rel)}
+        files[str(rel)] = {
+            "mode": "overwrite",
+            "checksum": install_copy_file(src, project_dir / rel),
+        }
 
     rules_src = ROOT_DIR / "templates/claude/rules"
     for src in sorted(rules_src.glob("*.md")):
         rel = paths["rules_dir"] / src.name
-        files[str(rel)] = {"mode": "overwrite", "checksum": install_copy_file(src, project_dir / rel)}
+        files[str(rel)] = {
+            "mode": "overwrite",
+            "checksum": install_copy_file(src, project_dir / rel),
+        }
 
     skills_src = ROOT_DIR / "templates/claude/skills"
     for src in sorted(skills_src.glob("*.md")):
         rel = paths["skills_dir"] / src.name
-        files[str(rel)] = {"mode": "overwrite", "checksum": install_copy_file(src, project_dir / rel)}
+        files[str(rel)] = {
+            "mode": "overwrite",
+            "checksum": install_copy_file(src, project_dir / rel),
+        }
 
     hooks_src = ROOT_DIR / "templates/claude/hooks"
     for src in sorted(hooks_src.iterdir()):
         if src.is_file():
             rel = paths["hooks_dir"] / src.name
-            files[str(rel)] = {"mode": "overwrite", "checksum": install_copy_file(src, project_dir / rel)}
+            files[str(rel)] = {
+                "mode": "overwrite",
+                "checksum": install_copy_file(src, project_dir / rel),
+            }
 
     plugin_src = ROOT_DIR / "templates/claude/plugin"
     for src in sorted(plugin_src.iterdir()):
         if src.is_file():
             rel = paths["plugin_dir"] / src.name
-            files[str(rel)] = {"mode": "overwrite", "checksum": install_copy_file(src, project_dir / rel)}
+            files[str(rel)] = {
+                "mode": "overwrite",
+                "checksum": install_copy_file(src, project_dir / rel),
+            }
 
     config_rel = str(paths["config_path"])
     files[config_rel] = {
         "mode": "skip_if_exists",
-        "checksum": update_project_config(project_dir, project_dir / paths["config_path"]),
+        "checksum": update_project_config(
+            project_dir, project_dir / paths["config_path"]
+        ),
     }
 
     return {

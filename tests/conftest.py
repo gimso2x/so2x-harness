@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 import sys
 
@@ -10,6 +9,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 SCRIPTS_DIR = ROOT_DIR / "scripts"
 TEMPLATES_DIR = ROOT_DIR / "templates"
 
+sys.path.insert(0, str(ROOT_DIR))
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 

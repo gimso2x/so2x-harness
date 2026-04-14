@@ -38,7 +38,9 @@ def test_sha256_file_vs_text_same_content() -> None:
     import tempfile
     from pathlib import Path
 
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False, encoding="utf-8") as f:
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".txt", delete=False, encoding="utf-8"
+    ) as f:
         f.write("identical content")
         f.flush()
         path = Path(f.name)

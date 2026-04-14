@@ -1,11 +1,8 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
-import pytest
-
-from scripts.lib.manifest import load_manifest, manifest_path
+from scripts.lib.manifest import load_manifest
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -14,7 +11,16 @@ def _apply(project: Path, preset: str = "general") -> None:
     import subprocess
 
     subprocess.run(
-        ["python3", str(ROOT_DIR / "scripts/apply.py"), "--project", str(project), "--platform", "claude", "--preset", preset],
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(project),
+            "--platform",
+            "claude",
+            "--preset",
+            preset,
+        ],
         capture_output=True,
         text=True,
         check=True,

@@ -3,8 +3,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
-
 from scripts.lib.manifest import load_manifest, manifest_path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
@@ -14,7 +12,16 @@ def test_apply_creates_manifest(tmp_project: Path) -> None:
     import subprocess
 
     result = subprocess.run(
-        ["python3", str(ROOT_DIR / "scripts/apply.py"), "--project", str(tmp_project), "--platform", "claude", "--preset", "general"],
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(tmp_project),
+            "--platform",
+            "claude",
+            "--preset",
+            "general",
+        ],
         capture_output=True,
         text=True,
         check=False,
@@ -27,7 +34,16 @@ def test_apply_creates_claude_md(tmp_project: Path) -> None:
     import subprocess
 
     subprocess.run(
-        ["python3", str(ROOT_DIR / "scripts/apply.py"), "--project", str(tmp_project), "--platform", "claude", "--preset", "general"],
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(tmp_project),
+            "--platform",
+            "claude",
+            "--preset",
+            "general",
+        ],
         capture_output=True,
         text=True,
         check=True,
@@ -42,7 +58,16 @@ def test_apply_creates_rules(tmp_project: Path) -> None:
     import subprocess
 
     subprocess.run(
-        ["python3", str(ROOT_DIR / "scripts/apply.py"), "--project", str(tmp_project), "--platform", "claude", "--preset", "general"],
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(tmp_project),
+            "--platform",
+            "claude",
+            "--preset",
+            "general",
+        ],
         capture_output=True,
         text=True,
         check=True,
@@ -57,7 +82,16 @@ def test_apply_creates_skills(tmp_project: Path) -> None:
     import subprocess
 
     subprocess.run(
-        ["python3", str(ROOT_DIR / "scripts/apply.py"), "--project", str(tmp_project), "--platform", "claude", "--preset", "general"],
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(tmp_project),
+            "--platform",
+            "claude",
+            "--preset",
+            "general",
+        ],
         capture_output=True,
         text=True,
         check=True,
@@ -72,7 +106,16 @@ def test_apply_creates_config(tmp_project: Path) -> None:
     import subprocess
 
     subprocess.run(
-        ["python3", str(ROOT_DIR / "scripts/apply.py"), "--project", str(tmp_project), "--platform", "claude", "--preset", "general"],
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(tmp_project),
+            "--platform",
+            "claude",
+            "--preset",
+            "general",
+        ],
         capture_output=True,
         text=True,
         check=True,
@@ -88,7 +131,16 @@ def test_apply_manifest_has_files(tmp_project: Path) -> None:
     import subprocess
 
     subprocess.run(
-        ["python3", str(ROOT_DIR / "scripts/apply.py"), "--project", str(tmp_project), "--platform", "claude", "--preset", "general"],
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(tmp_project),
+            "--platform",
+            "claude",
+            "--preset",
+            "general",
+        ],
         capture_output=True,
         text=True,
         check=True,
@@ -102,7 +154,16 @@ def test_apply_unsupported_platform(tmp_project: Path) -> None:
     import subprocess
 
     result = subprocess.run(
-        ["python3", str(ROOT_DIR / "scripts/apply.py"), "--project", str(tmp_project), "--platform", "codex", "--preset", "general"],
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(tmp_project),
+            "--platform",
+            "codex",
+            "--preset",
+            "general",
+        ],
         capture_output=True,
         text=True,
         check=False,
@@ -114,7 +175,16 @@ def test_apply_nextjs_preset(tmp_project: Path) -> None:
     import subprocess
 
     result = subprocess.run(
-        ["python3", str(ROOT_DIR / "scripts/apply.py"), "--project", str(tmp_project), "--platform", "claude", "--preset", "nextjs"],
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(tmp_project),
+            "--platform",
+            "claude",
+            "--preset",
+            "nextjs",
+        ],
         capture_output=True,
         text=True,
         check=False,

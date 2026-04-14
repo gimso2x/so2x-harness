@@ -46,7 +46,9 @@ def test_upsert_marker_block_insert_appends() -> None:
 
 
 def test_upsert_marker_preserves_surrounding() -> None:
-    existing = "# Header\n\nSome text\n\n<!-- SO2X:BEGIN -->\nold\n<!-- SO2X:END -->\n\nFooter"
+    existing = (
+        "# Header\n\nSome text\n\n<!-- SO2X:BEGIN -->\nold\n<!-- SO2X:END -->\n\nFooter"
+    )
     new_block = "<!-- SO2X:BEGIN -->\nnew\n<!-- SO2X:END -->"
     result = upsert_marker_block(existing, new_block, "SO2X")
     assert result.startswith("# Header")

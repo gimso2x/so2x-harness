@@ -7,7 +7,9 @@ from scripts.lib.render import render_template
 
 
 def _write_template(content: str) -> Path:
-    f = tempfile.NamedTemporaryFile(mode="w", suffix=".tmpl", delete=False, encoding="utf-8")
+    f = tempfile.NamedTemporaryFile(
+        mode="w", suffix=".tmpl", delete=False, encoding="utf-8"
+    )
     f.write(content)
     f.flush()
     f.close()

@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 from __future__ import annotations
 
 import argparse
@@ -54,12 +55,26 @@ def load_preset(preset_name: str) -> dict:
 
 
 def build_extra_fields_json(preset: dict) -> str:
-    extras = {k: v for k, v in preset.items() if k not in {"preset", "platforms", "language", "comment_language", "enabled_rules", "enabled_skills"}}
+    extras = {
+        k: v
+        for k, v in preset.items()
+        if k
+        not in {
+            "preset",
+            "platforms",
+            "language",
+            "comment_language",
+            "enabled_rules",
+            "enabled_skills",
+        }
+    }
     if not extras:
         return ""
     rendered = ",\n"
     for idx, (key, value) in enumerate(extras.items()):
-        rendered += f'  "{key}": ' + json.dumps(value, ensure_ascii=False, indent=2).replace("\n", "\n  ")
+        rendered += f'  "{key}": ' + json.dumps(
+            value, ensure_ascii=False, indent=2
+        ).replace("\n", "\n  ")
         if idx < len(extras) - 1:
             rendered += ",\n"
         else:
@@ -67,7 +82,9 @@ def build_extra_fields_json(preset: dict) -> str:
     return rendered
 
 
-def install_project_config(project_dir: Path, project_name: str, config_path: Path, preset_name: str) -> str:
+def install_project_config(
+    project_dir: Path, project_name: str, config_path: Path, preset_name: str
+) -> str:
     template = ROOT_DIR / "templates/project/.ai-harness/config.json.tmpl"
     preset = load_preset(preset_name)
     rendered = render_template(
@@ -75,8 +92,12 @@ def install_project_config(project_dir: Path, project_name: str, config_path: Pa
         {
             "project_name": project_name,
             "preset": preset_name,
-            "enabled_rules_json": json.dumps(preset["enabled_rules"], ensure_ascii=False, indent=2),
-            "enabled_skills_json": json.dumps(preset["enabled_skills"], ensure_ascii=False, indent=2),
+            "enabled_rules_json": json.dumps(
+                preset["enabled_rules"], ensure_ascii=False, indent=2
+            ),
+            "enabled_skills_json": json.dumps(
+                preset["enabled_skills"], ensure_ascii=False, indent=2
+            ),
             "extra_fields_json": build_extra_fields_json(preset),
         },
     )
@@ -158,7 +179,9 @@ def apply_claude(project_dir: Path, preset_name: str) -> dict:
     project_name = project_dir.name
     files[str(config_rel)] = {
         "mode": "skip_if_exists",
-        "checksum": install_project_config(project_dir, project_name, project_dir / config_rel, preset_name),
+        "checksum": install_project_config(
+            project_dir, project_name, project_dir / config_rel, preset_name
+        ),
     }
 
     manifest = {
@@ -186,7 +209,9 @@ def main() -> None:
         raise SystemExit(f"unsupported platform: {args.platform}")
 
     manifest = apply_claude(project, args.preset)
-    print(f"[so2x-harness] installed version={manifest['version']} platform=claude project={project}")
+    print(
+        f"[so2x-harness] installed version={manifest['version']} platform=claude project={project}"
+    )
     print(f"[so2x-harness] preset={args.preset}")
     print(f"[so2x-harness] wrote {len(manifest['files'])} managed file entries")
 
