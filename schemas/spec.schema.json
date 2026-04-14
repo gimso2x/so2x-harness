@@ -176,9 +176,12 @@
               "acceptance_criteria": {
                 "type": "string"
               },
+              "summary": {
+                "type": "string"
+              },
               "status": {
                 "type": "string",
-                "enum": ["pending", "in_progress", "done"],
+                "enum": ["pending", "in_progress", "blocked", "done"],
                 "default": "pending"
               }
             }
