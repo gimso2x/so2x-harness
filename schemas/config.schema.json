@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "so2x-harness project config",
+  "type": "object",
+  "required": ["project_name", "preset", "platforms", "language"],
+  "properties": {
+    "project_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "preset": {
+      "type": "string",
+      "enum": ["general", "nextjs"]
+    },
+    "platforms": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["claude"]
+      },
+      "minItems": 1
+    },
+    "language": {
+      "type": "string",
+      "enum": ["ko", "en"]
+    },
+    "comment_language": {
+      "type": "string",
+      "enum": ["ko", "en"]
+    },
+    "enabled_rules": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "enabled_skills": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": true
+}

@@ -16,6 +16,10 @@
     "debugging",
     "review",
     "specify-lite",
-    "check-harness"
+    "check-harness",
+    "spec-validate",
+    "setup-context",
+    "changelog",
+    "safe-commit"
   ]
 }

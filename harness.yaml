@@ -21,3 +21,7 @@ default_skills:
   - review
   - specify-lite
   - check-harness
+  - spec-validate
+  - setup-context
+  - changelog
+  - safe-commit

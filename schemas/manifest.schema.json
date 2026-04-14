@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "so2x-harness manifest",
+  "type": "object",
+  "required": ["name", "version", "platforms", "installed_at", "files"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "const": "so2x-harness"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "platforms": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["claude"]
+      }
+    },
+    "installed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "files": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["mode", "checksum"],
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": ["overwrite", "marker", "skip_if_exists"]
+          },
+          "marker": {
+            "type": "string"
+          },
+          "checksum": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
