@@ -1,276 +1,193 @@
 # so2x-harness
 
-Installable AI harness kit for multi-project development.
+**여러 프로젝트에 공통 AI harness를 설치해서 쓰는 가벼운 GitHub-managed kit.**
 
-여러 프로젝트에 공통 AI harness를 설치해서 쓰기 위한 가벼운 GitHub-managed kit입니다.
+[![CI](https://github.com/gimso2x/so2x-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/gimso2x/so2x-harness/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Platform: Claude Code](https://img.shields.io/badge/Platform-Claude_Code-blueviolet)](https://docs.anthropic.com/en/docs/claude-code)
+[![Version](https://img.shields.io/badge/Version-0.1.1-green)](https://github.com/gimso2x/so2x-harness/blob/main/VERSION)
 
-목표는 하나입니다.
+Quick Start · Why · What's Inside · Install · Update · Presets · Docs
 
-- 프로젝트마다 같은 AI 작업 규칙을 재사용하고
-- GitHub repo 하나에서 중앙 관리하고
-- 필요할 때 안전하게 update하고
-- 무거운 framework나 binary 없이도 실전에서 바로 쓰는 것
+---
 
-이 repo는 full orchestration framework가 아닙니다.
-대신 다음에 집중합니다.
+> _하나의 repo에서 공통 규칙을 관리하고, 여러 프로젝트에 안전하게 설치하고, 필요할 때 갱신한다._
 
-- installable harness
-- shared rules and skills
-- project-safe update
-- requirements-first workflow
-- lightweight validation
+## Quick Start
 
-## Why this exists
+```bash
+# macOS / Linux
+curl -sSfL https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.sh | sh
 
-기존 AI harness/framework는 크게 두 갈래가 있습니다.
-
-1. 아주 강한 framework
-- 장점: 체계적이고 강력함
-- 단점: 무겁고 도입 비용이 큼
-
-2. 아주 가벼운 prompt/skill 모음
-- 장점: 단순하고 빠름
-- 단점: 설치, update, 검증 체계가 약함
-
-`so2x-harness`는 그 중간을 목표로 합니다.
-
-- starter kit처럼 가볍게 시작
-- requirements-first와 verification 원칙은 유지
-- install/update/manifest는 최소한 갖춤
-
-## Design goals
-
-### 1. GitHub 하나로 중앙 관리
-공통 규칙과 skill은 이 repo에서 관리합니다.
-
-### 2. 여러 프로젝트에 설치 가능
-각 프로젝트에 필요한 파일만 복사하거나 marker 구간만 삽입합니다.
-
-### 3. 로컬 커스터마이징 허용
-프로젝트별 메모와 설정은 남기고, 공통 관리 구간만 update합니다.
-
-### 4. 가벼운 구현
-초기 버전은 shell + Python으로 구현합니다.
-Go binary, 복잡한 CLI, orchestration engine은 포함하지 않습니다.
-
-### 5. requirements-first
-큰 구현 전에는 요구, 결정, 검증 기준을 먼저 정리합니다.
-
-### 6. validate-before-done
-완료 주장 전에는 최소 검증 형식을 요구합니다.
-
-## Non-goals
-
-현재 버전에서 하지 않는 것:
-
-- multi-model orchestration
-- full spec.json schema engine
-- autonomous worker fleet
-- project architecture auto-generation
-- heavy merge engine
-- cross-platform binary distribution
-
-## Repo structure
-
-```text
-so2x-harness/
-├─ README.md
-├─ VERSION
-├─ harness.yaml
-├─ install.sh
-├─ install.ps1
-├─ scripts/
-│  ├─ apply.py
-│  ├─ update.py
-│  ├─ doctor.py
-│  └─ lib/
-│     ├─ manifest.py
-│     ├─ markers.py
-│     ├─ checksum.py
-│     ├─ render.py
-│     └─ platform_map.py
-├─ templates/
-│  ├─ shared/
-│  │  ├─ AGENTS.md
-│  │  ├─ docs/
-│  │  │  ├─ harness-philosophy.md
-│  │  │  ├─ workflow.md
-│  │  │  └─ review-checklist.md
-│  │  └─ snippets/
-│  │     └─ validate-prompt.md
-│  ├─ claude/
-│  │  ├─ CLAUDE.md
-│  │  ├─ rules/
-│  │  │  ├─ language-policy.md
-│  │  │  ├─ scope-control.md
-│  │  │  ├─ file-size-limit.md
-│  │  │  ├─ testing-policy.md
-│  │  │  └─ verification-policy.md
-│  │  ├─ skills/
-│  │  │  ├─ planning.md
-│  │  │  ├─ implementation.md
-│  │  │  ├─ debugging.md
-│  │  │  ├─ review.md
-│  │  │  ├─ specify-lite.md
-│  │  │  └─ check-harness.md
-│  │  ├─ hooks/
-│  │  │  ├─ hooks.json
-│  │  │  └─ validate-output.sh
-│  │  └─ plugin/
-│  │     └─ plugin.json
-│  └─ project/
-│     └─ .ai-harness/
-│        ├─ config.json.tmpl
-│        ├─ manifest.json.tmpl
-│        └─ presets/
-│           ├─ general.json
-│           └─ nextjs.json
-├─ docs/
-│  └─ release-checklist.md
-└─ examples/
-   ├─ project-config.general.json
-   └─ project-config.nextjs.json
+# Windows (PowerShell)
+powershell -c "irm https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.ps1 | iex"
 ```
 
-## What comes from where
+기본값은 `claude + general preset`으로 현재 디렉터리에 설치입니다.
 
-이 repo는 세 가지 계열의 장점을 섞습니다.
+```bash
+# 다른 프로젝트에 다른 preset으로 설치
+python3 scripts/apply.py --project /path/to/my-project --preset nextjs
+```
 
-### From lightweight starter-style harnesses
-- 단순한 plugin/skill 중심 구조
-- 작은 repo 크기
-- 빠른 도입
-- 교육/공유에 쉬운 형태
+설치 후 프로젝트 구조:
 
-### From requirements-first systems
-- requirements-first planning
-- planning과 execution 분리
-- validate prompt 개념
-- hook-based guardrails
-- traceable review mindset
-
-### From installable framework systems
-- install/update scripts
-- manifest and checksums
-- overwrite / marker / skip 정책
-- shared vs platform vs project template 분리
-
-## Supported platforms
-
-v0.1 목표:
-
-- Claude Code only
-
-향후 확장 가능:
-
-- Codex
-- Gemini
-- other AI coding tools
-
-초기에는 하나만 잘 지원하는 것이 우선입니다.
-
-## Core concepts
-
-### 1. Shared templates
-공통 규칙과 skill 원본은 이 repo의 `templates/` 아래에 있습니다.
-
-### 2. Project installation
-설치 시 각 프로젝트 안에 실제 사용 파일이 생성됩니다.
-
-예:
-
-```text
+```
 my-project/
-├─ CLAUDE.md
-├─ .claude/
-│  ├─ rules/so2x-harness/
-│  └─ skills/so2x-harness/
-└─ .ai-harness/
-   ├─ config.json
-   └─ manifest.json
+├── CLAUDE.md                  # harness 구간이 관리됨
+├── AGENTS.md
+├── .claude/
+│   ├── rules/so2x-harness/    # 5개 규칙
+│   ├── skills/so2x-harness/   # 10개 스킬
+│   └── hooks/                 # 5개 hook
+├── .claude-plugin/
+└── .ai-harness/
+    ├── config.json            # 프로젝트 설정
+    └── manifest.json          # 설치 추적
 ```
 
-### 3. Marker-managed files
-일부 파일은 전체를 덮어쓰지 않고 특정 구간만 관리합니다.
+---
 
-예: `CLAUDE.md`
+## Why This Exists
 
-```md
-<!-- SO2X-HARNESS:BEGIN -->
-공통 관리 영역
-<!-- SO2X-HARNESS:END -->
+AI 코딩 도구를 여러 프로젝트에서 쓸 때 같은 문제가 반복됩니다.
+
+| 문제 | so2x-harness의 접근 |
+|---|---|
+| 프로젝트마다 같은 규칙을 복사 | GitHub repo 하나에서 중앙 관리 |
+| 규칙을 업데이트하려면 일일이 수정 | manifest 기반 안전한 업데이트 |
+| 로컬 수정과 공통 규칙이 충돌 | marker 구간으로 로컬/공통 분리 |
+| 검증 없이 "다 했다"고 넘어감 | validate_prompt + hook으로 검증 |
+
+### 무겁지 않습니다
+
+full orchestration framework가 아닙니다. 설치 가능한 harness kit입니다.
+
+- Python 3.10+ 만 있으면 됨
+- Go binary, npm package 불필요
+- 프로젝트에 Python 런타임도 불필요 (markdown + shell만 설치됨)
+- CI/CD 포함, 테스트 포함, 스키마 검증 포함
+
+---
+
+## What's Inside
+
+### 10 Skills
+
+| Skill | When |
+|---|---|
+| `planning` | 큰 작업 전 계획 구조화 |
+| `implementation` | 범위 제한, 작은 단위 구현 |
+| `debugging` | root cause 중심 디버깅 |
+| `review` | 요구사항/위험/검증 기준 기반 리뷰 |
+| `specify-lite` | 요구 → 결정 → 구현 순서 정리 |
+| `check-harness` | harness 성숙도 점검 |
+| `spec-validate` | spec-lite 문서 완결성 검증 |
+| `setup-context` | 프로젝트 분석 → 컨텍스트 문서 생성 |
+| `changelog` | 변경 이력 구조화 기록 |
+| `safe-commit` | 커밋 전 검증 (시크릿, 크기, 범위) |
+
+### 5 Rules
+
+| Rule | Purpose |
+|---|---|
+| `language-policy` | 응답은 한국어, 주석은 영어 |
+| `scope-control` | 관련 없는 변경 방지 |
+| `file-size-limit` | 파일 300줄 이하 권장 |
+| `testing-policy` | 검증 후 완료 판단 |
+| `verification-policy` | 변경 내용, 증거, 위험 명시 |
+
+### 5 Hooks
+
+| Hook | Trigger |
+|---|---|
+| `validate-output` | skill/task 실행 후 출력 검증 |
+| `pre-apply-check` | 설치 전 프로젝트 상태 확인 |
+| `post-apply-verify` | 설치 후 결과 검증 |
+| `pre-commit-check` | 커밋 전 시크릿/크기/범위 검사 |
+| `spec-gate` | spec-lite 완결성 게이트 |
+
+---
+
+## Install
+
+### Bootstrap (권장)
+
+```bash
+# macOS / Linux
+curl -sSfL https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.sh | sh
+
+# Windows (PowerShell)
+powershell -c "irm https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.ps1 | iex"
 ```
 
-이 방식으로 프로젝트별 메모는 남기고 공통 구간만 update할 수 있습니다.
+### Local Clone
 
-### 4. Manifest-managed updates
-설치된 파일 상태는 `.ai-harness/manifest.json`에 기록합니다.
+```bash
+git clone https://github.com/gimso2x/so2x-harness.git
+cd so2x-harness
 
-이 파일은 다음을 추적합니다.
+# 특정 프로젝트에 설치
+python3 scripts/apply.py --project /path/to/project --platform claude --preset general
 
-- 설치 버전
-- 설치 플랫폼
-- 파일별 checksum
-- 파일별 update 정책
-- marker 정보
+# 상태 점검
+python3 scripts/doctor.py --project /path/to/project
+```
 
-## File update policies
+---
 
-세 가지 정책만 지원합니다.
+## Update
 
-### `overwrite`
-공통 원본이 항상 우선인 파일
+설치 후 공통 관리 부분만 갱신합니다. 프로젝트별 수정은 보존됩니다.
 
-예:
-- rules
-- shared skills
-- hook script
+```bash
+python3 /path/to/so2x-harness/scripts/update.py --project .
+```
 
-### `marker`
-파일 일부 구간만 공통 관리하는 파일
+동작:
 
-예:
-- `CLAUDE.md`
-- `AGENTS.md`
+| 정책 | 동작 |
+|---|---|
+| `overwrite` | 템플릿으로 항상 교체 (rules, skills, hooks) |
+| `marker` | `SO2X-HARNESS:BEGIN`~`END` 구간만 교체 (CLAUDE.md) |
+| `skip_if_exists` | 이미 있으면 유지 (config, AGENTS.md) |
 
-### `skip_if_exists`
-이미 프로젝트에서 관리 중이면 건드리지 않는 파일
+---
 
-예:
-- `.claude/settings.json`
-- 로컬 설정 파일
-- 팀별 메모 파일
+## Presets
 
-## Installed skill set (v0.1)
+| Preset | Description |
+|---|---|
+| `general` | 모든 프로젝트용 기본 preset |
+| `nextjs` | Next.js 프로젝트용 preset |
 
-v0.1에서는 아래 skill만 기본 제공합니다.
+커스텀 preset 작성 → [docs/preset-guide.md](docs/preset-guide.md)
 
-### `planning`
-큰 작업 시작 전 계획 구조화
+---
 
-### `implementation`
-범위 제한, 작은 단위 구현, 검증 우선
+## Project Config
 
-### `debugging`
-root cause 중심 디버깅
+각 프로젝트는 `.ai-harness/config.json`으로 로컬 옵션을 가집니다.
 
-### `review`
-요구사항/위험/검증 기준 기반 리뷰
+```json
+{
+  "project_name": "my-project",
+  "preset": "general",
+  "platforms": ["claude"],
+  "language": "ko",
+  "comment_language": "en",
+  "enabled_rules": ["language-policy", "scope-control", "testing-policy"],
+  "enabled_skills": ["planning", "implementation", "debugging", "review"]
+}
+```
 
-### `specify-lite`
-요구 → 결정 → 구현 순서 → 검증 기준 정리
-
-### `check-harness`
-현재 프로젝트의 harness 성숙도 점검
+---
 
 ## Spec Lite
 
-이 repo는 full schema 기반 spec engine을 사용하지 않습니다.
-대신 가벼운 `spec-lite` 문서를 사용합니다.
+full schema 기반 spec engine 대신 가벼운 markdown 문서를 사용합니다.
 
-기본 형식:
-
-```md
+```markdown
 # Spec Lite
 
 ## Goal
@@ -292,264 +209,35 @@ root cause 중심 디버깅
 완료 판단 기준
 ```
 
-목적:
-- 큰 작업 전 생각 정리
-- 요구사항 누락 줄이기
-- 구현/리뷰 기준 만들기
+`spec-validate` 스킬로 구조와 완결성을 검증합니다.
 
-## Validation model
-
-이 repo는 “완료했다”보다 “검증했다”를 더 중요하게 봅니다.
-
-가능하면 skill이나 agent 문서에 `validate_prompt`를 둡니다.
-
-예:
-
-```yaml
 ---
-name: review
-description: Review changes against requirements and risks
-validate_prompt: |
-  Output must include:
-  - Summary
-  - Findings
-  - Risks
-  - Verification status
+
+## Docs
+
+| Document | Description |
+|---|---|
+| [ARCHITECTURE.md](ARCHITECTURE.md) | 시스템 구조, 모듈, 데이터 흐름 |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | 기여 가이드, 개발 환경, PR 프로세스 |
+| [CHANGELOG.md](CHANGELOG.md) | 버전별 변경 이력 |
+| [docs/cli-reference.md](docs/cli-reference.md) | 전체 명령 참조 |
+| [docs/preset-guide.md](docs/preset-guide.md) | 프리셋 작성 가이드 |
+
 ---
-```
-
-hook는 완료 후 이 형식을 다시 상기시켜
-검토 없이 넘어가는 걸 줄입니다.
-
-## Quick start
-
-가장 쉬운 설치 방법은 bootstrap 스크립트를 바로 실행하는 것입니다.
-
-```bash
-# macOS / Linux
-curl -sSfL https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.sh | sh
-```
-
-```powershell
-# Windows (CMD or PowerShell)
-powershell -c "irm https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.ps1 | iex"
-```
-
-기본값은 현재 디렉터리에 `claude + general preset`으로 설치입니다.
-다른 디렉터리에 설치하거나 preset을 바꾸고 싶으면 로컬 clone 방식이 더 다루기 쉽습니다.
-
-```bash
-git clone https://github.com/gimso2x/so2x-harness.git
-cd so2x-harness
-
-# 임의의 프로젝트에 설치
-python3 scripts/apply.py --project /path/to/my-project --platform claude --preset general
-```
-
-설치가 끝나면 프로젝트 안에 대략 아래 구조가 생깁니다.
-
-```text
-my-project/
-├─ CLAUDE.md
-├─ AGENTS.md
-├─ .claude/
-│  ├─ rules/so2x-harness/
-│  ├─ skills/so2x-harness/
-│  └─ hooks/
-├─ .claude-plugin/
-└─ .ai-harness/
-   ├─ config.json
-   ├─ manifest.json
-   ├─ docs/
-   └─ snippets/
-```
-
-## Installation
-
-### Recommended
-프로젝트 루트에서 직접 적용:
-
-```bash
-python3 /path/to/so2x-harness/scripts/apply.py --project . --platform claude --preset general
-```
-
-preset 예시:
-- `general`: 기본 공통 preset
-- `nextjs`: Next.js 프로젝트용 preset
-
-또는 entrypoint 스크립트를 사용할 수 있습니다.
-
-```bash
-PRESET=nextjs /path/to/so2x-harness/install.sh .
-```
-
-기본 platform은 `claude`입니다.
-다른 값을 넘기면 현재 버전에서는 오류를 반환합니다.
-
-### Doctor check
-설치 전이나 설치 후 상태를 빠르게 점검하려면:
-
-```bash
-python3 /path/to/so2x-harness/scripts/doctor.py --project .
-```
-
-예상 용도:
-- 아직 harness가 안 깔린 프로젝트인지 확인
-- manifest/config/rules/skills/hooks 존재 여부 확인
-- 설치 후 구조가 정상인지 점검
-
-### Tested example
-실제 테스트는 아래 샘플 프로젝트로 확인했습니다.
-
-- harness repo: `/home/sgkim/ssuk/so2x-harness`
-- sample project: `/home/sgkim/ssuk/so2x-sandbox`
-
-실행 예:
-
-```bash
-python3 /home/sgkim/ssuk/so2x-harness/scripts/apply.py \
-  --project /home/sgkim/ssuk/so2x-sandbox \
-  --platform claude \
-  --preset general
-```
-
-예상 결과:
-- `CLAUDE.md` 생성 또는 marker 구간 삽입
-- `.claude/rules/so2x-harness/` 생성
-- `.claude/skills/so2x-harness/` 생성
-- `.ai-harness/config.json` 생성
-- `.ai-harness/manifest.json` 생성
-
-### Future convenience install
-현재는 아래 bootstrap 방식으로 바로 사용할 수 있습니다.
-
-```bash
-# macOS / Linux
-curl -sSfL https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.sh | sh
-```
-
-```powershell
-# Windows (CMD or PowerShell)
-powershell -c "irm https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.ps1 | iex"
-```
-
-기본 동작:
-- 현재 디렉터리에 설치
-- `platform=claude`
-- `preset=general`
-
-## Update
-
-설치 후 공통 관리 부분만 갱신합니다.
-
-```bash
-python3 /path/to/so2x-harness/scripts/update.py --project .
-```
-
-동작:
-- manifest 읽기
-- 새 template checksum 계산
-- `overwrite` 파일 교체
-- `marker` 파일은 marker 구간만 교체
-- `skip_if_exists` 파일은 유지
-- 새 manifest 저장
-
-## Project config
-
-각 프로젝트는 `.ai-harness/config.json`로 local 옵션을 가질 수 있습니다.
-
-예:
-
-```json
-{
-  "project_name": "my-project",
-  "preset": "general",
-  "platforms": ["claude"],
-  "language": "ko",
-  "comment_language": "en",
-  "enabled_rules": [
-    "language-policy",
-    "scope-control",
-    "testing-policy"
-  ],
-  "enabled_skills": [
-    "planning",
-    "implementation",
-    "debugging",
-    "review",
-    "specify-lite",
-    "check-harness"
-  ]
-}
-```
-
-## Manifest example
-
-```json
-{
-  "name": "so2x-harness",
-  "version": "0.1.0",
-  "platforms": ["claude"],
-  "installed_at": "2026-04-14T10:30:00Z",
-  "files": {
-    "CLAUDE.md": {
-      "mode": "marker",
-      "marker": "SO2X-HARNESS",
-      "checksum": "sha256:..."
-    },
-    ".claude/rules/so2x-harness/language-policy.md": {
-      "mode": "overwrite",
-      "checksum": "sha256:..."
-    },
-    ".claude/skills/so2x-harness/planning.md": {
-      "mode": "overwrite",
-      "checksum": "sha256:..."
-    }
-  }
-}
-```
-
-## v0.1 scope
-
-반드시 포함:
-
-- Claude-only support
-- install script entrypoints
-- Python apply/update/doctor scripts
-- marker-managed `CLAUDE.md`
-- manifest recording
-- `general` / `nextjs` preset
-- 6 base skills
-- 5 base rules
-- check-harness
-- specify-lite
-- validate-output hook
-
-포함하지 않음:
-
-- Codex support
-- full plugin marketplace flow
-- full spec schema engine
-- orchestration engine
-- multi-model review engine
-- architecture auto-generation
-- advanced merge system
 
 ## Roadmap
 
-### v0.1
-가볍게 설치해서 쓰는 첫 버전
+### v0.1 (현재)
+Claude Code 지원, 설치/업데이트/doctor, 10 스킬, 5 규칙, CI/CD
 
 ### v0.2
-- Codex support
-- project-type presets
-- stronger hook coverage
-- richer check-harness checklist
+- Codex 지원
+- project-type presets 확장
+- hook coverage 강화
 
 ### v0.3
-- spec-lite validation
-- review report templates
-- project profile presets
+- spec-lite 자동 검증
+- review report template
 - optional QA skill pack
 
 ### v1.0
@@ -557,23 +245,18 @@ python3 /path/to/so2x-harness/scripts/update.py --project .
 - versioned releases
 - team-wide repeatable rollout
 
+---
+
 ## Principles
 
-### Keep it installable
-이 repo는 실험장이 아니라 배포 가능한 kit여야 합니다.
-
-### Keep it small
-framework 욕심보다 유지 가능한 크기를 우선합니다.
-
-### Keep local edits safe
-프로젝트별 수정은 최대한 보존합니다.
-
-### Keep requirements visible
-구현 전에 요구와 검증 기준을 드러냅니다.
-
-### Keep done verifiable
-완료는 주장보다 증거로 판단합니다.
+| 원칙 | 의미 |
+|---|---|
+| **Keep it installable** | 배포 가능한 kit, 실험장이 아님 |
+| **Keep it small** | framework 욕심보다 유지 가능한 크기 |
+| **Keep local edits safe** | 프로젝트별 수정은 최대한 보존 |
+| **Keep requirements visible** | 구현 전에 요구와 검증 기준을 드러냄 |
+| **Keep done verifiable** | 완료는 주장이 아닌 증거로 판단 |
 
 ## License
 
-TBD
+MIT
