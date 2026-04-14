@@ -1,0 +1,1 @@
+{"id": "LRN-E27F72", "timestamp": "2026-04-14T05:31:44.323941+00:00", "source_project": "sandbox", "source_spec": "", "category": "anti-pattern", "problem": "OAuth callback URL이 배포 환경마다 다름", "cause": "환경 변수 없이 하드코딩", "rule": "callback URL은 항상 환경 변수로 설정", "tags": ["oauth", "config", "deployment"], "severity": "info"}

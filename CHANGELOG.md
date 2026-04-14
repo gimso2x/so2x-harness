@@ -5,6 +5,15 @@ All notable changes to so2x-harness will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-04-14
+
+### added
+- Knowledge accumulation system (JSONL-based learning storage)
+- so2x-cli learn add/search/sync/summary commands
+- Cross-project learning sharing (local + central)
+- 4 learning categories: pattern, anti-pattern, edge-case, decision
+- /specify auto-injects related learnings during derivation
+
 ## [0.2.0] - 2026-04-14
 
 ### added
