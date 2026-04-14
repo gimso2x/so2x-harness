@@ -5,6 +5,15 @@ All notable changes to so2x-harness will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-04-14
+
+### added
+- Agent orchestration pipeline runner (so2x-cli run specify/execute)
+- Sequential pipeline: Interviewer → Code Explorer → Spec Writer → Planner → Reviewer → Verifier
+- Gate checks between each pipeline stage
+- Agent template auto-loading with instruction generation
+- Task status tracking (pending/in_progress/done)
+
 ## [0.3.0] - 2026-04-14
 
 ### added

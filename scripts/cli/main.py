@@ -57,10 +57,21 @@ def main() -> None:
     summary_p = learn_sub.add_parser("summary", help="Show learning summary")
     summary_p.add_argument("--file", help="JSONL file to summarize")
 
+    # run subcommand
+    run_parser = subparsers.add_parser("run", help="Run agent pipeline")
+    run_sub = run_parser.add_subparsers(dest="run_command")
+
+    specify_p = run_sub.add_parser("specify", help="Run specify pipeline")
+    specify_p.add_argument("goal", help="Goal description")
+    specify_p.add_argument("--output", default="spec.json", help="Output spec file")
+
+    execute_p = run_sub.add_parser("execute", help="Run execute pipeline")
+    execute_p.add_argument("--file", default="spec.json", help="Spec file to execute")
+
     args = parser.parse_args()
 
     if args.version:
-        print("so2x-cli 0.3.0")
+        print("so2x-cli 0.4.0")
         return
 
     if args.command == "spec":
@@ -71,6 +82,10 @@ def main() -> None:
         from cli.commands.learn import handle_learn
 
         handle_learn(args)
+    elif args.command == "run":
+        from cli.commands.run import handle_run
+
+        handle_run(args)
     else:
         parser.print_help()
         sys.exit(1)
