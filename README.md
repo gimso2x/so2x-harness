@@ -360,6 +360,27 @@ my-project/
 python3 /path/to/so2x-harness/scripts/apply.py --project . --platform claude
 ```
 
+또는 entrypoint 스크립트를 사용할 수 있습니다.
+
+```bash
+/path/to/so2x-harness/install.sh .
+```
+
+기본 platform은 `claude`입니다.
+다른 값을 넘기면 현재 버전에서는 오류를 반환합니다.
+
+### Doctor check
+설치 전이나 설치 후 상태를 빠르게 점검하려면:
+
+```bash
+python3 /path/to/so2x-harness/scripts/doctor.py --project .
+```
+
+예상 용도:
+- 아직 harness가 안 깔린 프로젝트인지 확인
+- manifest/config/rules/skills/hooks 존재 여부 확인
+- 설치 후 구조가 정상인지 점검
+
 ### Tested example
 실제 테스트는 아래 샘플 프로젝트로 확인했습니다.
 
