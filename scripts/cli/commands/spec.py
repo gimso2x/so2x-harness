@@ -191,7 +191,8 @@ def cmd_guide(args: argparse.Namespace) -> None:
             "  action: string - what to implement\n"
             "  requirement_refs: string[] (R1, R2, ...) - traceability\n"
             "  acceptance_criteria?: string\n"
-            "  status?: pending | in_progress | done"
+            "  summary?: string - latest task status summary\n"
+            "  status?: pending | in_progress | blocked | done"
         ),
         "l5_review": (
             "Object:\n"
