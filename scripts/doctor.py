@@ -51,22 +51,24 @@ def _execution_items(project_dir: Path) -> list[tuple[str, str, str]]:
 
     if blocked:
         current = blocked[0]
+        task_id = current.get("id", "?")
         summary = current.get("summary", "blocked without summary")
         items = [
-            ("WARN", "execution_status", f"blocked:{current.get('id', '?')}"),
-            ("WARN", "execution_summary", summary),
+            ("WARN", "execution_status", f"blocked on task {task_id}"),
+            ("WARN", "execution_summary", f"latest summary: {summary}"),
         ]
     elif in_progress:
         current = in_progress[0]
+        task_id = current.get("id", "?")
         summary = current.get("summary", "in progress")
         items = [
-            ("OK", "execution_status", f"in_progress:{current.get('id', '?')}"),
-            ("OK", "execution_summary", summary),
+            ("OK", "execution_status", f"in progress on task {task_id}"),
+            ("OK", "execution_summary", f"latest summary: {summary}"),
         ]
     else:
-        items = [("OK", "execution_status", "no blocked or in_progress tasks")]
+        items = [("OK", "execution_status", "no active blocked or in_progress tasks")]
 
-    items.append(("OK", "pending_tasks", str(len(pending))))
+    items.append(("OK", "pending_tasks", f"{len(pending)} task(s) still pending"))
     return items
 
 
