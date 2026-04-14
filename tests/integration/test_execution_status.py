@@ -85,6 +85,6 @@ def test_doctor_surfaces_blocked_execution_summary(tmp_path: Path) -> None:
 
     assert result.returncode == 0
     assert "execution_status" in result.stdout
-    assert "blocked" in result.stdout
-    assert "Waiting for user approval" in result.stdout
-    assert "pending_tasks" in result.stdout
+    assert "blocked on task T1" in result.stdout
+    assert "latest summary: Waiting for user approval" in result.stdout
+    assert "pending_tasks: 1 task(s) still pending" in result.stdout

@@ -92,6 +92,22 @@ python3 scripts/doctor.py --project .
 python3 scripts/update.py --project .
 ```
 
+spec 기반 실행 상태까지 같이 관리할 때는 task status와 summary를 바로 기록할 수 있습니다.
+
+```bash
+# blocked 상태와 최신 요약 기록
+so2x-cli spec set-task-status spec.json \
+  --task-id T1 \
+  --status blocked \
+  --summary "Waiting for approval from product owner"
+
+# doctor는 사람이 읽기 쉬운 top-level surface를 보여줌
+python3 scripts/doctor.py --project .
+# [WARN] execution_status: blocked on task T1
+# [WARN] execution_summary: latest summary: Waiting for approval from product owner
+# [OK] pending_tasks: 1 task(s) still pending
+```
+
 ---
 
 ## Why This Exists
