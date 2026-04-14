@@ -137,11 +137,18 @@ def _build_instruction(agent_template: Path, spec_file: Path, phase: str) -> str
     return f"[{phase}] 에이전트 지시:\n{content}\n\nSpec file: {spec_file}{spec_summary}"
 
 
-def _update_task_status(spec_file: Path, task_id: str, status: str) -> None:
+def _update_task_status(
+    spec_file: Path,
+    task_id: str,
+    status: str,
+    summary: str | None = None,
+) -> None:
     spec = json.loads(spec_file.read_text(encoding="utf-8"))
     for task in spec.get("chain", {}).get("l4_tasks", []):
         if task.get("id") == task_id:
             task["status"] = status
+            if summary is not None:
+                task["summary"] = summary
     spec["meta"]["updated_at"] = datetime.now(timezone.utc).isoformat()
     spec_file.write_text(json.dumps(spec, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 

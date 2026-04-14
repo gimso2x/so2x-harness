@@ -19,6 +19,8 @@ def handle_spec(args: argparse.Namespace) -> None:
         cmd_validate(args)
     elif args.spec_command == "status":
         cmd_status(args)
+    elif args.spec_command == "set-task-status":
+        cmd_set_task_status(args)
     elif args.spec_command == "guide":
         cmd_guide(args)
     else:
@@ -134,6 +136,30 @@ def cmd_status(args: argparse.Namespace) -> None:
     for g in ["l0_to_l1", "l1_to_l2", "l2_to_l3", "l3_to_l4", "l4_to_l5"]:
         status = gates.get(g, {}).get("status", "pending")
         print(f"  {g}: {status}")
+
+
+def cmd_set_task_status(args: argparse.Namespace) -> None:
+    spec = _load_spec(args.file)
+    updated = False
+
+    for task in spec.get("chain", {}).get("l4_tasks", []):
+        if task.get("id") == args.task_id:
+            task["status"] = args.status
+            if args.summary is not None:
+                task["summary"] = args.summary
+            updated = True
+            break
+
+    if not updated:
+        raise SystemExit(f"task not found: {args.task_id}")
+
+    spec.setdefault("meta", {})["updated_at"] = datetime.now(timezone.utc).isoformat()
+    spec_path = Path(args.file)
+    spec_path.write_text(
+        json.dumps(spec, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    print(f"[spec] updated {args.task_id} -> {args.status}")
 
 
 def cmd_guide(args: argparse.Namespace) -> None:
