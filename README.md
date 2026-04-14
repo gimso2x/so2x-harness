@@ -323,7 +323,20 @@ hook는 완료 후 이 형식을 다시 상기시켜
 
 ## Quick start
 
-로컬 clone 기준 가장 단순한 시작 방법입니다.
+가장 쉬운 설치 방법은 bootstrap 스크립트를 바로 실행하는 것입니다.
+
+```bash
+# macOS / Linux
+curl -sSfL https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.sh | sh
+```
+
+```powershell
+# Windows (CMD or PowerShell)
+powershell -c "irm https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.ps1 | iex"
+```
+
+기본값은 현재 디렉터리에 `claude + general preset`으로 설치입니다.
+다른 디렉터리에 설치하거나 preset을 바꾸고 싶으면 로컬 clone 방식이 더 다루기 쉽습니다.
 
 ```bash
 git clone https://github.com/gimso2x/so2x-harness.git
@@ -408,11 +421,22 @@ python3 /home/sgkim/ssuk/so2x-harness/scripts/apply.py \
 - `.ai-harness/manifest.json` 생성
 
 ### Future convenience install
-향후 지원 예정:
+현재는 아래 bootstrap 방식으로 바로 사용할 수 있습니다.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<org>/so2x-harness/main/install.sh | sh
+# macOS / Linux
+curl -sSfL https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.sh | sh
 ```
+
+```powershell
+# Windows (CMD or PowerShell)
+powershell -c "irm https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.ps1 | iex"
+```
+
+기본 동작:
+- 현재 디렉터리에 설치
+- `platform=claude`
+- `preset=general`
 
 ## Update
 
