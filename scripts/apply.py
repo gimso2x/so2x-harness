@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime, timezone
+import json
 from pathlib import Path
 import sys
 
@@ -45,15 +46,46 @@ def install_skip_if_exists(template_path: Path, target_path: Path) -> str:
     return install_copy_file(template_path, target_path)
 
 
-def install_project_config(project_dir: Path, project_name: str, config_path: Path) -> str:
+def load_preset(preset_name: str) -> dict:
+    preset_path = ROOT_DIR / f"templates/project/.ai-harness/presets/{preset_name}.json"
+    if not preset_path.exists():
+        raise SystemExit(f"unknown preset: {preset_name}")
+    return json.loads(preset_path.read_text(encoding="utf-8"))
+
+
+def build_extra_fields_json(preset: dict) -> str:
+    extras = {k: v for k, v in preset.items() if k not in {"preset", "platforms", "language", "comment_language", "enabled_rules", "enabled_skills"}}
+    if not extras:
+        return ""
+    rendered = ",\n"
+    for idx, (key, value) in enumerate(extras.items()):
+        rendered += f'  "{key}": ' + json.dumps(value, ensure_ascii=False, indent=2).replace("\n", "\n  ")
+        if idx < len(extras) - 1:
+            rendered += ",\n"
+        else:
+            rendered += ""
+    return rendered
+
+
+def install_project_config(project_dir: Path, project_name: str, config_path: Path, preset_name: str) -> str:
     template = ROOT_DIR / "templates/project/.ai-harness/config.json.tmpl"
-    rendered = render_template(template, {"project_name": project_name})
+    preset = load_preset(preset_name)
+    rendered = render_template(
+        template,
+        {
+            "project_name": project_name,
+            "preset": preset_name,
+            "enabled_rules_json": json.dumps(preset["enabled_rules"], ensure_ascii=False, indent=2),
+            "enabled_skills_json": json.dumps(preset["enabled_skills"], ensure_ascii=False, indent=2),
+            "extra_fields_json": build_extra_fields_json(preset),
+        },
+    )
     if not config_path.exists():
         write_text(config_path, rendered)
     return sha256_text(config_path.read_text(encoding="utf-8"))
 
 
-def apply_claude(project_dir: Path) -> dict:
+def apply_claude(project_dir: Path, preset_name: str) -> dict:
     paths = PROJECT_PATHS["claude"]
     files: dict[str, dict[str, str]] = {}
 
@@ -126,7 +158,7 @@ def apply_claude(project_dir: Path) -> dict:
     project_name = project_dir.name
     files[str(config_rel)] = {
         "mode": "skip_if_exists",
-        "checksum": install_project_config(project_dir, project_name, project_dir / config_rel),
+        "checksum": install_project_config(project_dir, project_name, project_dir / config_rel, preset_name),
     }
 
     manifest = {
@@ -144,6 +176,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--project", required=True)
     parser.add_argument("--platform", default="claude")
+    parser.add_argument("--preset", default="general")
     args = parser.parse_args()
 
     project = Path(args.project).resolve()
@@ -152,8 +185,9 @@ def main() -> None:
     if args.platform != "claude":
         raise SystemExit(f"unsupported platform: {args.platform}")
 
-    manifest = apply_claude(project)
+    manifest = apply_claude(project, args.preset)
     print(f"[so2x-harness] installed version={manifest['version']} platform=claude project={project}")
+    print(f"[so2x-harness] preset={args.preset}")
     print(f"[so2x-harness] wrote {len(manifest['files'])} managed file entries")
 
 

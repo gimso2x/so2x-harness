@@ -121,12 +121,12 @@ so2x-harness/
 │  └─ project/
 │     └─ .ai-harness/
 │        ├─ config.json.tmpl
-│        └─ manifest.json.tmpl
-├─ materials/
-│  ├─ checklist.md
-│  └─ examples/
-│     ├─ nextjs-example.md
-│     └─ api-example.md
+│        ├─ manifest.json.tmpl
+│        └─ presets/
+│           ├─ general.json
+│           └─ nextjs.json
+├─ docs/
+│  └─ release-checklist.md
 └─ examples/
    ├─ project-config.general.json
    └─ project-config.nextjs.json
@@ -330,7 +330,7 @@ git clone https://github.com/gimso2x/so2x-harness.git
 cd so2x-harness
 
 # 임의의 프로젝트에 설치
-python3 scripts/apply.py --project /path/to/my-project --platform claude
+python3 scripts/apply.py --project /path/to/my-project --platform claude --preset general
 ```
 
 설치가 끝나면 프로젝트 안에 대략 아래 구조가 생깁니다.
@@ -357,13 +357,17 @@ my-project/
 프로젝트 루트에서 직접 적용:
 
 ```bash
-python3 /path/to/so2x-harness/scripts/apply.py --project . --platform claude
+python3 /path/to/so2x-harness/scripts/apply.py --project . --platform claude --preset general
 ```
+
+preset 예시:
+- `general`: 기본 공통 preset
+- `nextjs`: Next.js 프로젝트용 preset
 
 또는 entrypoint 스크립트를 사용할 수 있습니다.
 
 ```bash
-/path/to/so2x-harness/install.sh .
+PRESET=nextjs /path/to/so2x-harness/install.sh .
 ```
 
 기본 platform은 `claude`입니다.
@@ -392,7 +396,8 @@ python3 /path/to/so2x-harness/scripts/doctor.py --project .
 ```bash
 python3 /home/sgkim/ssuk/so2x-harness/scripts/apply.py \
   --project /home/sgkim/ssuk/so2x-sandbox \
-  --platform claude
+  --platform claude \
+  --preset general
 ```
 
 예상 결과:
@@ -434,6 +439,7 @@ python3 /path/to/so2x-harness/scripts/update.py --project .
 ```json
 {
   "project_name": "my-project",
+  "preset": "general",
   "platforms": ["claude"],
   "language": "ko",
   "comment_language": "en",
@@ -485,9 +491,10 @@ python3 /path/to/so2x-harness/scripts/update.py --project .
 
 - Claude-only support
 - install script entrypoints
-- Python apply/update scripts
+- Python apply/update/doctor scripts
 - marker-managed `CLAUDE.md`
 - manifest recording
+- `general` / `nextjs` preset
 - 6 base skills
 - 5 base rules
 - check-harness

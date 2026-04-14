@@ -1,21 +1,9 @@
 {
   "project_name": "{{ project_name }}",
+  "preset": "{{ preset }}",
   "platforms": ["claude"],
   "language": "ko",
   "comment_language": "en",
-  "enabled_rules": [
-    "language-policy",
-    "scope-control",
-    "file-size-limit",
-    "testing-policy",
-    "verification-policy"
-  ],
-  "enabled_skills": [
-    "planning",
-    "implementation",
-    "debugging",
-    "review",
-    "specify-lite",
-    "check-harness"
-  ]
+  "enabled_rules": {{ enabled_rules_json }},
+  "enabled_skills": {{ enabled_skills_json }}{{ extra_fields_json }}
 }

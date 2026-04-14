@@ -1,5 +1,6 @@
 {
   "project_name": "example-project",
+  "preset": "general",
   "platforms": ["claude"],
   "language": "ko",
   "comment_language": "en"

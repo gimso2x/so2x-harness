@@ -69,6 +69,11 @@ def check_project(project_dir: Path) -> list[tuple[str, str, str]]:
     config_path = project_dir / paths["config_path"]
     if config_path.exists():
         items.append(("OK", "config", str(config_path)))
+        try:
+            config_data = json.loads(config_path.read_text(encoding="utf-8"))
+            items.append(("OK", "config_preset", str(config_data.get("preset", "unknown"))))
+        except Exception as exc:
+            items.append(("ERROR", "config_parse", f"failed to parse config: {exc}"))
     else:
         items.append(("WARN", "config", "config not found — project-specific harness config missing"))
 

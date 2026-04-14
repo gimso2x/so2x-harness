@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="${1:-.}"
 PLATFORM="${PLATFORM:-claude}"
+PRESET="${PRESET:-general}"
 
 info() {
   printf '[so2x-harness] %s\n' "$1"
@@ -36,13 +37,22 @@ case "$PLATFORM" in
     ;;
 esac
 
+case "$PRESET" in
+  general|nextjs)
+    ;;
+  *)
+    fail "현재 지원하지 않는 preset입니다: $PRESET (지원: general, nextjs)"
+    ;;
+esac
+
 PROJECT_DIR_ABS="$(cd "$PROJECT_DIR" && pwd)"
 
 info "project=$PROJECT_DIR_ABS"
 info "platform=$PLATFORM"
+info "preset=$PRESET"
 info "python=$PYTHON_BIN"
 
-"$PYTHON_BIN" "$ROOT_DIR/scripts/apply.py" --project "$PROJECT_DIR_ABS" --platform "$PLATFORM"
+"$PYTHON_BIN" "$ROOT_DIR/scripts/apply.py" --project "$PROJECT_DIR_ABS" --platform "$PLATFORM" --preset "$PRESET"
 
 info "설치가 끝났습니다. 확인하려면 아래를 실행하세요:"
 info "  $PYTHON_BIN $ROOT_DIR/scripts/doctor.py --project $PROJECT_DIR_ABS"

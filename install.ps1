@@ -1,6 +1,7 @@
 param(
   [string]$Project = ".",
-  [string]$Platform = "claude"
+  [string]$Platform = "claude",
+  [string]$Preset = "general"
 )
 
 $ErrorActionPreference = "Stop"
@@ -32,13 +33,18 @@ if ($Platform -ne "claude") {
   Fail "현재 지원하지 않는 platform입니다: $Platform (지원: claude)"
 }
 
+if (($Preset -ne "general") -and ($Preset -ne "nextjs")) {
+  Fail "현재 지원하지 않는 preset입니다: $Preset (지원: general, nextjs)"
+}
+
 $projectAbs = (Resolve-Path $Project).Path
 
 Info "project=$projectAbs"
 Info "platform=$Platform"
+Info "preset=$Preset"
 Info "python=$pythonCmd"
 
-& $pythonCmd "$Root/scripts/apply.py" --project $projectAbs --platform $Platform
+& $pythonCmd "$Root/scripts/apply.py" --project $projectAbs --platform $Platform --preset $Preset
 
 Info "설치가 끝났습니다. 확인하려면 아래를 실행하세요:"
 Info "  $pythonCmd $Root/scripts/doctor.py --project $projectAbs"
