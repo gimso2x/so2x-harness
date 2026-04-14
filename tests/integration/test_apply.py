@@ -96,10 +96,34 @@ def test_apply_creates_skills(tmp_project: Path) -> None:
         text=True,
         check=True,
     )
-    skills_dir = tmp_project / ".claude" / "skills" / "so2x-harness"
+    skills_dir = tmp_project / ".claude" / "skills"
     assert skills_dir.exists()
     skills = list(skills_dir.glob("*/SKILL.md"))
     assert len(skills) >= 6
+
+
+def test_apply_installs_review_cycle_skill(tmp_project: Path) -> None:
+    import subprocess
+
+    subprocess.run(
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(tmp_project),
+            "--platform",
+            "claude",
+            "--preset",
+            "general",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    skill = tmp_project / ".claude" / "skills" / "review-cycle" / "SKILL.md"
+    assert skill.exists()
+    content = skill.read_text(encoding="utf-8")
+    assert ".review-artifacts/{branch-name}/" in content
 
 
 def test_apply_creates_config(tmp_project: Path) -> None:

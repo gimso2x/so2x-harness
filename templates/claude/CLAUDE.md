@@ -16,6 +16,7 @@ Add project-specific notes above or below the managed section.
 - implementation
 - debugging
 - review
+- review-cycle
 - specify-lite
 - check-harness
 <!-- SO2X-HARNESS:END -->

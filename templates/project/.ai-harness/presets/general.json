@@ -15,6 +15,7 @@
     "implementation",
     "debugging",
     "review",
+    "review-cycle",
     "specify-lite",
     "check-harness",
     "spec-validate",

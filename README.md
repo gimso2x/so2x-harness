@@ -64,6 +64,7 @@ spec이 완성되면:
 /planning              # 작업 전 계획
 /debugging             # 버그 원인 분석
 /review                # 변경 리뷰
+/review-cycle          # artifact-first 코드리뷰 파이프라인
 /safe-commit           # 커밋 전 검증
 /specify-lite          # 요구사항 가볍게 정리
 /spec-validate         # 누락 없는지 확인
@@ -77,6 +78,7 @@ spec이 완성되면:
 | 계획 실행 | `/execute` |
 | 버그 수정 | `/debugging` 후 설명 |
 | 커밋 전 검증 | `/safe-commit` |
+| 큰 변경 리뷰 | `/review-cycle` |
 | 요구사항 정리 | `/specify-lite` |
 | 변경 리뷰 | `/review` |
 | 작업 계획 | `/planning` |
@@ -178,6 +180,7 @@ so2x-cli run execute --file spec.json   # Task별 구현 → Verifier 검증
 | `implementation` | 범위 제한, 작은 단위 구현 |
 | `debugging` | root cause 중심 디버깅 |
 | `review` | 요구사항/위험/검증 기준 기반 리뷰 |
+| `review-cycle` | `.review-artifacts` 기반 근거 문서 + 코드리뷰 파이프라인 |
 | `specify-lite` | 요구 → 결정 → 구현 순서 정리 |
 | `check-harness` | harness 성숙도 점검 |
 | `spec-validate` | spec-lite 문서 완결성 검증 |
@@ -258,7 +261,7 @@ my-project/
 ├── AGENTS.md
 ├── .claude/
 │   ├── rules/so2x-harness/     # 5개 규칙
-│   ├── skills/so2x-harness/    # 12개 스킬
+│   ├── skills/                  # 13개 스킬 폴더 (각각 SKILL.md)
 │   ├── agents/so2x-harness/    # 6개 에이전트
 │   └── hooks/                  # 5개 hook
 ├── .claude-plugin/
@@ -267,6 +270,13 @@ my-project/
     ├── manifest.json
     ├── learnings.jsonl
     └── specs/
+
+.review-artifacts/
+└── feature-branch/
+    ├── design-intent.md
+    ├── code-quality-guide.md
+    ├── pr-body.md
+    └── review-comments.md
 ```
 
 ---

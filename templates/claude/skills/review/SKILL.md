@@ -15,6 +15,8 @@ validate_prompt: |
 Use this skill after implementation or before approval.
 Its job is not to rewrite the feature. Its job is to judge whether the current change is acceptable.
 
+If the change is broad, risky, or likely to trigger subjective back-and-forth, run `/review-cycle` first and review against the generated artifacts.
+
 ## What to review
 
 Review the change in four passes.
@@ -23,6 +25,7 @@ Review the change in four passes.
 - Does the change actually satisfy the stated goal?
 - Are important requirements covered?
 - Is anything important still missing?
+- If `design-intent.md` exists, does the implementation actually match it?
 
 ### 2. Scope control
 - Did the change stay within the requested scope?
@@ -38,6 +41,7 @@ Review the change in four passes.
 - Is there evidence, not just claims?
 - Were tests, checks, or manual verification steps shown?
 - Is the reported verification actually relevant to the requested change?
+- If `.review-artifacts/{branch-name}/code-quality-guide.md` exists, are findings grounded in it?
 
 ## Output format
 
@@ -70,3 +74,4 @@ One short paragraph: acceptable as-is, acceptable with caveats, or not ready.
 - Separate observed facts from guesses.
 - Do not suggest unrelated cleanup unless it blocks approval.
 - If you cannot verify something, say it is unverified.
+- If you recommend a change with a meaningful tradeoff, state the side effect explicitly.

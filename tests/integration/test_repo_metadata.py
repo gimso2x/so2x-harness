@@ -22,6 +22,12 @@ def test_readme_documents_blocked_task_and_doctor_examples() -> None:
     assert "latest summary: Waiting for approval from product owner" in readme
 
 
+def test_readme_documents_review_cycle_artifacts() -> None:
+    readme = (ROOT_DIR / "README.md").read_text(encoding="utf-8")
+    assert "/review-cycle" in readme
+    assert ".review-artifacts/" in readme
+
+
 def test_architecture_documents_spec_and_doctor_status_surface() -> None:
     architecture = (ROOT_DIR / "ARCHITECTURE.md").read_text(encoding="utf-8")
     assert "spec.json이 canonical execution state" in architecture

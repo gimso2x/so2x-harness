@@ -154,7 +154,7 @@ Claude Code 전용 파일입니다.
 
 - `CLAUDE.md` — 프로젝트 노트 (마커 관리)
 - `rules/` — 5개 기본 규칙
-- `skills/` — 10개 스킬
+- `skills/` — 11개 일반 스킬 + review-cycle 파이프라인
 - `hooks/` — 검증 훅 스크립트
 - `plugin/` — 플러그인 메타데이터
 
