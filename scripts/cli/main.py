@@ -47,16 +47,12 @@ def main() -> None:
     add_p.add_argument("--category", default="pattern", help="pattern|anti-pattern|edge-case|decision")
     add_p.add_argument("--tags", help="Comma-separated tags")
     add_p.add_argument("--severity", default="info", help="info|warning|critical")
-    add_p.add_argument("--project", help="Source project name")
     add_p.add_argument("--spec", help="Source spec ID")
     add_p.add_argument("--file", help="Output JSONL file path")
 
     search_p = learn_sub.add_parser("search", help="Search learnings")
     search_p.add_argument("query", help="Search query")
     search_p.add_argument("--file", help="JSONL file to search")
-
-    sync_p = learn_sub.add_parser("sync", help="Sync local learnings to central")
-    sync_p.add_argument("--project", default=".", help="Project directory")
 
     summary_p = learn_sub.add_parser("summary", help="Show learning summary")
     summary_p.add_argument("--file", help="JSONL file to summarize")
