@@ -475,6 +475,23 @@ def test_detect_project_profiles_for_src_next_app_router_project(tmp_path: Path)
     assert "next:app-router" in detected["detection_signals"]
 
 
+def test_detect_project_profiles_for_jsx_next_app_router_project(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "package.json").write_text(
+        '{"dependencies":{"next":"15.0.0","react":"19.0.0"}}\n',
+        encoding="utf-8",
+    )
+    src_app_dir = project / "src" / "app"
+    src_app_dir.mkdir(parents=True)
+    (src_app_dir / "page.jsx").write_text("export default function Page() { return null }\n", encoding="utf-8")
+
+    detected = detect_project_profiles(project)
+
+    assert "next-app" in detected["detected_profiles"]
+    assert "next:app-router" in detected["detection_signals"]
+
+
 def test_detect_project_profiles_for_vite_library_mode(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()

@@ -140,6 +140,55 @@ def test_apply_auto_preset_detects_src_app_next_router_and_surfaces_in_doctor(tm
     assert "policy promotion: next-app repos default to full specification workflow" in doctor.stdout
 
 
+def test_apply_auto_preset_detects_jsx_next_router_and_surfaces_in_doctor(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "package.json").write_text(
+        json.dumps({"dependencies": {"next": "15.0.0", "react": "19.0.0"}}) + "\n",
+        encoding="utf-8",
+    )
+    src_app_dir = project / "src" / "app"
+    src_app_dir.mkdir(parents=True)
+    (src_app_dir / "page.jsx").write_text(
+        "export default function Page() { return null }\n",
+        encoding="utf-8",
+    )
+
+    apply = subprocess.run(
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(project),
+            "--platform",
+            "claude",
+            "codex",
+            "--preset",
+            "auto",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert apply.returncode == 0
+    assert "detected_profiles=frontend,next-app" in apply.stdout
+
+    config = json.loads((project / ".ai-harness" / "config.json").read_text(encoding="utf-8"))
+    assert config["detected_profiles"] == ["frontend", "next-app"]
+    assert "next:app-router" in config["detection_signals"]
+    assert "specify" in config["enabled_skills"]
+
+    doctor = subprocess.run(
+        ["python3", str(ROOT_DIR / "scripts/doctor.py"), "--project", str(project)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert doctor.returncode == 0
+    assert "frontend, next-app" in doctor.stdout
+    assert "next:app-router" in doctor.stdout
+
+
 def test_apply_auto_preset_detects_workspace_only_monorepo(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()

@@ -339,7 +339,16 @@ def _has_workspace_config(workspaces: object) -> bool:
 
 def _has_next_app_router(project_dir: Path) -> bool:
     app_roots = [project_dir / "app", project_dir / "src" / "app"]
-    app_router_files = ("page.tsx", "layout.tsx", "page.js", "layout.js")
+    app_router_files = (
+        "page.tsx",
+        "layout.tsx",
+        "page.ts",
+        "layout.ts",
+        "page.jsx",
+        "layout.jsx",
+        "page.js",
+        "layout.js",
+    )
     return any(app_root.exists() and any((app_root / name).exists() for name in app_router_files) for app_root in app_roots)
 
 
