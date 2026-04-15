@@ -130,7 +130,9 @@ apply.py --project ./my-app --preset auto
 - workflow_tags: 반복 simplify 흐름 같은 우선 워크플로 태그
 
 사용자가 optional skill을 직접 승격하면 `enabled_optional_skills`에 저장되고,
-다음 `update.py` 실행에서도 설치 집합에 다시 합쳐집니다.
+다음 `update.py` 실행에서도 설치 집합에 다시 합쳐집니다. `so2x-cli skills recommend`는
+`enabled_skills`뿐 아니라 `recommended_skills`도 함께 보여줘서 policy promotion이나
+사용자 승격이 없는 상태에서도 "실제 설치 집합"과 "전체 추천 집합"을 바로 비교할 수 있습니다.
 
 현재는 `simplify-cycle`, `squash-commit`, `safe-commit`이 공통 core이며,
 `simplify-cycle`에는 아래 3개 lens를 first-class tag로 둡니다.

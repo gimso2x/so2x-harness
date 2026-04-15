@@ -38,6 +38,7 @@ def cmd_recommend(args: object) -> None:
     print(f"detected_profiles: {', '.join(detected['detected_profiles']) or 'none'}")
     print(f"detection_signals: {', '.join(detected['detection_signals']) or 'none'}")
     print(f"enabled_skills: {', '.join(plan['enabled_skills']) or 'none'}")
+    print(f"recommended_skills: {', '.join(plan['recommended_skills']) or 'none'}")
     print(f"enabled_optional_skills: {', '.join(plan['enabled_optional_skills']) or 'none'}")
     print(f"optional_skills: {', '.join(plan['optional_skills']) or 'none'}")
     print("policy_promoted_skills:")

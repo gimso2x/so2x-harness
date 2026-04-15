@@ -48,6 +48,7 @@ def test_cli_skills_recommend_shows_optional_and_reasons(tmp_path: Path) -> None
 
     assert result.returncode == 0
     assert "enabled_skills:" in result.stdout
+    assert "recommended_skills:" in result.stdout
     assert "enabled_optional_skills:" in result.stdout
     assert "optional_skills:" in result.stdout
     assert "policy_promoted_skills:" in result.stdout
