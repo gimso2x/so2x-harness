@@ -41,6 +41,19 @@ def _load_spec(project_dir: Path) -> dict | None:
     return _load_json(project_dir / "spec.json")
 
 
+def _append_skill_recommendation_items(
+    items: list[tuple[str, str, str]], skill_recommendations: dict, label_prefix: str = ""
+) -> None:
+    if not isinstance(skill_recommendations, dict):
+        return
+    for skill_name in sorted(skill_recommendations):
+        reasons = skill_recommendations.get(skill_name)
+        if not isinstance(reasons, list) or not reasons:
+            continue
+        summary = " | ".join(str(reason) for reason in reasons)
+        items.append(("OK", f"{label_prefix}skill_recommendation.{skill_name}", summary))
+
+
 def _execution_items(project_dir: Path) -> list[tuple[str, str, str]]:
     spec = _load_spec(project_dir)
     if not spec:
@@ -166,13 +179,7 @@ def _workflow_status_items(project_dir: Path) -> list[tuple[str, str, str]]:
                 f"{skill}={reason}" for skill, reason in sorted(policy_promoted_skills.items())
             )
             items.append(("OK", "policy_promoted_skills", summary))
-        if isinstance(skill_recommendations, dict):
-            for skill_name in sorted(skill_recommendations):
-                reasons = skill_recommendations.get(skill_name)
-                if not isinstance(reasons, list) or not reasons:
-                    continue
-                summary = " | ".join(str(reason) for reason in reasons)
-                items.append(("OK", f"skill_recommendation.{skill_name}", summary))
+        _append_skill_recommendation_items(items, skill_recommendations)
 
         if str(config.get("preset", "")) == "auto":
             current = detect_project_profiles(project_dir)
@@ -227,6 +234,9 @@ def _workflow_status_items(project_dir: Path) -> list[tuple[str, str, str]]:
                     f"{skill}={reason}" for skill, reason in sorted(current_plan["policy_promoted_skills"].items())
                 )
                 items.append(("OK", "current_policy_promoted_skills", current_policy_summary))
+            _append_skill_recommendation_items(
+                items, current_plan["skill_recommendations"], label_prefix="current_"
+            )
             if profiles != current["detected_profiles"] or signals != current["detection_signals"]:
                 items.append(
                     (

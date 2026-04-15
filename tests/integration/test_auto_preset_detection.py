@@ -80,6 +80,9 @@ def test_apply_auto_preset_detects_frontend_monorepo_and_surfaces_in_doctor(tmp_
     assert "current_detected_profiles" in doctor.stdout
     assert "current_enabled_skills" in doctor.stdout
     assert "current_recommended_skills" in doctor.stdout
+    assert "current_skill_recommendation.specify" in doctor.stdout
+    assert "current_skill_recommendation.simplify-cycle" in doctor.stdout
+    assert "policy promotion: next-app repos default to full specification workflow" in doctor.stdout
     assert "review-cycle" in doctor.stdout
 
 
