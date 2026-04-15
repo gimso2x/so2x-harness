@@ -73,6 +73,19 @@ def _execution_items(project_dir: Path) -> list[tuple[str, str, str]]:
     return items
 
 
+def _expected_skill_count(project_dir: Path, config_path: Path) -> tuple[int, list[str]] | None:
+    if not config_path.exists():
+        return None
+    try:
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    enabled_skills = config.get("enabled_skills")
+    if not isinstance(enabled_skills, list):
+        return None
+    return (len(enabled_skills), [str(skill) for skill in enabled_skills])
+
+
 def check_project(project_dir: Path) -> list[tuple[str, str, str]]:
     items: list[tuple[str, str, str]] = []
 
@@ -137,6 +150,15 @@ def check_project(project_dir: Path) -> list[tuple[str, str, str]]:
             if skills_dir.exists():
                 count = len(list(skills_dir.glob("*/SKILL.md")))
                 items.append(("OK", f"{prefix}skills_dir", f"{skills_dir} ({count} skills)"))
+                expected = _expected_skill_count(project_dir, project_dir / paths["config_path"])
+                if expected and count != expected[0]:
+                    items.append(
+                        (
+                            "WARN",
+                            f"{prefix}skills_drift",
+                            f"expected {expected[0]} enabled skills but found {count}",
+                        )
+                    )
             else:
                 items.append(("WARN", f"{prefix}skills_dir", f"missing: {skills_dir}"))
 
@@ -150,6 +172,7 @@ def check_project(project_dir: Path) -> list[tuple[str, str, str]]:
                 items.append(("WARN", f"{prefix}hooks_dir", f"missing: {hooks_dir}"))
 
         config_path = project_dir / paths["config_path"]
+        config_data: dict | None = None
         if config_path.exists():
             items.append(("OK", f"{prefix}config", str(config_path)))
             try:
@@ -160,6 +183,19 @@ def check_project(project_dir: Path) -> list[tuple[str, str, str]]:
                 items.append(("ERROR", f"{prefix}config_parse", f"failed to parse config: {exc}"))
         else:
             items.append(("WARN", f"{prefix}config", "config not found"))
+
+        if config_data and manifest_data:
+            config_platforms = config_data.get("platforms", [])
+            manifest_platforms = manifest_data.get("platforms", [])
+            if config_platforms != manifest_platforms:
+                items.append(
+                    (
+                        "WARN",
+                        f"{prefix}config_platforms_drift",
+                        "config platforms="
+                        f"{config_platforms} != manifest platforms={manifest_platforms}",
+                    )
+                )
 
     # Manifest summary
     if manifest_data:
