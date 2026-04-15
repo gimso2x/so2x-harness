@@ -45,6 +45,10 @@ def detect_project_profiles(project_dir: Path) -> dict[str, object]:
                 signals.append("package.json:vite")
             else:
                 signals.append("package.json:frontend-framework")
+        elif _is_node_backend_package(package_data, deps):
+            profiles.append("backend")
+            profiles.append("js-package")
+            signals.append("package.json:backend-framework")
         if deps and not any(dep in deps for dep in {"next", "react", "vite", "@remix-run/react"}):
             profiles.append("js-package")
             signals.append("package.json:js-package")
@@ -363,6 +367,15 @@ def _is_react_library_package(package_data: dict, deps: set[str]) -> bool:
         bool(package_data.get(key)) for key in ("main", "module", "types", "typesVersions", "bin")
     ) or isinstance(exports, (dict, str))
     return has_library_entry or any(dep in deps for dep in {"tsup", "rollup", "vite", "storybook"})
+
+
+def _is_node_backend_package(package_data: dict, deps: set[str]) -> bool:
+    if any(dep in deps for dep in {"next", "react", "vite", "@remix-run/react"}):
+        return False
+    if any(dep in deps for dep in {"express", "fastify", "koa", "hono", "nestjs", "@nestjs/core", "@nestjs/common"}):
+        return True
+    package_type = str(package_data.get("type", "")).lower()
+    return package_type == "commonjs" and any(dep in deps for dep in {"http", "ws"})
 
 
 def _dedupe(items: list[str]) -> list[str]:

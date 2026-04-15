@@ -125,6 +125,7 @@ catalog 원본은 `templates/project/.ai-harness/skill-catalog.json`에 있고, 
   - yarn packageManager + workspaces도 `yarn-monorepo`와 `workspace:yarn` signal로 함께 감지
   - npm packageManager + workspaces도 `npm-monorepo`와 `workspace:npm` signal로 함께 감지
   - bun packageManager + workspaces도 `bun-monorepo`와 `workspace:bun` signal로 함께 감지
+  - `express`/`fastify`/`koa`/`hono`/`nestjs` 계열 dependency가 있으면 `package.json:backend-framework` signal과 함께 backend + js-package로 감지
   - `go.work`가 있으면 `go.work:workspace` signal과 함께 monorepo로 감지
   - Cargo workspace root도 `[workspace]`를 읽어 `Cargo.toml:workspace` signal과 함께 monorepo로 감지
   - workspace-only monorepo(`package.json:workspaces`, `workspace:pnpm|yarn|npm|bun`, `pyproject.toml:uv-workspace`, `go.work:workspace`, `Cargo.toml:workspace`)도 catalog 기반으로 `review-cycle`과 `specify-lite` rationale이 유지됨

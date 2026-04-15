@@ -133,6 +133,54 @@ def test_apply_auto_preset_detects_workspace_only_monorepo(tmp_path: Path) -> No
     assert "specify-lite" in doctor.stdout
 
 
+def test_apply_auto_preset_detects_node_backend_service_and_surfaces_in_doctor(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "package.json").write_text(
+        json.dumps({"dependencies": {"express": "^4.19.2"}}) + "\n",
+        encoding="utf-8",
+    )
+
+    apply = subprocess.run(
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(project),
+            "--platform",
+            "claude",
+            "codex",
+            "--preset",
+            "auto",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert apply.returncode == 0
+    assert "detected_profiles=backend,js-package" in apply.stdout
+
+    config = json.loads((project / ".ai-harness" / "config.json").read_text(encoding="utf-8"))
+    assert config["detected_profiles"] == ["backend", "js-package"]
+    assert "package.json:backend-framework" in config["detection_signals"]
+    assert "review-cycle" in config["enabled_skills"]
+    assert "specify-lite" in config["enabled_skills"]
+    assert "spec-validate" in config["enabled_skills"]
+
+    doctor = subprocess.run(
+        ["python3", str(ROOT_DIR / "scripts/doctor.py"), "--project", str(project)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert doctor.returncode == 0
+    assert "backend, js-package" in doctor.stdout
+    assert "package.json:backend-framework" in doctor.stdout
+    assert "review-cycle" in doctor.stdout
+    assert "specify-lite" in doctor.stdout
+    assert "spec-validate" in doctor.stdout
+
+
 def test_apply_auto_preset_detects_object_workspaces_monorepo(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()

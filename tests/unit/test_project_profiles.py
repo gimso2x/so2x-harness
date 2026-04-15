@@ -76,6 +76,23 @@ def test_detect_project_profiles_for_django_service(tmp_path: Path) -> None:
     assert "pyproject.toml:django" in detected["detection_signals"]
 
 
+def test_detect_project_profiles_for_node_backend_service(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "package.json").write_text(
+        '{"dependencies":{"express":"^4.19.2"}}\n',
+        encoding="utf-8",
+    )
+
+    detected = detect_project_profiles(project)
+
+    assert "backend" in detected["detected_profiles"]
+    assert "package.json:backend-framework" in detected["detection_signals"]
+    assert "review-cycle" in detected["recommended_skills"]
+    assert "specify-lite" in detected["recommended_skills"]
+    assert "spec-validate" in detected["recommended_skills"]
+
+
 def test_detect_project_profiles_for_react_library(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()
