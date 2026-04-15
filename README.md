@@ -112,6 +112,7 @@ catalog 원본은 `templates/project/.ai-harness/skill-catalog.json`에 있고, 
   - fastapi-service
   - django-service
   - pnpm-monorepo
+  - yarn-monorepo
   - uv workspace monorepo (`[tool.uv.workspace]`)
 - signal도 더 세분화해서 잡습니다
   - turborepo / nx / lerna workspace
@@ -120,6 +121,7 @@ catalog 원본은 `templates/project/.ai-harness/skill-catalog.json`에 있고, 
   - next app router
   - vite lib mode
   - pnpm-workspace.yaml만 있는 저장소도 coarse `monorepo` + `pnpm-monorepo`로 함께 감지
+  - yarn packageManager + workspaces도 `yarn-monorepo`와 `workspace:yarn` signal로 함께 감지
 - profile policy도 같이 적용합니다
   - next-app / react-lib: `specify`를 기본 추천에서 승격
   - monorepo / pnpm-monorepo: `execute`, `spec-validate`를 기본 추천에서 승격

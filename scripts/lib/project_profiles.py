@@ -51,6 +51,8 @@ def detect_project_profiles(project_dir: Path) -> dict[str, object]:
             (project_dir / "pnpm-workspace.yaml").exists() or has_workspace_config
         ):
             signals.append("packageManager:pnpm")
+        if package_manager.startswith("yarn@") and has_workspace_config:
+            signals.append("packageManager:yarn")
 
     pyproject = project_dir / "pyproject.toml"
     if pyproject.exists():
@@ -118,6 +120,10 @@ def detect_project_profiles(project_dir: Path) -> dict[str, object]:
     if (project_dir / "pnpm-workspace.yaml").exists() or "packageManager:pnpm" in signals:
         profiles.append("pnpm-monorepo")
         signals.append("workspace:pnpm")
+
+    if "packageManager:yarn" in signals:
+        profiles.append("yarn-monorepo")
+        signals.append("workspace:yarn")
 
     if (project_dir / "app").exists() and any(
         (project_dir / "app" / name).exists() for name in ("page.tsx", "layout.tsx", "page.js", "layout.js")
