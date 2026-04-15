@@ -12,39 +12,21 @@ ROOT_DIR = CURRENT_DIR.parent
 sys.path.insert(0, str(CURRENT_DIR))
 
 from lib.checksum import sha256_text
-from lib.manifest import load_manifest, manifest_path, write_manifest
-from lib.markers import extract_marker_block, upsert_marker_block
+from lib.install import (
+    DEFAULT_PLATFORM,
+    MARKER,
+    SUPPORTED_PLATFORMS,
+    Capability,
+    install_copy_file,
+    install_marker_file,
+    install_skip_if_exists,
+    write_text,
+)
+from lib.manifest import load_manifest, write_manifest
 from lib.platform_map import PLATFORM_CAPABILITIES, PROJECT_PATHS
 from lib.render import render_template
 
-MARKER = "SO2X-HARNESS"
 VERSION = (ROOT_DIR / "VERSION").read_text(encoding="utf-8").strip()
-
-
-def write_text(path: Path, content: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(content, encoding="utf-8")
-
-
-def install_marker_file(template_path: Path, target_path: Path) -> str:
-    template_text = template_path.read_text(encoding="utf-8")
-    marker_block = extract_marker_block(template_text, MARKER)
-    existing = target_path.read_text(encoding="utf-8") if target_path.exists() else ""
-    merged = upsert_marker_block(existing, marker_block, MARKER)
-    write_text(target_path, merged)
-    return sha256_text(marker_block)
-
-
-def install_copy_file(template_path: Path, target_path: Path) -> str:
-    content = template_path.read_text(encoding="utf-8")
-    write_text(target_path, content)
-    return sha256_text(content)
-
-
-def install_skip_if_exists(template_path: Path, target_path: Path) -> str:
-    if target_path.exists():
-        return sha256_text(target_path.read_text(encoding="utf-8"))
-    return install_copy_file(template_path, target_path)
 
 
 def load_preset(preset_name: str) -> dict:
@@ -77,8 +59,6 @@ def build_extra_fields_json(preset: dict) -> str:
         )
         if idx < len(extras) - 1:
             rendered += ",\n"
-        else:
-            rendered += ""
     return rendered
 
 
@@ -101,6 +81,7 @@ def install_project_config(
     )
     if not config_path.exists():
         write_text(config_path, rendered)
+        return sha256_text(rendered)
     return sha256_text(config_path.read_text(encoding="utf-8"))
 
 
@@ -120,7 +101,7 @@ def apply_platform(project_dir: Path, platform: str, preset_name: str) -> dict:
             "checksum": install_marker_file(claude_template, claude_target),
         }
 
-    # AGENTS.md - codex uses merged template with rules, claude uses shared
+    # AGENTS.md
     agents_path = paths["agents_path"]
     agents_target = project_dir / agents_path
     if platform == "codex":
@@ -155,8 +136,7 @@ def apply_platform(project_dir: Path, platform: str, preset_name: str) -> dict:
             "checksum": install_copy_file(src, project_dir / rel),
         }
 
-    # Rules (claude only)
-    if caps["rules"]:
+    if caps[Capability.RULES]:
         rules_src = ROOT_DIR / f"templates/{platform}/rules"
         for src in sorted(rules_src.glob("*.md")):
             rel = paths["rules_dir"] / src.name
@@ -165,8 +145,7 @@ def apply_platform(project_dir: Path, platform: str, preset_name: str) -> dict:
                 "checksum": install_copy_file(src, project_dir / rel),
             }
 
-    # Skills
-    if caps["skills"]:
+    if caps[Capability.SKILLS]:
         skills_src = ROOT_DIR / f"templates/{platform}/skills"
         for skill_dir in sorted(skills_src.iterdir()):
             if not skill_dir.is_dir():
@@ -180,8 +159,7 @@ def apply_platform(project_dir: Path, platform: str, preset_name: str) -> dict:
                 "checksum": install_copy_file(skill_file, project_dir / rel),
             }
 
-    # Agents (claude only)
-    if caps["agents"]:
+    if caps[Capability.AGENTS]:
         agents_src = ROOT_DIR / f"templates/{platform}/agents"
         if agents_src.exists():
             for src in sorted(agents_src.glob("*.md")):
@@ -191,8 +169,7 @@ def apply_platform(project_dir: Path, platform: str, preset_name: str) -> dict:
                     "checksum": install_copy_file(src, project_dir / rel),
                 }
 
-    # Hooks (claude only)
-    if caps["hooks"]:
+    if caps[Capability.HOOKS]:
         hooks_src = ROOT_DIR / f"templates/{platform}/hooks"
         for src in sorted(hooks_src.iterdir()):
             if src.is_file():
@@ -221,8 +198,8 @@ def main() -> None:
     parser.add_argument(
         "--platform",
         nargs="+",
-        default=["claude"],
-        choices=["claude", "codex"],
+        default=[DEFAULT_PLATFORM],
+        choices=SUPPORTED_PLATFORMS,
     )
     parser.add_argument("--preset", default="general")
     args = parser.parse_args()
@@ -238,12 +215,11 @@ def main() -> None:
 
     # Merge with existing manifest platforms (add-only)
     existing_platforms: list[str] = []
-    if manifest_path(project).exists():
-        try:
-            existing = load_manifest(project)
-            existing_platforms = existing.get("platforms", [])
-        except Exception:
-            pass
+    try:
+        existing = load_manifest(project)
+        existing_platforms = existing.get("platforms", [])
+    except Exception:
+        pass
     merged_platforms = list(dict.fromkeys(existing_platforms + platforms))
 
     manifest = {

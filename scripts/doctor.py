@@ -11,6 +11,7 @@ CURRENT_DIR = Path(__file__).resolve().parent
 ROOT_DIR = CURRENT_DIR.parent
 sys.path.insert(0, str(CURRENT_DIR))
 
+from lib.install import Capability
 from lib.manifest import manifest_path
 from lib.platform_map import PLATFORM_CAPABILITIES, PROJECT_PATHS
 
@@ -81,15 +82,18 @@ def check_project(project_dir: Path) -> list[tuple[str, str, str]]:
         items.append(("ERROR", "project_dir", f"directory not found: {project_dir}"))
         return items
 
-    # Detect installed platforms from manifest
+    # Read manifest once
     mf = manifest_path(project_dir)
-    platforms: list[str] = ["claude"]
+    manifest_data: dict | None = None
     if mf.exists():
         try:
-            data = json.loads(mf.read_text(encoding="utf-8"))
-            platforms = data.get("platforms", ["claude"])
+            manifest_data = json.loads(mf.read_text(encoding="utf-8"))
         except Exception:
             pass
+
+    platforms: list[str] = ["claude"]
+    if manifest_data:
+        platforms = manifest_data.get("platforms", ["claude"])
 
     package_json = project_dir / "package.json"
     if package_json.exists():
@@ -105,7 +109,6 @@ def check_project(project_dir: Path) -> list[tuple[str, str, str]]:
         paths = PROJECT_PATHS[platform]
         caps = PLATFORM_CAPABILITIES.get(platform, {})
 
-        # CLAUDE.md (claude only)
         claude_md_path = paths.get("claude_md_path")
         if claude_md_path:
             claude_md = project_dir / claude_md_path
@@ -114,16 +117,14 @@ def check_project(project_dir: Path) -> list[tuple[str, str, str]]:
             else:
                 items.append(("WARN", f"{prefix}claude_md", "CLAUDE.md not found yet"))
 
-        # AGENTS.md
         agents_md = project_dir / paths["agents_path"]
         if agents_md.exists():
             items.append(("OK", f"{prefix}agents_md", "AGENTS.md exists"))
         else:
             items.append(("WARN", f"{prefix}agents_md", "AGENTS.md not found yet"))
 
-        # Rules (if supported)
         rules_dir_path = paths.get("rules_dir")
-        if rules_dir_path and caps.get("rules"):
+        if rules_dir_path and caps.get(Capability.RULES):
             rules_dir = project_dir / rules_dir_path
             if rules_dir.exists():
                 count = len(list(rules_dir.glob("*.md")))
@@ -131,8 +132,7 @@ def check_project(project_dir: Path) -> list[tuple[str, str, str]]:
             else:
                 items.append(("WARN", f"{prefix}rules_dir", f"missing: {rules_dir}"))
 
-        # Skills
-        if caps.get("skills"):
+        if caps.get(Capability.SKILLS):
             skills_dir = project_dir / paths["skills_dir"]
             if skills_dir.exists():
                 count = len(list(skills_dir.glob("*/SKILL.md")))
@@ -140,9 +140,8 @@ def check_project(project_dir: Path) -> list[tuple[str, str, str]]:
             else:
                 items.append(("WARN", f"{prefix}skills_dir", f"missing: {skills_dir}"))
 
-        # Hooks (if supported)
         hooks_dir_path = paths.get("hooks_dir")
-        if hooks_dir_path and caps.get("hooks"):
+        if hooks_dir_path and caps.get(Capability.HOOKS):
             hooks_dir = project_dir / hooks_dir_path
             if hooks_dir.exists():
                 count = len([p for p in hooks_dir.iterdir() if p.is_file()])
@@ -150,7 +149,6 @@ def check_project(project_dir: Path) -> list[tuple[str, str, str]]:
             else:
                 items.append(("WARN", f"{prefix}hooks_dir", f"missing: {hooks_dir}"))
 
-        # Config
         config_path = project_dir / paths["config_path"]
         if config_path.exists():
             items.append(("OK", f"{prefix}config", str(config_path)))
@@ -162,16 +160,14 @@ def check_project(project_dir: Path) -> list[tuple[str, str, str]]:
         else:
             items.append(("WARN", f"{prefix}config", "config not found"))
 
-    # Manifest (shared)
-    if mf.exists():
+    # Manifest summary
+    if manifest_data:
         items.append(("OK", "manifest", str(mf)))
-        try:
-            data = json.loads(mf.read_text(encoding="utf-8"))
-            items.append(("OK", "manifest_version", str(data.get("version", "unknown"))))
-            items.append(("OK", "manifest_platforms", ",".join(data.get("platforms", []))))
-            items.append(("OK", "manifest_files", str(len(data.get("files", {})))))
-        except Exception as exc:
-            items.append(("ERROR", "manifest_parse", f"failed to parse manifest: {exc}"))
+        items.append(("OK", "manifest_version", str(manifest_data.get("version", "unknown"))))
+        items.append(("OK", "manifest_platforms", ",".join(manifest_data.get("platforms", []))))
+        items.append(("OK", "manifest_files", str(len(manifest_data.get("files", {})))))
+    elif mf.exists():
+        items.append(("ERROR", "manifest_parse", "manifest exists but could not be parsed"))
     else:
         items.append(("WARN", "manifest", "manifest not found — harness may not be installed"))
 

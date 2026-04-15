@@ -11,37 +11,19 @@ ROOT_DIR = CURRENT_DIR.parent
 sys.path.insert(0, str(CURRENT_DIR))
 
 from lib.checksum import sha256_text
+from lib.install import (
+    MARKER,
+    Capability,
+    install_copy_file,
+    install_marker_file,
+    keep_existing_file,
+    write_text,
+)
 from lib.manifest import load_manifest, write_manifest
-from lib.markers import extract_marker_block, upsert_marker_block
 from lib.platform_map import PLATFORM_CAPABILITIES, PROJECT_PATHS
 from lib.render import render_template
 
-MARKER = "SO2X-HARNESS"
 VERSION = (ROOT_DIR / "VERSION").read_text(encoding="utf-8").strip()
-
-
-def write_text(path: Path, content: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(content, encoding="utf-8")
-
-
-def install_marker_file(template_path: Path, target_path: Path) -> str:
-    template_text = template_path.read_text(encoding="utf-8")
-    marker_block = extract_marker_block(template_text, MARKER)
-    existing = target_path.read_text(encoding="utf-8") if target_path.exists() else ""
-    merged = upsert_marker_block(existing, marker_block, MARKER)
-    write_text(target_path, merged)
-    return sha256_text(marker_block)
-
-
-def install_copy_file(template_path: Path, target_path: Path) -> str:
-    content = template_path.read_text(encoding="utf-8")
-    write_text(target_path, content)
-    return sha256_text(content)
-
-
-def keep_existing_file(target_path: Path) -> str:
-    return sha256_text(target_path.read_text(encoding="utf-8"))
 
 
 def update_project_config(project_dir: Path, config_path: Path) -> str:
@@ -49,6 +31,7 @@ def update_project_config(project_dir: Path, config_path: Path) -> str:
         template = ROOT_DIR / "templates/project/.ai-harness/config.json.tmpl"
         rendered = render_template(template, {"project_name": project_dir.name})
         write_text(config_path, rendered)
+        return sha256_text(rendered)
     return keep_existing_file(config_path)
 
 
@@ -109,8 +92,7 @@ def build_updated_manifest(project_dir: Path, old_manifest: dict) -> dict:
                 "checksum": install_copy_file(src, project_dir / rel),
             }
 
-        # Rules (claude only)
-        if caps["rules"]:
+        if caps[Capability.RULES]:
             rules_src = ROOT_DIR / f"templates/{platform}/rules"
             for src in sorted(rules_src.glob("*.md")):
                 rel = paths["rules_dir"] / src.name
@@ -119,8 +101,7 @@ def build_updated_manifest(project_dir: Path, old_manifest: dict) -> dict:
                     "checksum": install_copy_file(src, project_dir / rel),
                 }
 
-        # Skills
-        if caps["skills"]:
+        if caps[Capability.SKILLS]:
             skills_src = ROOT_DIR / f"templates/{platform}/skills"
             for skill_dir in sorted(skills_src.iterdir()):
                 if not skill_dir.is_dir():
@@ -143,8 +124,7 @@ def build_updated_manifest(project_dir: Path, old_manifest: dict) -> dict:
                         old_file.unlink()
                         print(f"[so2x-harness] removed old-format skill: {old_file.name}")
 
-        # Agents (claude only)
-        if caps["agents"]:
+        if caps[Capability.AGENTS]:
             agents_src = ROOT_DIR / f"templates/{platform}/agents"
             if agents_src.exists():
                 for src in sorted(agents_src.glob("*.md")):
@@ -154,8 +134,7 @@ def build_updated_manifest(project_dir: Path, old_manifest: dict) -> dict:
                         "checksum": install_copy_file(src, project_dir / rel),
                     }
 
-        # Hooks (claude only)
-        if caps["hooks"]:
+        if caps[Capability.HOOKS]:
             hooks_src = ROOT_DIR / f"templates/{platform}/hooks"
             for src in sorted(hooks_src.iterdir()):
                 if src.is_file():
