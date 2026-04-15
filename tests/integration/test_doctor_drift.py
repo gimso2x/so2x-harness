@@ -76,6 +76,10 @@ def test_doctor_warns_when_skill_count_drifts_from_enabled_skills() -> None:
     stale_dir = project / ".claude" / "skills" / "unexpected-skill"
     stale_dir.mkdir(parents=True)
     (stale_dir / "SKILL.md").write_text("stale", encoding="utf-8")
+    missing_dir = project / ".claude" / "skills" / "review"
+    for child in missing_dir.iterdir():
+        child.unlink()
+    missing_dir.rmdir()
 
     result = subprocess.run(
         ["python3", str(ROOT_DIR / "scripts/doctor.py"), "--project", str(project)],
@@ -86,6 +90,10 @@ def test_doctor_warns_when_skill_count_drifts_from_enabled_skills() -> None:
 
     assert "skills_drift" in result.stdout
     assert "enabled skills" in result.stdout
+    assert "missing_enabled_skills" in result.stdout
+    assert "review" in result.stdout
+    assert "unexpected_installed_skills" in result.stdout
+    assert "unexpected-skill" in result.stdout
 
 
 def test_doctor_warns_when_workflow_status_files_are_missing() -> None:

@@ -349,7 +349,7 @@ def _workflow_status_items(project_dir: Path) -> list[tuple[str, str, str]]:
     return items
 
 
-def _expected_skill_count(project_dir: Path, config_path: Path) -> tuple[int, list[str]] | None:
+def _expected_skill_inventory(config_path: Path) -> list[str] | None:
     if not config_path.exists():
         return None
     try:
@@ -359,7 +359,7 @@ def _expected_skill_count(project_dir: Path, config_path: Path) -> tuple[int, li
     enabled_skills = config.get("enabled_skills")
     if not isinstance(enabled_skills, list):
         return None
-    return (len(enabled_skills), [str(skill) for skill in enabled_skills])
+    return [str(skill) for skill in enabled_skills]
 
 
 def check_project(project_dir: Path) -> list[tuple[str, str, str]]:
@@ -423,17 +423,38 @@ def check_project(project_dir: Path) -> list[tuple[str, str, str]]:
         if caps.get(Capability.SKILLS):
             skills_dir = project_dir / paths["skills_dir"]
             if skills_dir.exists():
-                count = len(list(skills_dir.glob("*/SKILL.md")))
+                installed_skills = sorted(path.parent.name for path in skills_dir.glob("*/SKILL.md"))
+                count = len(installed_skills)
                 items.append(("OK", f"{prefix}skills_dir", f"{skills_dir} ({count} skills)"))
-                expected = _expected_skill_count(project_dir, project_dir / paths["config_path"])
-                if expected and count != expected[0]:
-                    items.append(
-                        (
-                            "WARN",
-                            f"{prefix}skills_drift",
-                            f"expected {expected[0]} enabled skills but found {count}",
+                expected_skills = _expected_skill_inventory(project_dir / paths["config_path"])
+                if expected_skills is not None:
+                    missing_skills = sorted(skill for skill in expected_skills if skill not in installed_skills)
+                    unexpected_skills = sorted(skill for skill in installed_skills if skill not in expected_skills)
+                    if missing_skills or unexpected_skills:
+                        items.append(
+                            (
+                                "WARN",
+                                f"{prefix}skills_drift",
+                                "expected enabled skills="
+                                f"{expected_skills} but found installed skills={installed_skills}",
+                            )
                         )
-                    )
+                    if missing_skills:
+                        items.append(
+                            (
+                                "WARN",
+                                f"{prefix}missing_enabled_skills",
+                                ", ".join(missing_skills),
+                            )
+                        )
+                    if unexpected_skills:
+                        items.append(
+                            (
+                                "WARN",
+                                f"{prefix}unexpected_installed_skills",
+                                ", ".join(unexpected_skills),
+                            )
+                        )
             else:
                 items.append(("WARN", f"{prefix}skills_dir", f"missing: {skills_dir}"))
 
