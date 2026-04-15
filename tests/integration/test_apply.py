@@ -184,7 +184,7 @@ def test_apply_unsupported_platform(tmp_project: Path) -> None:
             "--project",
             str(tmp_project),
             "--platform",
-            "codex",
+            "gemini",
             "--preset",
             "general",
         ],
@@ -193,3 +193,148 @@ def test_apply_unsupported_platform(tmp_project: Path) -> None:
         check=False,
     )
     assert result.returncode != 0
+
+
+def test_apply_codex_creates_agents_skills(tmp_project: Path) -> None:
+    import subprocess
+
+    result = subprocess.run(
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(tmp_project),
+            "--platform",
+            "codex",
+            "--preset",
+            "general",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    skills_dir = tmp_project / ".agents" / "skills"
+    assert skills_dir.exists()
+    assert len(list(skills_dir.glob("*/SKILL.md"))) >= 6
+
+
+def test_apply_codex_agents_md_has_rules(tmp_project: Path) -> None:
+    import subprocess
+
+    subprocess.run(
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(tmp_project),
+            "--platform",
+            "codex",
+            "--preset",
+            "general",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    agents_md = tmp_project / "AGENTS.md"
+    assert agents_md.exists()
+    content = agents_md.read_text(encoding="utf-8")
+    assert "SO2X-HARNESS:BEGIN" in content
+    assert "## Rules" in content
+
+
+def test_apply_multi_platform(tmp_project: Path) -> None:
+    import subprocess
+
+    result = subprocess.run(
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(tmp_project),
+            "--platform",
+            "claude",
+            "codex",
+            "--preset",
+            "general",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert (tmp_project / "CLAUDE.md").exists()
+    assert (tmp_project / ".agents" / "skills").exists()
+    assert (tmp_project / ".claude" / "skills").exists()
+    manifest = load_manifest(tmp_project)
+    assert "claude" in manifest["platforms"]
+    assert "codex" in manifest["platforms"]
+
+
+def test_apply_dedup_platforms(tmp_project: Path) -> None:
+    import subprocess
+
+    result = subprocess.run(
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(tmp_project),
+            "--platform",
+            "codex",
+            "codex",
+            "--preset",
+            "general",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    manifest = load_manifest(tmp_project)
+    assert manifest["platforms"].count("codex") == 1
+
+
+def test_apply_upgrade_claude_to_multi(tmp_project: Path) -> None:
+    import subprocess
+
+    # First install claude only
+    subprocess.run(
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(tmp_project),
+            "--platform",
+            "claude",
+            "--preset",
+            "general",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    manifest = load_manifest(tmp_project)
+    assert manifest["platforms"] == ["claude"]
+
+    # Then add codex
+    subprocess.run(
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(tmp_project),
+            "--platform",
+            "codex",
+            "--preset",
+            "general",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    manifest = load_manifest(tmp_project)
+    assert "claude" in manifest["platforms"]
+    assert "codex" in manifest["platforms"]
+    assert (tmp_project / ".agents" / "skills").exists()

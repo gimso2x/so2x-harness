@@ -84,3 +84,31 @@ def test_update_overwrite_files_refreshed(tmp_project: Path) -> None:
     # After update, overwrite files should be restored
     restored = rule_file.read_text(encoding="utf-8")
     assert restored != "tampered content"
+
+
+def _apply_codex(project: Path) -> None:
+    import subprocess
+
+    subprocess.run(
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(project),
+            "--platform",
+            "codex",
+            "--preset",
+            "general",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+
+def test_update_after_codex_apply(tmp_project: Path) -> None:
+    _apply_codex(tmp_project)
+    _update(tmp_project)
+    manifest = load_manifest(tmp_project)
+    assert "files" in manifest
+    assert len(manifest["files"]) >= 5

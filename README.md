@@ -5,7 +5,7 @@
 [![CI](https://github.com/gimso2x/so2x-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/gimso2x/so2x-harness/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Platform: Claude Code](https://img.shields.io/badge/Platform-Claude_Code-blueviolet)](https://docs.anthropic.com/en/docs/claude-code)
-[![Version](https://img.shields.io/badge/Version-0.4.0-green)](https://github.com/gimso2x/so2x-harness/blob/main/VERSION)
+[![Version](https://img.shields.io/badge/Version-0.5.0-green)](https://github.com/gimso2x/so2x-harness/blob/main/VERSION)
 
 [Quick Start](#quick-start) · [Usage](#usage) · [Spec Engine](#spec-engine) · [Agents](#agents) · [Skills](#skills) · [CLI](#cli) · [Install](#install) · [Docs](#docs)
 
@@ -15,7 +15,7 @@
 
 ## Quick Start
 
-현재 설치 엔진이 공식 지원하는 대상 플랫폼은 Claude Code입니다. 멀티플랫폼 확장은 열어 두고 있지만, 지금 리포에서 바로 검증된 설치 경로는 `claude` 하나입니다.
+현재 설치 엔진이 공식 지원하는 대상 플랫폼은 Claude Code와 Codex CLI입니다. `--platform claude`, `--platform codex`, 또는 `--platform claude codex`로 다중 플랫폼 동시 설치가 가능합니다.
 
 ```bash
 # macOS / Linux
@@ -239,7 +239,7 @@ so2x-cli learn search "oauth"
 
 ## Install
 
-현재 설치 엔진은 Claude Code용 하네스 배포를 기준으로 동작합니다. `scripts/apply.py`의 공식 지원 플랫폼도 `claude` 하나이며, 다른 플랫폼 이름을 넘기면 에러를 반환합니다.
+현재 설치 엔진은 Claude Code 및 Codex CLI용 하네스 배포를 기준으로 동작합니다. `scripts/apply.py`의 공식 지원 플랫폼은 `claude`와 `codex`이며, 다중 플랫폼 동시 설치도 지원합니다.
 
 ```bash
 # Bootstrap (macOS / Linux)
@@ -253,17 +253,19 @@ cd so2x-harness && pip install -e .
 python3 scripts/apply.py --project /path/to/project --platform claude --preset general
 ```
 
-설치 후 프로젝트 구조:
+설치 후 프로젝트 구조 (claude + codex):
 
 ```
 my-project/
-├── CLAUDE.md
+├── CLAUDE.md                    # Claude Code용 (claude 플랫폼 시)
 ├── AGENTS.md
 ├── .claude/
 │   ├── rules/so2x-harness/     # 5개 규칙
 │   ├── skills/                  # 13개 스킬 폴더 (각각 SKILL.md)
 │   ├── agents/so2x-harness/    # 6개 에이전트
 │   └── hooks/                  # 5개 hook
+├── codex/
+│   └── skills/                  # 13개 스킬 폴더 (각각 SKILL.md)
 └── .ai-harness/
     ├── config.json
     ├── manifest.json
@@ -293,11 +295,11 @@ my-project/
 
 ## Roadmap
 
-### v0.4 (현재)
+### v0.4
 Spec engine, 6 agents, CLI, knowledge system, orchestration pipeline
 
-### v0.5
-- Codex, Gemini 지원 (멀티플랫폼)
+### v0.5 (현재)
+- Codex CLI 지원 (멀티플랫폼)
 - 병렬 에이전트 실행 옵션
 
 ### v1.0

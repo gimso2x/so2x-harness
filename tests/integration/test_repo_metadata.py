@@ -44,7 +44,7 @@ def test_apply_unsupported_platform_message_lists_supported_platforms(tmp_path: 
             "--project",
             str(project),
             "--platform",
-            "codex",
+            "gemini",
             "--preset",
             "general",
         ],
@@ -53,4 +53,4 @@ def test_apply_unsupported_platform_message_lists_supported_platforms(tmp_path: 
         check=False,
     )
     assert result.returncode != 0
-    assert "currently supported: claude" in result.stderr
+    assert "invalid choice" in result.stderr
