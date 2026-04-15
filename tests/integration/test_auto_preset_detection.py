@@ -17,6 +17,9 @@ def test_apply_auto_preset_detects_frontend_monorepo_and_surfaces_in_doctor(tmp_
     (project / "pnpm-workspace.yaml").write_text("packages:\n  - apps/*\n  - packages/*\n", encoding="utf-8")
     (project / "apps").mkdir()
     (project / "packages").mkdir()
+    app_dir = project / "app"
+    app_dir.mkdir()
+    (app_dir / "page.tsx").write_text("export default function Page() { return null }\n", encoding="utf-8")
 
     apply = subprocess.run(
         [
@@ -43,11 +46,14 @@ def test_apply_auto_preset_detects_frontend_monorepo_and_surfaces_in_doctor(tmp_
     assert config["preset"] == "auto"
     assert config["detected_profiles"] == ["frontend", "next-app", "monorepo", "pnpm-monorepo"]
     assert "package.json:next" in config["detection_signals"]
+    assert "next:app-router" in config["detection_signals"]
     assert "workspace:apps+packages" in config["detection_signals"]
     assert "workspace:pnpm" in config["detection_signals"]
     assert "review-cycle" in config["enabled_skills"]
     assert "specify-lite" in config["enabled_skills"]
-    assert "execute" in config["optional_skills"]
+    assert "specify" in config["enabled_skills"]
+    assert "execute" in config["enabled_skills"]
+    assert "spec-validate" in config["enabled_skills"]
     assert "simplify-cycle" in config["recommended_skills"]
     assert "workflow tags: code-reuse-review, code-quality-review, efficiency-review" in config[
         "skill_recommendations"
@@ -64,4 +70,5 @@ def test_apply_auto_preset_detects_frontend_monorepo_and_surfaces_in_doctor(tmp_
     assert "frontend, next-app, monorepo, pnpm-monorepo" in doctor.stdout
     assert "detection_signals" in doctor.stdout
     assert "recommended_skills" in doctor.stdout
-    assert "optional_skills" in doctor.stdout
+    assert "specify" in doctor.stdout
+    assert "execute" in doctor.stdout

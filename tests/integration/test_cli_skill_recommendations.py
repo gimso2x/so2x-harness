@@ -87,7 +87,6 @@ def test_cli_skills_enable_promotes_optional_skill_into_installed_set(tmp_path: 
             "skills",
             "enable",
             "execute",
-            "specify",
             "--project",
             str(project),
         ],
@@ -99,7 +98,7 @@ def test_cli_skills_enable_promotes_optional_skill_into_installed_set(tmp_path: 
 
     assert result.returncode == 0
     config = json.loads((project / ".ai-harness" / "config.json").read_text(encoding="utf-8"))
-    assert config["enabled_optional_skills"] == ["execute", "specify"]
+    assert config["enabled_optional_skills"] == ["execute"]
     assert "execute" in config["enabled_skills"]
     assert "specify" in config["enabled_skills"]
     assert (project / ".claude" / "skills" / "execute" / "SKILL.md").exists()
@@ -116,4 +115,4 @@ def test_cli_skills_enable_promotes_optional_skill_into_installed_set(tmp_path: 
     )
     assert doctor.returncode == 0
     assert "enabled_optional_skills" in doctor.stdout
-    assert "execute, specify" in doctor.stdout
+    assert "execute" in doctor.stdout

@@ -139,6 +139,7 @@ def recommend_skill_plan(
     skill_catalog = load_skill_catalog()
     selected_platforms = _dedupe(platforms or ["claude", "codex"])
     selected_optional = _dedupe(enabled_optional_skills or [])
+    policy_promoted = _policy_promoted_skills(profiles)
     enabled: list[str] = []
     recommended: list[str] = []
     optional: list[str] = []
@@ -151,16 +152,18 @@ def recommend_skill_plan(
             continue
         if not _matches_profiles(meta, profiles):
             continue
-        if not _matches_signals(meta, signals):
+        if skill_name not in policy_promoted and not _matches_signals(meta, signals):
             continue
 
         rationale = _build_rationale(skill_name, meta, profiles, signals)
+        if skill_name in policy_promoted:
+            rationale.append(f"policy promotion: {policy_promoted[skill_name]}")
         reasons[skill_name] = rationale
         tier = str(meta.get("tier", "optional"))
         if tier == "core":
             enabled.append(skill_name)
             recommended.append(skill_name)
-        elif tier == "recommended":
+        elif tier == "recommended" or skill_name in policy_promoted:
             enabled.append(skill_name)
             recommended.append(skill_name)
         else:
@@ -231,6 +234,18 @@ def _matches_signals(meta: dict, signals: list[str]) -> bool:
     if not required_any:
         return True
     return bool(required_any.intersection(signals))
+
+
+def _policy_promoted_skills(profiles: list[str]) -> dict[str, str]:
+    promoted: dict[str, str] = {}
+    if "next-app" in profiles:
+        promoted["specify"] = "next-app repos default to full specification workflow"
+    if "react-lib" in profiles:
+        promoted["specify"] = "react-lib repos benefit from explicit API/change planning"
+    if "monorepo" in profiles or "pnpm-monorepo" in profiles:
+        promoted["execute"] = "monorepo repos usually need longer coordinated execution chains"
+        promoted["spec-validate"] = "monorepo repos benefit from stronger spec verification across packages"
+    return promoted
 
 
 def _load_json(path: Path) -> dict:

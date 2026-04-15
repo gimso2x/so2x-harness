@@ -33,7 +33,9 @@ def test_detect_project_profiles_for_next_monorepo(tmp_path: Path) -> None:
     assert "workspace:pnpm" in detected["detection_signals"]
     assert "review-cycle" in detected["recommended_skills"]
     assert "specify-lite" in detected["recommended_skills"]
-    assert "execute" in detected["optional_skills"]
+    assert "execute" in detected["enabled_skills"]
+    assert "specify" in detected["enabled_skills"]
+    assert "spec-validate" in detected["enabled_skills"]
     assert "simplify-cycle" in detected["enabled_skills"]
     assert "workflow tags: code-reuse-review, code-quality-review, efficiency-review" in detected[
         "skill_recommendations"
@@ -207,6 +209,32 @@ def test_recommend_skill_plan_keeps_enabled_and_optional_separate() -> None:
     assert "execute" in plan["optional_skills"]
     assert "specify" in plan["optional_skills"]
     assert "execute" not in plan["enabled_skills"]
+
+
+def test_recommend_skill_plan_promotes_specify_for_next_app() -> None:
+    plan = recommend_skill_plan(
+        ["frontend", "next-app"],
+        ["package.json:next", "next:app-router"],
+        platforms=["claude", "codex"],
+    )
+
+    assert "specify" in plan["enabled_skills"]
+    assert "specify" in plan["recommended_skills"]
+    assert "execute" in plan["optional_skills"]
+    assert any("policy" in reason for reason in plan["skill_recommendations"]["specify"])
+
+
+def test_recommend_skill_plan_promotes_execute_and_spec_validate_for_monorepo() -> None:
+    plan = recommend_skill_plan(
+        ["monorepo", "pnpm-monorepo"],
+        ["package.json:turborepo", "workspace:pnpm"],
+        platforms=["claude", "codex"],
+    )
+
+    assert "execute" in plan["enabled_skills"]
+    assert "execute" in plan["recommended_skills"]
+    assert "spec-validate" in plan["enabled_skills"]
+    assert any("policy" in reason for reason in plan["skill_recommendations"]["execute"])
 
 
 def test_load_skill_catalog_reads_external_catalog_file() -> None:

@@ -137,7 +137,7 @@
     ],
     "rationale": "Backends, Python packages, and monorepos benefit from spec verification."
   },
-  "changelog": {
+    "changelog": {
     "tier": "recommended",
     "applies_to": ["python-package", "js-package"],
     "platforms": ["claude", "codex"],
