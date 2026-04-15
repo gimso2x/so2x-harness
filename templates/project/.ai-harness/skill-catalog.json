@@ -88,6 +88,11 @@
       "go.mod:backend-service",
       "Cargo.toml:backend-service",
       "workspace:apps+packages",
+      "package.json:workspaces",
+      "workspace:pnpm",
+      "workspace:yarn",
+      "workspace:npm",
+      "workspace:bun",
       "pyproject.toml:uv-workspace"
     ],
     "rationale": "Multi-step review loops help app/service repos converge safely."

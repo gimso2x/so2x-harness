@@ -434,6 +434,19 @@ def test_recommend_skill_plan_promotes_execute_and_spec_validate_for_monorepo() 
     assert any("policy" in reason for reason in plan["skill_recommendations"]["execute"])
 
 
+def test_recommend_skill_plan_matches_catalog_signals_for_workspace_only_bun_monorepo() -> None:
+    plan = recommend_skill_plan(
+        ["monorepo", "bun-monorepo"],
+        ["package.json:workspaces", "workspace:bun"],
+        platforms=["claude", "codex"],
+    )
+
+    assert "review-cycle" in plan["enabled_skills"]
+    assert "review-cycle" in plan["recommended_skills"]
+    assert any("matched signals" in reason for reason in plan["skill_recommendations"]["review-cycle"])
+    assert "specify" in plan["optional_skills"]
+
+
 def test_load_skill_catalog_reads_external_catalog_file() -> None:
     catalog = load_skill_catalog()
 

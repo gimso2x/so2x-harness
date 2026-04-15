@@ -124,6 +124,8 @@ catalog 원본은 `templates/project/.ai-harness/skill-catalog.json`에 있고, 
   - pnpm-workspace.yaml만 있는 저장소도 coarse `monorepo` + `pnpm-monorepo`로 함께 감지
   - yarn packageManager + workspaces도 `yarn-monorepo`와 `workspace:yarn` signal로 함께 감지
   - npm packageManager + workspaces도 `npm-monorepo`와 `workspace:npm` signal로 함께 감지
+  - bun packageManager + workspaces도 `bun-monorepo`와 `workspace:bun` signal로 함께 감지
+  - workspace-only monorepo(`package.json:workspaces`, `workspace:pnpm|yarn|npm|bun`, `pyproject.toml:uv-workspace`)도 catalog 기반으로 `review-cycle` rationale이 유지됨
 - profile policy도 같이 적용합니다
   - next-app / react-lib: `specify`를 기본 추천에서 승격
   - monorepo / pnpm-monorepo: `execute`, `spec-validate`를 기본 추천에서 승격

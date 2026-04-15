@@ -30,6 +30,8 @@ def test_readme_documents_review_cycle_artifacts() -> None:
     readme = (ROOT_DIR / "README.md").read_text(encoding="utf-8")
     assert "/review-cycle" in readme
     assert ".review-artifacts/" in readme
+    assert "workspace:bun" in readme
+    assert "package.json:workspaces" in readme
 
 
 def test_architecture_documents_spec_and_doctor_status_surface() -> None:
@@ -41,6 +43,8 @@ def test_architecture_documents_spec_and_doctor_status_surface() -> None:
     assert "current_enabled_skills" in architecture
     assert "current_enabled_optional_skills" in architecture
     assert "current_recommended_skills" in architecture
+    assert "workspace:bun" in architecture
+    assert "package.json:workspaces" in architecture
 
 
 def test_apply_unsupported_platform_message_lists_supported_platforms(tmp_path: Path) -> None:
