@@ -229,6 +229,14 @@ def _workflow_status_items(project_dir: Path) -> list[tuple[str, str, str]]:
                         ", ".join(str(skill) for skill in current_plan["optional_skills"]),
                     )
                 )
+            if current_plan["enabled_optional_skills"]:
+                items.append(
+                    (
+                        "OK",
+                        "current_enabled_optional_skills",
+                        ", ".join(str(skill) for skill in current_plan["enabled_optional_skills"]),
+                    )
+                )
             if current_plan["policy_promoted_skills"]:
                 current_policy_summary = "; ".join(
                     f"{skill}={reason}" for skill, reason in sorted(current_plan["policy_promoted_skills"].items())

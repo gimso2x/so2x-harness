@@ -368,6 +368,21 @@ def test_recommend_skill_plan_keeps_enabled_and_optional_separate() -> None:
     assert "execute" in plan["optional_skills"]
     assert "specify" in plan["optional_skills"]
     assert "execute" not in plan["enabled_skills"]
+    assert plan["enabled_optional_skills"] == []
+
+
+def test_recommend_skill_plan_tracks_enabled_optional_skills() -> None:
+    plan = recommend_skill_plan(
+        ["frontend"],
+        ["package.json:next"],
+        platforms=["claude", "codex"],
+        enabled_optional_skills=["execute"],
+    )
+
+    assert "execute" in plan["enabled_skills"]
+    assert "execute" in plan["recommended_skills"]
+    assert "execute" in plan["optional_skills"]
+    assert plan["enabled_optional_skills"] == ["execute"]
 
 
 def test_recommend_skill_plan_promotes_specify_for_next_app() -> None:

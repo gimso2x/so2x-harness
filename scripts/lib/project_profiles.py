@@ -169,6 +169,7 @@ def recommend_skill_plan(
     enabled: list[str] = []
     recommended: list[str] = []
     optional: list[str] = []
+    enabled_optional: list[str] = []
     reasons: dict[str, list[str]] = {}
 
     for skill_name, meta in sorted(
@@ -196,12 +197,14 @@ def recommend_skill_plan(
             if skill_name in selected_optional:
                 enabled.append(skill_name)
                 recommended.append(skill_name)
+                enabled_optional.append(skill_name)
             optional.append(skill_name)
 
     return {
         "enabled_skills": _dedupe(enabled),
         "recommended_skills": _dedupe(recommended),
         "optional_skills": _dedupe(optional),
+        "enabled_optional_skills": _dedupe(enabled_optional),
         "policy_promoted_skills": policy_promoted,
         "skill_recommendations": {skill: reasons[skill] for skill in _dedupe(recommended + optional)},
     }

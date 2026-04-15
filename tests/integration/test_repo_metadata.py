@@ -22,6 +22,7 @@ def test_readme_documents_blocked_task_and_doctor_examples() -> None:
     assert "latest summary: Waiting for approval from product owner" in readme
     assert "current_detected_profiles" in readme
     assert "current_enabled_skills" in readme
+    assert "current_enabled_optional_skills" in readme
     assert "current_recommended_skills" in readme
 
 
@@ -38,6 +39,7 @@ def test_architecture_documents_spec_and_doctor_status_surface() -> None:
     assert "blocked on task" in architecture
     assert "current_detected_profiles" in architecture
     assert "current_enabled_skills" in architecture
+    assert "current_enabled_optional_skills" in architecture
     assert "current_recommended_skills" in architecture
 
 

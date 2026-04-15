@@ -48,9 +48,11 @@ def test_cli_skills_recommend_shows_optional_and_reasons(tmp_path: Path) -> None
 
     assert result.returncode == 0
     assert "enabled_skills:" in result.stdout
+    assert "enabled_optional_skills:" in result.stdout
     assert "optional_skills:" in result.stdout
     assert "policy_promoted_skills:" in result.stdout
     assert "execute" in result.stdout
+    assert "enabled_optional_skills: none" in result.stdout
     assert "specify: next-app repos default to full specification workflow" in result.stdout
     assert "workflow tags: code-reuse-review, code-quality-review, efficiency-review" in result.stdout
 
@@ -117,4 +119,5 @@ def test_cli_skills_enable_promotes_optional_skill_into_installed_set(tmp_path: 
     )
     assert doctor.returncode == 0
     assert "enabled_optional_skills" in doctor.stdout
+    assert "current_enabled_optional_skills" in doctor.stdout
     assert "execute" in doctor.stdout
