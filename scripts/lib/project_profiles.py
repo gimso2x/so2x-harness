@@ -336,9 +336,12 @@ def _has_workspace_config(workspaces: object) -> bool:
 
 
 def _detect_workspace_package_manager(project_dir: Path, package_manager: str, has_workspace_config: bool) -> str | None:
-    if package_manager.startswith("pnpm@") and ((project_dir / "pnpm-workspace.yaml").exists() or has_workspace_config):
+    has_pnpm_workspace = (project_dir / "pnpm-workspace.yaml").exists()
+    if package_manager.startswith("pnpm@") and (has_pnpm_workspace or has_workspace_config):
         return "pnpm"
     if has_workspace_config:
+        if (project_dir / "pnpm-lock.yaml").exists():
+            return "pnpm"
         if package_manager.startswith("yarn@") or (project_dir / "yarn.lock").exists():
             return "yarn"
         if package_manager.startswith("npm@") or (project_dir / "package-lock.json").exists():

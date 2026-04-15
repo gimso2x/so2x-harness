@@ -499,6 +499,55 @@ def test_apply_auto_preset_detects_pnpm_workspace_yaml_only_monorepo(tmp_path: P
     assert "review-cycle" in doctor.stdout
 
 
+def test_apply_auto_preset_detects_lockfile_only_pnpm_workspace_monorepo(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "package.json").write_text(
+        json.dumps({"workspaces": ["apps/*", "packages/*"], "dependencies": {"react": "19.0.0"}}) + "\n",
+        encoding="utf-8",
+    )
+    (project / "pnpm-lock.yaml").write_text("lockfileVersion: '9.0'\n", encoding="utf-8")
+
+    apply = subprocess.run(
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(project),
+            "--platform",
+            "claude",
+            "codex",
+            "--preset",
+            "auto",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert apply.returncode == 0
+    assert "detected_profiles=frontend,monorepo,pnpm-monorepo" in apply.stdout
+
+    config = json.loads((project / ".ai-harness" / "config.json").read_text(encoding="utf-8"))
+    assert config["detected_profiles"] == ["frontend", "monorepo", "pnpm-monorepo"]
+    assert "package.json:workspaces" in config["detection_signals"]
+    assert "workspace:pnpm" in config["detection_signals"]
+    assert "review-cycle" in config["enabled_skills"]
+    assert "execute" in config["enabled_skills"]
+    assert "spec-validate" in config["enabled_skills"]
+
+    doctor = subprocess.run(
+        ["python3", str(ROOT_DIR / "scripts/doctor.py"), "--project", str(project)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert doctor.returncode == 0
+    assert "frontend, monorepo, pnpm-monorepo" in doctor.stdout
+    assert "package.json:workspaces" in doctor.stdout
+    assert "workspace:pnpm" in doctor.stdout
+    assert "review-cycle" in doctor.stdout
+
+
 def test_apply_auto_preset_detects_bun_workspace_monorepo(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()

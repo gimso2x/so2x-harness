@@ -298,6 +298,7 @@ def test_detect_project_profiles_for_object_workspaces_monorepo(tmp_path: Path) 
 
 def test_detect_project_profiles_for_lockfile_only_workspace_monorepos(tmp_path: Path) -> None:
     for lockfile_name, profile_name, signal_name in (
+        ("pnpm-lock.yaml", "pnpm-monorepo", "workspace:pnpm"),
         ("yarn.lock", "yarn-monorepo", "workspace:yarn"),
         ("package-lock.json", "npm-monorepo", "workspace:npm"),
         ("bun.lockb", "bun-monorepo", "workspace:bun"),
