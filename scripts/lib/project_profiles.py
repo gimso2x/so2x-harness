@@ -76,9 +76,19 @@ def detect_project_profiles(project_dir: Path) -> dict[str, object]:
         profiles.append("python-package")
         signals.append("pyproject.toml:python-package")
 
-    if (project_dir / "requirements.txt").exists() and "backend" not in profiles:
-        profiles.append("backend")
-        signals.append("requirements.txt:python-backend")
+    requirements = _read_first_existing(project_dir / "requirements.txt")
+    if requirements:
+        if "backend" not in profiles:
+            profiles.append("backend")
+            signals.append("requirements.txt:python-backend")
+        if "fastapi" in requirements:
+            profiles.append("fastapi-service")
+            signals.append("requirements.txt:fastapi")
+        elif "django" in requirements:
+            profiles.append("django-service")
+            signals.append("requirements.txt:django")
+        elif any(token in requirements for token in {"flask", "sqlalchemy", "uvicorn"}):
+            signals.append("requirements.txt:backend-framework")
 
     if (project_dir / "manage.py").exists():
         profiles.append("backend")

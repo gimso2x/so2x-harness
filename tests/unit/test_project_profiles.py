@@ -169,6 +169,20 @@ def test_detect_project_profiles_for_django_manage_py_project(tmp_path: Path) ->
     assert "manage.py:django" in detected["detection_signals"]
 
 
+def test_detect_project_profiles_for_fastapi_requirements_project(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "requirements.txt").write_text("fastapi>=0.115\nuvicorn>=0.30\n", encoding="utf-8")
+
+    detected = detect_project_profiles(project)
+
+    assert "backend" in detected["detected_profiles"]
+    assert "fastapi-service" in detected["detected_profiles"]
+    assert "requirements.txt:fastapi" in detected["detection_signals"]
+    assert "review-cycle" in detected["recommended_skills"]
+    assert "specify-lite" in detected["recommended_skills"]
+
+
 def test_detect_project_profiles_for_next_app_router_project(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()
