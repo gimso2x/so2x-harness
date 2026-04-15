@@ -106,3 +106,14 @@ def test_cli_skills_enable_promotes_optional_skill_into_installed_set(tmp_path: 
     assert (project / ".claude" / "skills" / "specify" / "SKILL.md").exists()
     assert (project / ".agents" / "skills" / "execute" / "SKILL.md").exists()
     assert (project / ".agents" / "skills" / "specify" / "SKILL.md").exists()
+
+    doctor = subprocess.run(
+        ["python3", str(ROOT_DIR / "scripts/doctor.py"), "--project", str(project)],
+        capture_output=True,
+        text=True,
+        env=ENV,
+        check=False,
+    )
+    assert doctor.returncode == 0
+    assert "enabled_optional_skills" in doctor.stdout
+    assert "execute, specify" in doctor.stdout

@@ -136,6 +136,7 @@ def _workflow_status_items(project_dir: Path) -> list[tuple[str, str, str]]:
         signals = config.get("detection_signals", [])
         recommended_skills = config.get("recommended_skills", [])
         optional_skills = config.get("optional_skills", [])
+        enabled_optional_skills = config.get("enabled_optional_skills", [])
         if profiles:
             items.append(("OK", "detected_profiles", ", ".join(str(p) for p in profiles)))
         if signals:
@@ -146,6 +147,14 @@ def _workflow_status_items(project_dir: Path) -> list[tuple[str, str, str]]:
             )
         if optional_skills:
             items.append(("OK", "optional_skills", ", ".join(str(skill) for skill in optional_skills)))
+        if enabled_optional_skills:
+            items.append(
+                (
+                    "OK",
+                    "enabled_optional_skills",
+                    ", ".join(str(skill) for skill in enabled_optional_skills),
+                )
+            )
 
     feedback_count = 0
     latest_feedback = ""
