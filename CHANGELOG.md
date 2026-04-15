@@ -13,6 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 신규 helper/test: learning_tools, run learning integration coverage
 - 신규 스킬: `simplify-cycle`, `squash-commit` (Claude/Codex 공통 배포)
 - `general` preset에 반복 simplify → safe-commit → squash-commit 마무리 흐름 추가
+- `.ai-harness/events.jsonl`, `.ai-harness/learnings.jsonl`, `.ai-harness/promoted-rules.json`, `.ai-harness/status/*.json` 기반 학습/상태 표면 추가
+- `learn feedback`, `run safe-commit`, `run squash-check`, `run status` CLI 추가
+- 멀티 플랫폼 end-to-end smoke test 추가 (`claude` + `codex` 동시 apply + workflow 검증)
+
+### changed
+- `doctor.py`가 simplify/safe-commit/squash/promoted-rules/latest promoted rule/latest feedback/event counts를 surface하도록 확장
+- 반복된 `user_feedback_captured` 이벤트를 feedback-frequency 규칙으로 승격하고 이후 `run specify`에 다시 주입하도록 연결
+- `simplify-cycle` / `squash-commit` 스킬을 3 review lens(Code Reuse, Code Quality, Efficiency)와 convergence/precondition 규약 기준으로 강화
+- README / ARCHITECTURE를 Claude/Codex parity 및 learning surface 흐름 기준으로 갱신
 
 ## [0.5.0] - 2026-04-15
 
