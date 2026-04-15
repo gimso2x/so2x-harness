@@ -201,6 +201,26 @@ def test_detect_project_profiles_for_npm_workspace_monorepo(tmp_path: Path) -> N
     assert "spec-validate" in detected["enabled_skills"]
 
 
+def test_detect_project_profiles_for_bun_workspace_monorepo(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "package.json").write_text(
+        '{"packageManager":"bun@1.1.17","workspaces":["apps/*","packages/*"],"dependencies":{"react":"19.0.0"}}\n',
+        encoding="utf-8",
+    )
+
+    detected = detect_project_profiles(project)
+
+    assert "frontend" in detected["detected_profiles"]
+    assert "monorepo" in detected["detected_profiles"]
+    assert "bun-monorepo" in detected["detected_profiles"]
+    assert "packageManager:bun" in detected["detection_signals"]
+    assert "workspace:bun" in detected["detection_signals"]
+    assert "review-cycle" in detected["recommended_skills"]
+    assert "execute" in detected["enabled_skills"]
+    assert "spec-validate" in detected["enabled_skills"]
+
+
 def test_detect_project_profiles_for_object_workspaces_monorepo(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()
