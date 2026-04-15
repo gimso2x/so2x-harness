@@ -16,14 +16,17 @@ def detect_project_profiles(project_dir: Path) -> dict[str, object]:
     signals: list[str] = []
     profiles: list[str] = []
     has_workspace_config = False
-    workspace_package_data = _load_workspace_package_data(project_dir)
+    workspace_globs: list[str] = []
+    workspace_package_data: list[dict] = []
 
     package_json = project_dir / "package.json"
     if package_json.exists():
         package_data = _load_json(package_json)
         deps = _package_deps(package_data)
         package_manager = str(package_data.get("packageManager", "")).lower()
-        has_workspace_config = _has_workspace_config(package_data.get("workspaces"))
+        workspace_globs = _workspace_globs(package_data.get("workspaces"))
+        has_workspace_config = bool(workspace_globs)
+        workspace_package_data = _load_workspace_package_data(project_dir, workspace_globs)
         workspace_package_manager = _detect_workspace_package_manager(project_dir, package_manager, has_workspace_config)
         if "turbo" in deps:
             signals.append("package.json:turborepo")
@@ -354,20 +357,40 @@ def _package_deps(package_data: dict) -> set[str]:
 
 
 def _has_workspace_config(workspaces: object) -> bool:
+    return bool(_workspace_globs(workspaces))
+
+
+def _workspace_globs(workspaces: object) -> list[str]:
     if isinstance(workspaces, list):
-        return bool(workspaces)
+        return [str(entry) for entry in workspaces if isinstance(entry, str) and entry.strip()]
     if isinstance(workspaces, dict):
         packages = workspaces.get("packages")
-        return isinstance(packages, list) and bool(packages)
-    return False
+        if isinstance(packages, list):
+            return [str(entry) for entry in packages if isinstance(entry, str) and entry.strip()]
+    return []
+
+
+def _workspace_package_dirs(project_dir: Path, workspace_globs: list[str] | None = None) -> list[Path]:
+    globs = workspace_globs
+    if globs is None:
+        package_data = _load_json(project_dir / "package.json") if (project_dir / "package.json").exists() else {}
+        globs = _workspace_globs(package_data.get("workspaces"))
+    if not globs:
+        globs = ["apps/*", "packages/*"]
+    package_dirs: list[Path] = []
+    for pattern in globs:
+        normalized = pattern.rstrip("/")
+        for candidate in project_dir.glob(normalized):
+            if candidate.is_dir() and (candidate / "package.json").exists():
+                package_dirs.append(candidate)
+    return list(dict.fromkeys(package_dirs))
 
 
 def _has_next_app_router(project_dir: Path) -> bool:
     app_roots = [project_dir / "app", project_dir / "src" / "app"]
-    app_roots.extend(project_dir.glob("apps/*/app"))
-    app_roots.extend(project_dir.glob("apps/*/src/app"))
-    app_roots.extend(project_dir.glob("packages/*/app"))
-    app_roots.extend(project_dir.glob("packages/*/src/app"))
+    for package_dir in _workspace_package_dirs(project_dir):
+        app_roots.append(package_dir / "app")
+        app_roots.append(package_dir / "src" / "app")
     app_router_files = (
         "page.tsx",
         "layout.tsx",
@@ -399,14 +422,10 @@ def _detect_workspace_package_manager(project_dir: Path, package_manager: str, h
     return None
 
 
-def _load_workspace_package_data(project_dir: Path) -> list[dict]:
+def _load_workspace_package_data(project_dir: Path, workspace_globs: list[str] | None = None) -> list[dict]:
     package_data: list[dict] = []
-    for package_json in project_dir.glob("apps/*/package.json"):
-        data = _load_json(package_json)
-        if data:
-            package_data.append(data)
-    for package_json in project_dir.glob("packages/*/package.json"):
-        data = _load_json(package_json)
+    for package_dir in _workspace_package_dirs(project_dir, workspace_globs):
+        data = _load_json(package_dir / "package.json")
         if data:
             package_data.append(data)
     return package_data

@@ -189,6 +189,70 @@ def test_apply_auto_preset_detects_jsx_next_router_and_surfaces_in_doctor(tmp_pa
     assert "next:app-router" in doctor.stdout
 
 
+def test_apply_auto_preset_detects_custom_workspace_glob_next_app(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "package.json").write_text(
+        json.dumps({"packageManager": "pnpm@9.0.0", "workspaces": ["services/*"]}) + "\n",
+        encoding="utf-8",
+    )
+    service = project / "services" / "web"
+    service.mkdir(parents=True)
+    (service / "package.json").write_text(
+        json.dumps({"dependencies": {"next": "15.0.0", "react": "19.0.0"}}) + "\n",
+        encoding="utf-8",
+    )
+    (service / "src" / "app").mkdir(parents=True)
+    (service / "src" / "app" / "page.tsx").write_text(
+        "export default function Page() { return null }\n",
+        encoding="utf-8",
+    )
+
+    apply = subprocess.run(
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(project),
+            "--platform",
+            "claude",
+            "codex",
+            "--preset",
+            "auto",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert apply.returncode == 0
+    assert "detected_profiles=frontend,next-app,monorepo,pnpm-monorepo" in apply.stdout
+
+    config = json.loads((project / ".ai-harness" / "config.json").read_text(encoding="utf-8"))
+    assert config["detected_profiles"] == ["frontend", "next-app", "monorepo", "pnpm-monorepo"]
+    assert "package.json:next" in config["detection_signals"]
+    assert "next:app-router" in config["detection_signals"]
+    assert "package.json:workspaces" in config["detection_signals"]
+    assert "workspace:pnpm" in config["detection_signals"]
+    assert config["policy_promoted_skills"] == {
+        "execute": "monorepo repos usually need longer coordinated execution chains",
+        "spec-validate": "monorepo repos benefit from stronger spec verification across packages",
+        "specify": "next-app repos default to full specification workflow",
+    }
+
+    doctor = subprocess.run(
+        ["python3", str(ROOT_DIR / "scripts/doctor.py"), "--project", str(project)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert doctor.returncode == 0
+    assert "frontend, next-app, monorepo, pnpm-monorepo" in doctor.stdout
+    assert "package.json:next" in doctor.stdout
+    assert "next:app-router" in doctor.stdout
+    assert "package.json:workspaces" in doctor.stdout
+    assert "workspace:pnpm" in doctor.stdout
+
+
 def test_apply_auto_preset_detects_workspace_only_monorepo(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()
