@@ -16,6 +16,7 @@ from lib.install import (
     Capability,
     install_copy_file,
     install_marker_file,
+    install_platform_assets,
     keep_existing_file,
     write_text,
 )
@@ -74,75 +75,15 @@ def build_updated_manifest(project_dir: Path, old_manifest: dict) -> dict:
                 checksum = keep_existing_file(agents_target)
             files[str(agents_path)] = {"mode": "skip_if_exists", "checksum": checksum}
 
-        # Shared docs
-        shared_docs_src = ROOT_DIR / "templates/shared/docs"
-        for src in sorted(shared_docs_src.glob("*.md")):
-            rel = paths["shared_docs_dir"] / src.name
-            files[str(rel)] = {
-                "mode": "overwrite",
-                "checksum": install_copy_file(src, project_dir / rel),
-            }
+        files.update(install_platform_assets(ROOT_DIR, project_dir, platform, paths, caps))
 
-        # Shared snippets
-        shared_snippets_src = ROOT_DIR / "templates/shared/snippets"
-        for src in sorted(shared_snippets_src.glob("*.md")):
-            rel = paths["shared_snippets_dir"] / src.name
-            files[str(rel)] = {
-                "mode": "overwrite",
-                "checksum": install_copy_file(src, project_dir / rel),
-            }
-
-        if caps[Capability.RULES]:
-            rules_src = ROOT_DIR / f"templates/{platform}/rules"
-            for src in sorted(rules_src.glob("*.md")):
-                rel = paths["rules_dir"] / src.name
-                files[str(rel)] = {
-                    "mode": "overwrite",
-                    "checksum": install_copy_file(src, project_dir / rel),
-                }
-
-        if caps[Capability.SKILLS]:
-            skills_src = ROOT_DIR / f"templates/{platform}/skills"
-            for skill_dir in sorted(skills_src.iterdir()):
-                if not skill_dir.is_dir():
-                    continue
-                skill_file = skill_dir / "SKILL.md"
-                if not skill_file.exists():
-                    continue
-                rel = paths["skills_dir"] / skill_dir.name / "SKILL.md"
-                files[str(rel)] = {
-                    "mode": "overwrite",
-                    "checksum": install_copy_file(skill_file, project_dir / rel),
-                }
-
-            # Clean old flat-format skills (claude only)
-            if platform == "claude":
-                skills_installed = paths["skills_dir"]
-                old_flat_dir = project_dir / skills_installed
-                if old_flat_dir.exists():
-                    for old_file in old_flat_dir.glob("*.md"):
-                        old_file.unlink()
-                        print(f"[so2x-harness] removed old-format skill: {old_file.name}")
-
-        if caps[Capability.AGENTS]:
-            agents_src = ROOT_DIR / f"templates/{platform}/agents"
-            if agents_src.exists():
-                for src in sorted(agents_src.glob("*.md")):
-                    rel = paths["agents_dir"] / src.name
-                    files[str(rel)] = {
-                        "mode": "overwrite",
-                        "checksum": install_copy_file(src, project_dir / rel),
-                    }
-
-        if caps[Capability.HOOKS]:
-            hooks_src = ROOT_DIR / f"templates/{platform}/hooks"
-            for src in sorted(hooks_src.iterdir()):
-                if src.is_file():
-                    rel = paths["hooks_dir"] / src.name
-                    files[str(rel)] = {
-                        "mode": "overwrite",
-                        "checksum": install_copy_file(src, project_dir / rel),
-                    }
+        # Clean old flat-format skills (claude only)
+        if caps.get(Capability.SKILLS) and platform == "claude":
+            old_flat_dir = project_dir / paths["skills_dir"]
+            if old_flat_dir.exists():
+                for old_file in old_flat_dir.glob("*.md"):
+                    old_file.unlink()
+                    print(f"[so2x-harness] removed old-format skill: {old_file.name}")
 
         # Config
         config_rel = str(paths["config_path"])

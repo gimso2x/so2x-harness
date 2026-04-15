@@ -17,8 +17,8 @@ from lib.install import (
     MARKER,
     SUPPORTED_PLATFORMS,
     Capability,
-    install_copy_file,
     install_marker_file,
+    install_platform_assets,
     install_skip_if_exists,
     write_text,
 )
@@ -118,66 +118,7 @@ def apply_platform(project_dir: Path, platform: str, preset_name: str) -> dict:
             "checksum": install_skip_if_exists(agents_template, agents_target),
         }
 
-    # Shared docs
-    shared_docs_src = ROOT_DIR / "templates/shared/docs"
-    for src in sorted(shared_docs_src.glob("*.md")):
-        rel = paths["shared_docs_dir"] / src.name
-        files[str(rel)] = {
-            "mode": "overwrite",
-            "checksum": install_copy_file(src, project_dir / rel),
-        }
-
-    # Shared snippets
-    shared_snippets_src = ROOT_DIR / "templates/shared/snippets"
-    for src in sorted(shared_snippets_src.glob("*.md")):
-        rel = paths["shared_snippets_dir"] / src.name
-        files[str(rel)] = {
-            "mode": "overwrite",
-            "checksum": install_copy_file(src, project_dir / rel),
-        }
-
-    if caps[Capability.RULES]:
-        rules_src = ROOT_DIR / f"templates/{platform}/rules"
-        for src in sorted(rules_src.glob("*.md")):
-            rel = paths["rules_dir"] / src.name
-            files[str(rel)] = {
-                "mode": "overwrite",
-                "checksum": install_copy_file(src, project_dir / rel),
-            }
-
-    if caps[Capability.SKILLS]:
-        skills_src = ROOT_DIR / f"templates/{platform}/skills"
-        for skill_dir in sorted(skills_src.iterdir()):
-            if not skill_dir.is_dir():
-                continue
-            skill_file = skill_dir / "SKILL.md"
-            if not skill_file.exists():
-                continue
-            rel = paths["skills_dir"] / skill_dir.name / "SKILL.md"
-            files[str(rel)] = {
-                "mode": "overwrite",
-                "checksum": install_copy_file(skill_file, project_dir / rel),
-            }
-
-    if caps[Capability.AGENTS]:
-        agents_src = ROOT_DIR / f"templates/{platform}/agents"
-        if agents_src.exists():
-            for src in sorted(agents_src.glob("*.md")):
-                rel = paths["agents_dir"] / src.name
-                files[str(rel)] = {
-                    "mode": "overwrite",
-                    "checksum": install_copy_file(src, project_dir / rel),
-                }
-
-    if caps[Capability.HOOKS]:
-        hooks_src = ROOT_DIR / f"templates/{platform}/hooks"
-        for src in sorted(hooks_src.iterdir()):
-            if src.is_file():
-                rel = paths["hooks_dir"] / src.name
-                files[str(rel)] = {
-                    "mode": "overwrite",
-                    "checksum": install_copy_file(src, project_dir / rel),
-                }
+    files.update(install_platform_assets(ROOT_DIR, project_dir, platform, paths, caps))
 
     # Config
     config_rel = paths["config_path"]
@@ -218,7 +159,7 @@ def main() -> None:
     try:
         existing = load_manifest(project)
         existing_platforms = existing.get("platforms", [])
-    except Exception:
+    except (FileNotFoundError, json.JSONDecodeError):
         pass
     merged_platforms = list(dict.fromkeys(existing_platforms + platforms))
 

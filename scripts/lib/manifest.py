@@ -20,4 +20,9 @@ def write_manifest(project_dir: Path, data: dict[str, Any]) -> Path:
 
 def load_manifest(project_dir: Path) -> dict[str, Any]:
     path = manifest_path(project_dir)
-    return json.loads(path.read_text(encoding="utf-8"))
+    if not path.exists():
+        raise FileNotFoundError(f"manifest not found: {path} (run apply.py first)")
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        raise SystemExit(f"corrupt manifest: {path} — {e}") from e
