@@ -62,7 +62,11 @@ def build_extra_fields_json(preset: dict) -> str:
 
 
 def install_project_config(
-    project_dir: Path, project_name: str, config_path: Path, preset_name: str
+    project_dir: Path,
+    project_name: str,
+    config_path: Path,
+    preset_name: str,
+    platforms: list[str],
 ) -> str:
     template = ROOT_DIR / "templates/project/.ai-harness/config.json.tmpl"
     preset = load_preset(preset_name)
@@ -71,6 +75,7 @@ def install_project_config(
         {
             "project_name": project_name,
             "preset": preset_name,
+            "platforms_json": json.dumps(platforms, ensure_ascii=False, indent=2),
             "enabled_rules_json": json.dumps(preset["enabled_rules"], ensure_ascii=False, indent=2),
             "enabled_skills_json": json.dumps(
                 preset["enabled_skills"], ensure_ascii=False, indent=2
@@ -81,10 +86,22 @@ def install_project_config(
     if not config_path.exists():
         write_text(config_path, rendered)
         return sha256_text(rendered)
-    return sha256_text(config_path.read_text(encoding="utf-8"))
+
+    existing = json.loads(config_path.read_text(encoding="utf-8"))
+    existing["project_name"] = project_name
+    existing["preset"] = preset_name
+    existing["platforms"] = platforms
+    updated = json.dumps(existing, ensure_ascii=False, indent=2) + "\n"
+    write_text(config_path, updated)
+    return sha256_text(updated)
 
 
-def apply_platform(project_dir: Path, platform: str, preset_name: str) -> dict:
+def apply_platform(
+    project_dir: Path,
+    platform: str,
+    preset_name: str,
+    config_platforms: list[str],
+) -> dict:
     paths = PROJECT_PATHS[platform]
     caps = PLATFORM_CAPABILITIES[platform]
     files: dict[str, dict[str, str]] = {}
@@ -125,7 +142,11 @@ def apply_platform(project_dir: Path, platform: str, preset_name: str) -> dict:
     files[str(config_rel)] = {
         "mode": "skip_if_exists",
         "checksum": install_project_config(
-            project_dir, project_name, project_dir / config_rel, preset_name
+            project_dir,
+            project_name,
+            project_dir / config_rel,
+            preset_name,
+            config_platforms,
         ),
     }
 
@@ -148,10 +169,6 @@ def main() -> None:
     project.mkdir(parents=True, exist_ok=True)
 
     platforms = list(dict.fromkeys(args.platform))
-    all_files: dict[str, dict[str, str]] = {}
-    for platform in platforms:
-        platform_files = apply_platform(project, platform, args.preset)
-        all_files.update(platform_files)
 
     # Merge with existing manifest platforms (add-only)
     existing_platforms: list[str] = []
@@ -161,6 +178,11 @@ def main() -> None:
     except (FileNotFoundError, json.JSONDecodeError):
         pass
     merged_platforms = list(dict.fromkeys(existing_platforms + platforms))
+
+    all_files: dict[str, dict[str, str]] = {}
+    for platform in merged_platforms:
+        platform_files = apply_platform(project, platform, args.preset, merged_platforms)
+        all_files.update(platform_files)
 
     manifest = {
         "name": "so2x-harness",

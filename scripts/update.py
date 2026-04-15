@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -27,17 +28,76 @@ from lib.render import render_template
 VERSION = (ROOT_DIR / "VERSION").read_text(encoding="utf-8").strip()
 
 
-def update_project_config(project_dir: Path, config_path: Path) -> str:
+def load_preset(preset_name: str) -> dict:
+    preset_path = ROOT_DIR / f"templates/project/.ai-harness/presets/{preset_name}.json"
+    if not preset_path.exists():
+        raise SystemExit(f"unknown preset: {preset_name} (supported: general)")
+    return json.loads(preset_path.read_text(encoding="utf-8"))
+
+
+def build_extra_fields_json(preset: dict) -> str:
+    extras = {
+        k: v
+        for k, v in preset.items()
+        if k
+        not in {
+            "preset",
+            "platforms",
+            "language",
+            "comment_language",
+            "enabled_rules",
+            "enabled_skills",
+        }
+    }
+    if not extras:
+        return ""
+    rendered = ",\n"
+    for idx, (key, value) in enumerate(extras.items()):
+        rendered += f'  "{key}": ' + json.dumps(value, ensure_ascii=False, indent=2).replace(
+            "\n", "\n  "
+        )
+        if idx < len(extras) - 1:
+            rendered += ",\n"
+    return rendered
+
+
+def update_project_config(
+    project_dir: Path,
+    config_path: Path,
+    preset_name: str,
+    platforms: list[str],
+) -> str:
+    template = ROOT_DIR / "templates/project/.ai-harness/config.json.tmpl"
+    preset = load_preset(preset_name)
+    rendered = render_template(
+        template,
+        {
+            "project_name": project_dir.name,
+            "preset": preset_name,
+            "platforms_json": json.dumps(platforms, ensure_ascii=False, indent=2),
+            "enabled_rules_json": json.dumps(preset["enabled_rules"], ensure_ascii=False, indent=2),
+            "enabled_skills_json": json.dumps(
+                preset["enabled_skills"], ensure_ascii=False, indent=2
+            ),
+            "extra_fields_json": build_extra_fields_json(preset),
+        },
+    )
     if not config_path.exists():
-        template = ROOT_DIR / "templates/project/.ai-harness/config.json.tmpl"
-        rendered = render_template(template, {"project_name": project_dir.name})
         write_text(config_path, rendered)
         return sha256_text(rendered)
-    return keep_existing_file(config_path)
+
+    existing = json.loads(config_path.read_text(encoding="utf-8"))
+    existing["project_name"] = project_dir.name
+    existing["preset"] = preset_name
+    existing["platforms"] = platforms
+    updated = json.dumps(existing, ensure_ascii=False, indent=2) + "\n"
+    write_text(config_path, updated)
+    return sha256_text(updated)
 
 
 def build_updated_manifest(project_dir: Path, old_manifest: dict) -> dict:
     platforms = old_manifest.get("platforms", ["claude"])
+    preset_name = "general"
     all_files: dict[str, dict[str, str]] = {}
 
     for platform in platforms:
@@ -89,7 +149,12 @@ def build_updated_manifest(project_dir: Path, old_manifest: dict) -> dict:
         config_rel = str(paths["config_path"])
         files[config_rel] = {
             "mode": "skip_if_exists",
-            "checksum": update_project_config(project_dir, project_dir / paths["config_path"]),
+            "checksum": update_project_config(
+                project_dir,
+                project_dir / paths["config_path"],
+                preset_name,
+                platforms,
+            ),
         }
 
         all_files.update(files)

@@ -1,7 +1,7 @@
 {
   "project_name": "example-project",
   "preset": "general",
-  "platforms": ["claude"],
+  "platforms": ["claude", "codex"],
   "language": "ko",
   "comment_language": "en"
 }

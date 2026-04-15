@@ -25,4 +25,4 @@ def test_install_sh_passes_multi_platforms_after_single_flag() -> None:
 
     assert 'set -- "$PYTHON_BIN" "$ROOT_DIR/scripts/apply.py"' in script
     assert 'set -- "$@" --platform' in script
-    assert 'for p in $PLATFORM; do' in script
+    assert "for p in $PLATFORM; do" in script

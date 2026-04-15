@@ -271,6 +271,10 @@ def test_apply_multi_platform(tmp_project: Path) -> None:
     assert "claude" in manifest["platforms"]
     assert "codex" in manifest["platforms"]
 
+    config = json.loads((tmp_project / ".ai-harness" / "config.json").read_text(encoding="utf-8"))
+    assert "claude" in config["platforms"]
+    assert "codex" in config["platforms"]
+
 
 def test_apply_dedup_platforms(tmp_project: Path) -> None:
     import subprocess
@@ -295,6 +299,9 @@ def test_apply_dedup_platforms(tmp_project: Path) -> None:
     manifest = load_manifest(tmp_project)
     assert manifest["platforms"].count("codex") == 1
 
+    config = json.loads((tmp_project / ".ai-harness" / "config.json").read_text(encoding="utf-8"))
+    assert config["platforms"] == ["codex"]
+
 
 def test_apply_upgrade_claude_to_multi(tmp_project: Path) -> None:
     import subprocess
@@ -318,6 +325,9 @@ def test_apply_upgrade_claude_to_multi(tmp_project: Path) -> None:
     manifest = load_manifest(tmp_project)
     assert manifest["platforms"] == ["claude"]
 
+    config = json.loads((tmp_project / ".ai-harness" / "config.json").read_text(encoding="utf-8"))
+    assert config["platforms"] == ["claude"]
+
     # Then add codex
     subprocess.run(
         [
@@ -338,3 +348,7 @@ def test_apply_upgrade_claude_to_multi(tmp_project: Path) -> None:
     assert "claude" in manifest["platforms"]
     assert "codex" in manifest["platforms"]
     assert (tmp_project / ".agents" / "skills").exists()
+
+    config = json.loads((tmp_project / ".ai-harness" / "config.json").read_text(encoding="utf-8"))
+    assert "claude" in config["platforms"]
+    assert "codex" in config["platforms"]

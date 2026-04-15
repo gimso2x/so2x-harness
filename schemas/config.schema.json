@@ -16,9 +16,10 @@
       "type": "array",
       "items": {
         "type": "string",
-        "enum": ["claude"]
+        "enum": ["claude", "codex"]
       },
-      "minItems": 1
+      "minItems": 1,
+      "uniqueItems": true
     },
     "language": {
       "type": "string",
