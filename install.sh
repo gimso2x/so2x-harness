@@ -55,7 +55,24 @@ detect_platforms() {
   found=""
   command -v claude >/dev/null 2>&1 && found="claude"
   command -v codex >/dev/null 2>&1 && found="$found codex"
-  echo "$found"
+  printf '%s\n' "$(echo "$found" | xargs)"
+}
+
+normalize_platform_selection() {
+  choice="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | xargs)"
+  case "$choice" in
+    "") printf '%s\n' "$2" ;;
+    1|claude) printf 'claude\n' ;;
+    2|codex) printf 'codex\n' ;;
+    3|claude,codex|codex,claude|"claude codex"|"codex claude"|"둘 다"|"둘다") printf 'claude codex\n' ;;
+    *)
+      case "$choice" in
+        *claude*codex*|*codex*claude*) printf 'claude codex\n' ;;
+        *codex*) printf 'codex\n' ;;
+        *) printf 'claude\n' ;;
+      esac
+      ;;
+  esac
 }
 
 if command -v python3 >/dev/null 2>&1; then
@@ -82,15 +99,16 @@ if [ -z "$PLATFORM" ]; then
     printf '  1) claude\n'
     printf '  2) codex\n'
     printf '  3) 둘 다\n'
-    printf '선택 [1-3]: '
+    printf '  Enter) 감지 결과 그대로 설치\n'
+    printf '  직접 입력도 가능: claude / codex / claude,codex\n'
+    printf '선택 [Enter/1/2/3]: '
     read -r choice
-    case "$choice" in
-      2) PLATFORM="codex" ;;
-      3) PLATFORM="claude codex" ;;
-      *) PLATFORM="claude" ;;
-    esac
+    PLATFORM="$(normalize_platform_selection "$choice" "$DETECTED")"
+    if [ -z "$(printf '%s' "$choice" | xargs)" ]; then
+      info "입력이 없어서 감지된 플랫폼 그대로 설치합니다."
+    fi
   else
-    PLATFORM="claude"
+    PLATFORM="$DETECTED"
   fi
 fi
 
@@ -108,10 +126,14 @@ info "preset=$PRESET"
 info "python=$PYTHON_BIN"
 info "source=$ROOT_DIR"
 
-"$PYTHON_BIN" "$ROOT_DIR/scripts/apply.py" \
+set -- "$PYTHON_BIN" "$ROOT_DIR/scripts/apply.py" \
   --project "$PROJECT_DIR_ABS" \
-  --platform $PLATFORM \
   --preset "$PRESET"
+set -- "$@" --platform
+for p in $PLATFORM; do
+  set -- "$@" "$p"
+done
+"$@"
 
 info "설치가 끝났습니다. 확인하려면 아래를 실행하세요:"
 info "  $PYTHON_BIN $ROOT_DIR/scripts/doctor.py --project $PROJECT_DIR_ABS"
