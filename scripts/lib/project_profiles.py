@@ -16,6 +16,7 @@ def detect_project_profiles(project_dir: Path) -> dict[str, object]:
     signals: list[str] = []
     profiles: list[str] = []
     has_workspace_config = False
+    workspace_package_data = _load_workspace_package_data(project_dir)
 
     package_json = project_dir / "package.json"
     if package_json.exists():
@@ -60,6 +61,30 @@ def detect_project_profiles(project_dir: Path) -> dict[str, object]:
             signals.append("packageManager:npm")
         if workspace_package_manager == "bun":
             signals.append("packageManager:bun")
+
+    workspace_deps = _workspace_package_deps(workspace_package_data)
+    if any(dep in workspace_deps for dep in {"next", "react", "vite", "@remix-run/react"}):
+        profiles.append("frontend")
+        if "next" in workspace_deps:
+            profiles.append("next-app")
+            signals.append("package.json:next")
+        elif any(_is_react_library_package(data, _package_deps(data)) for data in workspace_package_data):
+            profiles.append("react-lib")
+            profiles.append("js-package")
+            signals.append("package.json:react-lib")
+        elif "react" in workspace_deps:
+            signals.append("package.json:react")
+        elif "vite" in workspace_deps:
+            signals.append("package.json:vite")
+        else:
+            signals.append("package.json:frontend-framework")
+    elif any(_is_node_backend_package(data, _package_deps(data)) for data in workspace_package_data):
+        profiles.append("backend")
+        profiles.append("js-package")
+        signals.append("package.json:backend-framework")
+    if workspace_deps and not any(dep in workspace_deps for dep in {"next", "react", "vite", "@remix-run/react"}):
+        profiles.append("js-package")
+        signals.append("package.json:js-package")
 
     pyproject = project_dir / "pyproject.toml"
     if pyproject.exists():
@@ -339,6 +364,10 @@ def _has_workspace_config(workspaces: object) -> bool:
 
 def _has_next_app_router(project_dir: Path) -> bool:
     app_roots = [project_dir / "app", project_dir / "src" / "app"]
+    app_roots.extend(project_dir.glob("apps/*/app"))
+    app_roots.extend(project_dir.glob("apps/*/src/app"))
+    app_roots.extend(project_dir.glob("packages/*/app"))
+    app_roots.extend(project_dir.glob("packages/*/src/app"))
     app_router_files = (
         "page.tsx",
         "layout.tsx",
@@ -368,6 +397,26 @@ def _detect_workspace_package_manager(project_dir: Path, package_manager: str, h
         ):
             return "bun"
     return None
+
+
+def _load_workspace_package_data(project_dir: Path) -> list[dict]:
+    package_data: list[dict] = []
+    for package_json in project_dir.glob("apps/*/package.json"):
+        data = _load_json(package_json)
+        if data:
+            package_data.append(data)
+    for package_json in project_dir.glob("packages/*/package.json"):
+        data = _load_json(package_json)
+        if data:
+            package_data.append(data)
+    return package_data
+
+
+def _workspace_package_deps(package_data: list[dict]) -> set[str]:
+    deps: set[str] = set()
+    for entry in package_data:
+        deps.update(_package_deps(entry))
+    return deps
 
 
 def _is_react_library_package(package_data: dict, deps: set[str]) -> bool:

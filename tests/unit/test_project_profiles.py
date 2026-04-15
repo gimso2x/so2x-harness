@@ -475,6 +475,32 @@ def test_detect_project_profiles_for_src_next_app_router_project(tmp_path: Path)
     assert "next:app-router" in detected["detection_signals"]
 
 
+def test_detect_project_profiles_for_nested_workspace_next_app_router_project(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "package.json").write_text(
+        '{"packageManager":"pnpm@9.0.0","workspaces":["apps/*","packages/*"]}\n',
+        encoding="utf-8",
+    )
+    app_dir = project / "apps" / "web" / "app"
+    app_dir.mkdir(parents=True)
+    (project / "apps" / "web" / "package.json").write_text(
+        '{"dependencies":{"next":"15.0.0","react":"19.0.0"}}\n',
+        encoding="utf-8",
+    )
+    (app_dir / "page.tsx").write_text("export default function Page() { return null }\n", encoding="utf-8")
+
+    detected = detect_project_profiles(project)
+
+    assert "frontend" in detected["detected_profiles"]
+    assert "next-app" in detected["detected_profiles"]
+    assert "monorepo" in detected["detected_profiles"]
+    assert "pnpm-monorepo" in detected["detected_profiles"]
+    assert "package.json:next" in detected["detection_signals"]
+    assert "next:app-router" in detected["detection_signals"]
+    assert "specify" in detected["enabled_skills"]
+
+
 def test_detect_project_profiles_for_jsx_next_app_router_project(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()
