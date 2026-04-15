@@ -15,6 +15,7 @@ def load_skill_catalog() -> dict[str, dict]:
 def detect_project_profiles(project_dir: Path) -> dict[str, object]:
     signals: list[str] = []
     profiles: list[str] = []
+    has_workspace_config = False
 
     package_json = project_dir / "package.json"
     if package_json.exists():
@@ -24,6 +25,12 @@ def detect_project_profiles(project_dir: Path) -> dict[str, object]:
         has_workspace_config = isinstance(package_data.get("workspaces"), list) and bool(
             package_data.get("workspaces")
         )
+        if "turbo" in deps:
+            signals.append("package.json:turborepo")
+        if "nx" in deps:
+            signals.append("package.json:nx")
+        if "lerna" in deps:
+            signals.append("package.json:lerna")
         if any(dep in deps for dep in {"next", "react", "vite", "@remix-run/react"}):
             profiles.append("frontend")
             if "next" in deps:
@@ -50,6 +57,12 @@ def detect_project_profiles(project_dir: Path) -> dict[str, object]:
     pyproject = project_dir / "pyproject.toml"
     if pyproject.exists():
         text = pyproject.read_text(encoding="utf-8").lower()
+        if "[tool.poetry]" in text or "[tool.poetry.dependencies]" in text:
+            signals.append("pyproject.toml:poetry")
+        if "[tool.uv" in text:
+            signals.append("pyproject.toml:uv")
+        if "[tool.hatch" in text:
+            signals.append("pyproject.toml:hatch")
         if any(token in text for token in {"fastapi", "django", "flask", "sqlalchemy", "uvicorn"}):
             profiles.append("backend")
             if "fastapi" in text:
@@ -67,6 +80,11 @@ def detect_project_profiles(project_dir: Path) -> dict[str, object]:
         profiles.append("backend")
         signals.append("requirements.txt:python-backend")
 
+    if (project_dir / "manage.py").exists():
+        profiles.append("backend")
+        profiles.append("django-service")
+        signals.append("manage.py:django")
+
     if (project_dir / "go.mod").exists():
         profiles.append("backend")
         signals.append("go.mod:backend-service")
@@ -79,9 +97,24 @@ def detect_project_profiles(project_dir: Path) -> dict[str, object]:
         profiles.append("monorepo")
         signals.append("workspace:apps+packages")
 
+    if has_workspace_config:
+        profiles.append("monorepo")
+        signals.append("package.json:workspaces")
+
     if (project_dir / "pnpm-workspace.yaml").exists() or "packageManager:pnpm" in signals:
         profiles.append("pnpm-monorepo")
         signals.append("workspace:pnpm")
+
+    if (project_dir / "app").exists() and any(
+        (project_dir / "app" / name).exists() for name in ("page.tsx", "layout.tsx", "page.js", "layout.js")
+    ):
+        signals.append("next:app-router")
+
+    vite_config = _read_first_existing(project_dir / "vite.config.ts", project_dir / "vite.config.js")
+    if vite_config and "lib:" in vite_config:
+        profiles.append("react-lib")
+        profiles.append("js-package")
+        signals.append("vite.config:lib-mode")
 
     profiles = _dedupe(profiles)
     signals = _dedupe(signals)
@@ -205,6 +238,16 @@ def _load_json(path: Path) -> dict:
         return json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
         return {}
+
+
+def _read_first_existing(*paths: Path) -> str:
+    for path in paths:
+        try:
+            if path.exists():
+                return path.read_text(encoding="utf-8").lower()
+        except OSError:
+            continue
+    return ""
 
 
 def _package_deps(package_data: dict) -> set[str]:

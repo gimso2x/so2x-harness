@@ -91,6 +91,98 @@ def test_detect_project_profiles_for_react_library(tmp_path: Path) -> None:
     assert "changelog" in detected["recommended_skills"]
 
 
+def test_detect_project_profiles_for_turborepo_workspace(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "package.json").write_text(
+        '{"packageManager":"pnpm@9.0.0","workspaces":["apps/*","packages/*"],"devDependencies":{"turbo":"^2.0.0"}}\n',
+        encoding="utf-8",
+    )
+
+    detected = detect_project_profiles(project)
+
+    assert "pnpm-monorepo" in detected["detected_profiles"]
+    assert "package.json:turborepo" in detected["detection_signals"]
+    assert "workspace:pnpm" in detected["detection_signals"]
+
+
+def test_detect_project_profiles_for_nx_workspace(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "package.json").write_text(
+        '{"workspaces":["apps/*","packages/*"],"devDependencies":{"nx":"^19.0.0"}}\n',
+        encoding="utf-8",
+    )
+
+    detected = detect_project_profiles(project)
+
+    assert "monorepo" in detected["detected_profiles"]
+    assert "package.json:nx" in detected["detection_signals"]
+
+
+def test_detect_project_profiles_for_poetry_backend(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "pyproject.toml").write_text(
+        '[tool.poetry]\nname = "svc"\nversion = "0.1.0"\n[tool.poetry.dependencies]\npython = "^3.12"\nfastapi = "^0.115.0"\n',
+        encoding="utf-8",
+    )
+
+    detected = detect_project_profiles(project)
+
+    assert "backend" in detected["detected_profiles"]
+    assert "fastapi-service" in detected["detected_profiles"]
+    assert "pyproject.toml:poetry" in detected["detection_signals"]
+
+
+def test_detect_project_profiles_for_django_manage_py_project(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "manage.py").write_text("print('manage')\n", encoding="utf-8")
+    (project / "requirements.txt").write_text("django>=5\n", encoding="utf-8")
+
+    detected = detect_project_profiles(project)
+
+    assert "backend" in detected["detected_profiles"]
+    assert "django-service" in detected["detected_profiles"]
+    assert "manage.py:django" in detected["detection_signals"]
+
+
+def test_detect_project_profiles_for_next_app_router_project(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "package.json").write_text(
+        '{"dependencies":{"next":"15.0.0","react":"19.0.0"}}\n',
+        encoding="utf-8",
+    )
+    app_dir = project / "app"
+    app_dir.mkdir()
+    (app_dir / "page.tsx").write_text("export default function Page() { return null }\n", encoding="utf-8")
+
+    detected = detect_project_profiles(project)
+
+    assert "next-app" in detected["detected_profiles"]
+    assert "next:app-router" in detected["detection_signals"]
+
+
+def test_detect_project_profiles_for_vite_library_mode(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "package.json").write_text(
+        '{"dependencies":{"react":"^19.0.0"},"devDependencies":{"vite":"^5.0.0"}}\n',
+        encoding="utf-8",
+    )
+    (project / "vite.config.ts").write_text(
+        'import { defineConfig } from "vite"\nexport default defineConfig({ build: { lib: { entry: "src/index.ts" } } })\n',
+        encoding="utf-8",
+    )
+
+    detected = detect_project_profiles(project)
+
+    assert "react-lib" in detected["detected_profiles"]
+    assert "vite.config:lib-mode" in detected["detection_signals"]
+
+
 def test_recommend_skills_for_empty_profiles_returns_core() -> None:
     recommended = recommend_skills_for_profiles([])
 

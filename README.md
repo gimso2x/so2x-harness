@@ -112,6 +112,12 @@ catalog 원본은 `templates/project/.ai-harness/skill-catalog.json`에 있고, 
   - fastapi-service
   - django-service
   - pnpm-monorepo
+- signal도 더 세분화해서 잡습니다
+  - turborepo / nx / lerna workspace
+  - poetry / uv / hatch python toolchain
+  - django manage.py
+  - next app router
+  - vite lib mode
 - Claude/Codex는 같은 추천 로직을 공유하고, 플랫폼 미지원 스킬만 제외
 
 optional 후보를 실제 설치로 올리고 싶으면 다음처럼 사용할 수 있습니다.
