@@ -4,150 +4,12 @@ import json
 from pathlib import Path
 
 
-SKILL_CATALOG = {
-    "planning": {
-        "tier": "core",
-        "applies_to": ["*"],
-        "platforms": ["claude", "codex"],
-        "priority": 100,
-        "rationale": "All projects need a shared planning entry point.",
-    },
-    "implementation": {
-        "tier": "core",
-        "applies_to": ["*"],
-        "platforms": ["claude", "codex"],
-        "priority": 100,
-        "rationale": "All projects need a default implementation workflow.",
-    },
-    "debugging": {
-        "tier": "core",
-        "applies_to": ["*"],
-        "platforms": ["claude", "codex"],
-        "priority": 100,
-        "rationale": "Every repo needs a default debugging path.",
-    },
-    "review": {
-        "tier": "core",
-        "applies_to": ["*"],
-        "platforms": ["claude", "codex"],
-        "priority": 100,
-        "rationale": "Baseline review skill for any change set.",
-    },
-    "setup-context": {
-        "tier": "core",
-        "applies_to": ["*"],
-        "platforms": ["claude", "codex"],
-        "priority": 100,
-        "rationale": "All projects need environment/context bootstrap.",
-    },
-    "check-harness": {
-        "tier": "core",
-        "applies_to": ["*"],
-        "platforms": ["claude", "codex"],
-        "priority": 100,
-        "rationale": "All projects should verify harness health before work.",
-    },
-    "safe-commit": {
-        "tier": "core",
-        "applies_to": ["*"],
-        "platforms": ["claude", "codex"],
-        "priority": 110,
-        "rationale": "Commit safety checks are required across all repos.",
-    },
-    "simplify-cycle": {
-        "tier": "core",
-        "applies_to": ["*"],
-        "platforms": ["claude", "codex"],
-        "priority": 120,
-        "rationale": "User-preferred convergence workflow; keep installed everywhere.",
-        "workflow_tags": ["code-reuse-review", "code-quality-review", "efficiency-review"],
-    },
-    "squash-commit": {
-        "tier": "core",
-        "applies_to": ["*"],
-        "platforms": ["claude", "codex"],
-        "priority": 115,
-        "rationale": "User-preferred post-simplify squash workflow; keep installed everywhere.",
-    },
-    "review-cycle": {
-        "tier": "recommended",
-        "applies_to": ["frontend", "backend", "monorepo"],
-        "platforms": ["claude", "codex"],
-        "priority": 90,
-        "signals_any": [
-            "package.json:next",
-            "package.json:react",
-            "package.json:vite",
-            "package.json:frontend-framework",
-            "pyproject.toml:fastapi",
-            "pyproject.toml:django",
-            "pyproject.toml:backend-framework",
-            "requirements.txt:python-backend",
-            "go.mod:backend-service",
-            "Cargo.toml:backend-service",
-            "workspace:apps+packages",
-        ],
-        "rationale": "Multi-step review loops help app/service repos converge safely.",
-    },
-    "specify-lite": {
-        "tier": "recommended",
-        "applies_to": ["frontend", "backend"],
-        "platforms": ["claude", "codex"],
-        "priority": 80,
-        "signals_any": [
-            "package.json:next",
-            "package.json:react",
-            "package.json:vite",
-            "package.json:frontend-framework",
-            "pyproject.toml:fastapi",
-            "pyproject.toml:django",
-            "pyproject.toml:backend-framework",
-            "requirements.txt:python-backend",
-            "go.mod:backend-service",
-            "Cargo.toml:backend-service",
-        ],
-        "rationale": "Service/UI repos benefit from lighter spec capture before implementation.",
-    },
-    "spec-validate": {
-        "tier": "recommended",
-        "applies_to": ["backend", "python-package", "monorepo"],
-        "platforms": ["claude", "codex"],
-        "priority": 85,
-        "signals_any": [
-            "pyproject.toml:fastapi",
-            "pyproject.toml:django",
-            "pyproject.toml:backend-framework",
-            "pyproject.toml:python-package",
-            "requirements.txt:python-backend",
-            "go.mod:backend-service",
-            "Cargo.toml:backend-service",
-            "workspace:apps+packages",
-        ],
-        "rationale": "Backends, Python packages, and monorepos benefit from spec verification.",
-    },
-    "changelog": {
-        "tier": "recommended",
-        "applies_to": ["python-package", "js-package"],
-        "platforms": ["claude", "codex"],
-        "priority": 70,
-        "signals_any": ["pyproject.toml:python-package", "package.json:js-package"],
-        "rationale": "Package repos benefit from release-note discipline.",
-    },
-    "execute": {
-        "tier": "optional",
-        "applies_to": ["frontend", "backend", "python-package", "js-package", "monorepo"],
-        "platforms": ["claude", "codex"],
-        "priority": 40,
-        "rationale": "Useful when the repo needs longer execution chains, but not installed by default.",
-    },
-    "specify": {
-        "tier": "optional",
-        "applies_to": ["frontend", "backend", "python-package", "js-package", "monorepo"],
-        "platforms": ["claude", "codex"],
-        "priority": 35,
-        "rationale": "Full spec workflow is optional unless the project asks for heavier planning.",
-    },
-}
+ROOT_DIR = Path(__file__).resolve().parents[2]
+SKILL_CATALOG_PATH = ROOT_DIR / "templates" / "project" / ".ai-harness" / "skill-catalog.json"
+
+
+def load_skill_catalog() -> dict[str, dict]:
+    return _load_json(SKILL_CATALOG_PATH)
 
 
 def detect_project_profiles(project_dir: Path) -> dict[str, object]:
@@ -222,6 +84,7 @@ def recommend_skill_plan(
     platforms: list[str] | None = None,
     enabled_optional_skills: list[str] | None = None,
 ) -> dict[str, object]:
+    skill_catalog = load_skill_catalog()
     selected_platforms = _dedupe(platforms or ["claude", "codex"])
     selected_optional = _dedupe(enabled_optional_skills or [])
     enabled: list[str] = []
@@ -230,7 +93,7 @@ def recommend_skill_plan(
     reasons: dict[str, list[str]] = {}
 
     for skill_name, meta in sorted(
-        SKILL_CATALOG.items(), key=lambda item: (-int(item[1].get("priority", 0)), item[0])
+        skill_catalog.items(), key=lambda item: (-int(item[1].get("priority", 0)), item[0])
     ):
         if not _is_skill_available_for_platforms(meta, selected_platforms):
             continue

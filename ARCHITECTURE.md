@@ -116,7 +116,7 @@ apply.py --project ./my-app --preset auto
         → manifest.json (파일별 mode, checksum 기록)
 ```
 
-`project_profiles.py`는 단순 profile bundle이 아니라 skill metadata catalog를 사용합니다.
+`project_profiles.py`는 단순 profile bundle이 아니라 외부 skill metadata catalog(`templates/project/.ai-harness/skill-catalog.json`)를 사용합니다.
 
 - tier: `core` / `recommended` / `optional`
 - applies_to: 어떤 project profile에 붙는지

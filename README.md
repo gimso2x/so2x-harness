@@ -90,6 +90,8 @@ so2x-cli --version
 
 auto 추천 기준은 메타데이터 기반입니다.
 
+catalog 원본은 `templates/project/.ai-harness/skill-catalog.json`에 있습니다.
+
 - `enabled_skills`: 실제로 설치되는 core/recommended 스킬
 - `recommended_skills`: 현재 프로젝트에 맞다고 판단된 전체 추천 스킬
 - `optional_skills`: 당장 설치하지는 않지만 후보로 남기는 스킬

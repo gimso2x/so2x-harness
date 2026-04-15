@@ -3,7 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 
 from scripts.lib.project_profiles import (
+    SKILL_CATALOG_PATH,
     detect_project_profiles,
+    load_skill_catalog,
     recommend_skill_plan,
     recommend_skills_for_profiles,
 )
@@ -76,3 +78,12 @@ def test_recommend_skill_plan_keeps_enabled_and_optional_separate() -> None:
     assert "execute" in plan["optional_skills"]
     assert "specify" in plan["optional_skills"]
     assert "execute" not in plan["enabled_skills"]
+
+
+def test_load_skill_catalog_reads_external_catalog_file() -> None:
+    catalog = load_skill_catalog()
+
+    assert SKILL_CATALOG_PATH.exists()
+    assert "planning" in catalog
+    assert catalog["simplify-cycle"]["tier"] == "core"
+    assert catalog["execute"]["tier"] == "optional"
