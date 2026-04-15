@@ -185,6 +185,23 @@ def test_detect_project_profiles_for_config_only_workspace_tools(tmp_path: Path)
         assert "spec-validate" in detected["enabled_skills"]
 
 
+def test_detect_project_profiles_for_go_workspace_monorepo(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "go.work").write_text("go 1.22\nuse ./services/api\n", encoding="utf-8")
+    (project / "go.mod").write_text("module example.com/platform\n\ngo 1.22\n", encoding="utf-8")
+
+    detected = detect_project_profiles(project)
+
+    assert "backend" in detected["detected_profiles"]
+    assert "monorepo" in detected["detected_profiles"]
+    assert "go.mod:backend-service" in detected["detection_signals"]
+    assert "go.work:workspace" in detected["detection_signals"]
+    assert "review-cycle" in detected["recommended_skills"]
+    assert "execute" in detected["enabled_skills"]
+    assert "spec-validate" in detected["enabled_skills"]
+
+
 def test_detect_project_profiles_for_yarn_workspace_monorepo(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()

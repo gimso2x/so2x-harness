@@ -86,6 +86,7 @@
       "pyproject.toml:backend-framework",
       "requirements.txt:python-backend",
       "go.mod:backend-service",
+      "go.work:workspace",
       "Cargo.toml:backend-service",
       "workspace:apps+packages",
       "package.json:workspaces",
@@ -120,6 +121,7 @@
       "pyproject.toml:backend-framework",
       "requirements.txt:python-backend",
       "go.mod:backend-service",
+      "go.work:workspace",
       "Cargo.toml:backend-service"
     ],
     "rationale": "Service/UI repos benefit from lighter spec capture before implementation."
@@ -138,6 +140,7 @@
       "pyproject.toml:python-package",
       "requirements.txt:python-backend",
       "go.mod:backend-service",
+      "go.work:workspace",
       "Cargo.toml:backend-service",
       "workspace:apps+packages",
       "pyproject.toml:uv-workspace"

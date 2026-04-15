@@ -105,6 +105,10 @@ def detect_project_profiles(project_dir: Path) -> dict[str, object]:
         profiles.append("backend")
         signals.append("go.mod:backend-service")
 
+    if (project_dir / "go.work").exists():
+        profiles.append("monorepo")
+        signals.append("go.work:workspace")
+
     if (project_dir / "Cargo.toml").exists():
         profiles.append("backend")
         signals.append("Cargo.toml:backend-service")
