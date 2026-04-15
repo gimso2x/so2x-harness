@@ -109,9 +109,13 @@ def detect_project_profiles(project_dir: Path) -> dict[str, object]:
         profiles.append("monorepo")
         signals.append("go.work:workspace")
 
-    if (project_dir / "Cargo.toml").exists():
+    cargo_toml = _read_first_existing(project_dir / "Cargo.toml")
+    if cargo_toml:
         profiles.append("backend")
         signals.append("Cargo.toml:backend-service")
+        if "[workspace]" in cargo_toml:
+            profiles.append("monorepo")
+            signals.append("Cargo.toml:workspace")
 
     if (project_dir / "apps").exists() and (project_dir / "packages").exists():
         profiles.append("monorepo")

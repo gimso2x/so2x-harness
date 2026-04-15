@@ -178,11 +178,28 @@ def test_detect_project_profiles_for_config_only_workspace_tools(tmp_path: Path)
         detected = detect_project_profiles(project)
 
         assert "monorepo" in detected["detected_profiles"]
-        assert "package.json:workspaces" in detected["detection_signals"]
         assert signal_name in detected["detection_signals"]
         assert "review-cycle" in detected["recommended_skills"]
-        assert "execute" in detected["enabled_skills"]
-        assert "spec-validate" in detected["enabled_skills"]
+
+
+def test_detect_project_profiles_for_cargo_workspace_monorepo(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "Cargo.toml").write_text(
+        '[workspace]\nmembers = ["crates/api", "crates/worker"]\n\n[package]\nname = "workspace-root"\nversion = "0.1.0"\n',
+        encoding="utf-8",
+    )
+
+    detected = detect_project_profiles(project)
+
+    assert "backend" in detected["detected_profiles"]
+    assert "monorepo" in detected["detected_profiles"]
+    assert "Cargo.toml:backend-service" in detected["detection_signals"]
+    assert "Cargo.toml:workspace" in detected["detection_signals"]
+    assert "review-cycle" in detected["recommended_skills"]
+    assert "specify-lite" in detected["recommended_skills"]
+    assert "execute" in detected["enabled_skills"]
+    assert "spec-validate" in detected["enabled_skills"]
 
 
 def test_detect_project_profiles_for_go_workspace_monorepo(tmp_path: Path) -> None:

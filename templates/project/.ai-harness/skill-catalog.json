@@ -88,6 +88,7 @@
       "go.mod:backend-service",
       "go.work:workspace",
       "Cargo.toml:backend-service",
+      "Cargo.toml:workspace",
       "workspace:apps+packages",
       "package.json:workspaces",
       "workspace:pnpm",
@@ -122,7 +123,8 @@
       "requirements.txt:python-backend",
       "go.mod:backend-service",
       "go.work:workspace",
-      "Cargo.toml:backend-service"
+      "Cargo.toml:backend-service",
+      "Cargo.toml:workspace"
     ],
     "rationale": "Service/UI repos benefit from lighter spec capture before implementation."
   },
@@ -142,6 +144,7 @@
       "go.mod:backend-service",
       "go.work:workspace",
       "Cargo.toml:backend-service",
+      "Cargo.toml:workspace",
       "workspace:apps+packages",
       "pyproject.toml:uv-workspace"
     ],
