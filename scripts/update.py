@@ -116,7 +116,11 @@ def main() -> None:
     old_version = old_manifest.get("version", "unknown")
     new_version = new_manifest["version"]
     platforms = ",".join(new_manifest["platforms"])
-    print(f"[so2x-harness] updated version {old_version} -> {new_version} platforms={platforms} project={project}")
+    print(
+        "[so2x-harness] updated version "
+        f"{old_version} -> {new_version} "
+        f"platforms={platforms} project={project}"
+    )
     print(f"[so2x-harness] wrote {len(new_manifest['files'])} managed file entries")
 
 

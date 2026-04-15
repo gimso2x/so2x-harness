@@ -16,7 +16,6 @@ from lib.install import (
     DEFAULT_PLATFORM,
     MARKER,
     SUPPORTED_PLATFORMS,
-    Capability,
     install_marker_file,
     install_platform_assets,
     install_skip_if_exists,

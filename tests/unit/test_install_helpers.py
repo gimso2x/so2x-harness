@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-import pytest
 from pathlib import Path
+
 from lib.install import (
-    Capability,
-    SUPPORTED_PLATFORMS,
     DEFAULT_PLATFORM,
-    write_text,
+    SUPPORTED_PLATFORMS,
+    Capability,
     install_copy_file,
     keep_existing_file,
+    write_text,
 )
 
 
