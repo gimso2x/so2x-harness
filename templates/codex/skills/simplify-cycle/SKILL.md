@@ -47,6 +47,26 @@ $simplify-cycle
 7. 남은 simplification count가 0이면 종료합니다.
 8. 0이 아니면 같은 루프를 반복합니다.
 
+## Convergence state
+
+각 pass마다 최소 아래 상태를 남깁니다.
+
+- `pass_index`
+- `remaining_count`
+- `lens_results.code_reuse`
+- `lens_results.code_quality`
+- `lens_results.efficiency`
+- `actions_taken`
+- `verification_commands`
+- `stop_reason`
+
+`remaining_count`는 최종 목표가 0입니다. 다만 아래 경우는 0이 아니어도 안전 종료 가능합니다.
+
+- `no_safe_gain` — 더 줄이면 요구사항/가독성/디버깅성이 나빠짐
+- `repeated_no_progress` — 같은 종류의 지적이 반복되고 diff 개선이 없음
+- `blocked_by_requirement` — 요구사항 때문에 남겨야 함
+- `circuit_breaker` — 2~3 pass 연속으로 실질 개선이 없거나 검증만 흔들림
+
 ## Simplification checklist
 
 - 같은 의미의 로직이 여러 곳에 중복되지 않는가
@@ -70,11 +90,15 @@ $simplify-cycle
 simplify-cycle result:
   Passes: <count>
   Remaining simplification count: <n>
+  Lens results:
+    - code_reuse: <n>
+    - code_quality: <n>
+    - efficiency: <n>
   Final pass changes:
     - ...
   Verification:
     - <command/result>
-  Stop reason: converged_to_zero | no_safe_gain | blocked_by_requirement
+  Stop reason: converged_to_zero | no_safe_gain | blocked_by_requirement | repeated_no_progress | circuit_breaker
 ```
 
 ## Rules
@@ -85,3 +109,4 @@ simplify-cycle result:
 4. count가 0이 아니면 완료라고 주장하지 않습니다.
 5. Claude 전용 slash command를 전제로 설명하지 않습니다.
 6. 삭제/축소가 유리해 보여도 추적성이나 디버깅성이 크게 나빠지면 멈춥니다.
+7. `Code Reuse Review`, `Code Quality Review`, `Efficiency Review`는 pass별 first-class 결과로 남깁니다.

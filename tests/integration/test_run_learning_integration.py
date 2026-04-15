@@ -29,6 +29,24 @@ def test_run_specify_includes_relevant_learnings_in_instruction(tmp_path: Path) 
         + "\n",
         encoding="utf-8",
     )
+    (learning_dir / "promoted-rules.json").write_text(
+        json.dumps(
+            {
+                "rules": [
+                    {
+                        "id": "PRM-OAUTH-1",
+                        "rule": "Promoted OAuth callback rule",
+                        "category": "pattern",
+                        "severity": "warning",
+                        "tags": ["oauth"],
+                    }
+                ]
+            },
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
 
     result = subprocess.run(
         ["python3", str(ROOT_DIR / "scripts/cli/main.py"), "run", "specify", "Add OAuth login", "--output", "spec.json"],
@@ -41,13 +59,18 @@ def test_run_specify_includes_relevant_learnings_in_instruction(tmp_path: Path) 
     assert result.returncode == 1
     assert "Relevant learnings:" in result.stdout
     assert "Always configure OAuth callback via env" in result.stdout
+    assert "Promoted OAuth callback rule" in result.stdout
 
 
 def test_run_execute_appends_auto_learnings_from_task_summaries(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()
     spec_file = project / "spec.json"
-    learning_file = project / ".ai-harness" / "learnings.jsonl"
+    harness_dir = project / ".ai-harness"
+    learning_file = harness_dir / "learnings.jsonl"
+    event_file = harness_dir / "events.jsonl"
+    promoted_file = harness_dir / "promoted-rules.json"
+    simplify_status_file = harness_dir / "status" / "simplify-cycle.json"
     spec = {
         "meta": {
             "id": "SPEC-AUTH-001",
@@ -69,7 +92,14 @@ def test_run_execute_appends_auto_learnings_from_task_summaries(tmp_path: Path) 
                     "requirement_refs": ["R1"],
                     "status": "done",
                     "summary": "Always configure callback URL via environment per deployment",
-                }
+                },
+                {
+                    "id": "T2",
+                    "action": "Handle callback configuration in worker",
+                    "requirement_refs": ["R1"],
+                    "status": "done",
+                    "summary": "Always configure callback URL via environment per deployment",
+                },
             ],
             "l5_review": {
                 "status": "needs_changes",
@@ -103,7 +133,20 @@ def test_run_execute_appends_auto_learnings_from_task_summaries(tmp_path: Path) 
 
     assert result.returncode == 0
     assert learning_file.exists()
+    assert event_file.exists()
+    assert promoted_file.exists()
+    assert simplify_status_file.exists()
+
     lines = [json.loads(line) for line in learning_file.read_text(encoding="utf-8").splitlines() if line.strip()]
+    events = [json.loads(line) for line in event_file.read_text(encoding="utf-8").splitlines() if line.strip()]
+    promoted = json.loads(promoted_file.read_text(encoding="utf-8"))
+    simplify_status = json.loads(simplify_status_file.read_text(encoding="utf-8"))
+
     assert any("callback URL via environment" in entry["rule"] for entry in lines)
     assert any("Duplicate token parsing logic" in entry["problem"] for entry in lines)
-    assert "Auto-learnings captured:" in result.stdout
+    assert any(event["type"] == "simplify_cycle_completed" for event in events)
+    assert any(event["type"] == "learning_promoted" for event in events)
+    assert promoted["rules"]
+    assert simplify_status["remaining_count"] == 1
+    assert "Auto-events captured:" in result.stdout
+    assert "Promoted rules:" in result.stdout

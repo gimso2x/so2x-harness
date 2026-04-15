@@ -102,3 +102,68 @@ def test_doctor_on_codex_project(tmp_project: Path) -> None:
     assert result.returncode == 0
     assert "[OK]" in result.stdout
     assert "skills" in result.stdout.lower()
+
+
+def test_doctor_reports_workflow_status_surface(tmp_project: Path) -> None:
+    import json
+    import subprocess
+
+    _apply(tmp_project)
+    harness_dir = tmp_project / ".ai-harness"
+    status_dir = harness_dir / "status"
+    status_dir.mkdir(parents=True, exist_ok=True)
+    (status_dir / "simplify-cycle.json").write_text(
+        json.dumps({"remaining_count": 0, "stop_reason": "converged_to_zero"}, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    (status_dir / "safe-commit.json").write_text(
+        json.dumps({"safety_verdict": "SAFE", "verification_status": "PASS"}, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    (status_dir / "squash-commit.json").write_text(
+        json.dumps({"ready": True, "reason": "ready"}, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    (harness_dir / "promoted-rules.json").write_text(
+        json.dumps(
+            {
+                "rules": [
+                    {"rule": "Keep simplify-cycle at zero", "promoted_at": "2026-04-15T00:00:00+00:00"},
+                    {"rule": "Honor repeated user feedback: 더 단순하게", "promoted_at": "2026-04-16T00:00:00+00:00"},
+                ]
+            },
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (harness_dir / "events.jsonl").write_text(
+        "\n".join(
+            [
+                json.dumps({"type": "user_feedback_captured", "message": "더 단순하게"}, ensure_ascii=False),
+                json.dumps({"type": "safe_commit_completed", "reason": "ready_for_commit"}, ensure_ascii=False),
+                json.dumps({"type": "squash_check_completed", "reason": "ready"}, ensure_ascii=False),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        ["python3", str(ROOT_DIR / "scripts/doctor.py"), "--project", str(tmp_project)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert "simplify_status" in result.stdout
+    assert "safe_commit_status" in result.stdout
+    assert "squash_status" in result.stdout
+    assert "promoted_rules" in result.stdout
+    assert "latest_promoted_rule" in result.stdout
+    assert "Honor repeated user feedback: 더 단순하게" in result.stdout
+    assert "feedback_events" in result.stdout
+    assert "latest_feedback" in result.stdout
+    assert "safe_commit_events" in result.stdout
+    assert "squash_check_events" in result.stdout

@@ -85,3 +85,23 @@ def test_doctor_warns_when_skill_count_drifts_from_enabled_skills() -> None:
 
     assert "skills_drift" in result.stdout
     assert "enabled skills" in result.stdout
+
+
+def test_doctor_warns_when_workflow_status_files_are_missing() -> None:
+    import subprocess
+
+    project = _apply("claude")
+    result = subprocess.run(
+        ["python3", str(ROOT_DIR / "scripts/doctor.py"), "--project", str(project)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert "simplify_status" in result.stdout
+    assert "missing simplify-cycle.json" in result.stdout
+    assert "safe_commit_status" in result.stdout
+    assert "squash_status" in result.stdout
+    assert "feedback_events" in result.stdout
+    assert "safe_commit_events" in result.stdout
+    assert "squash_check_events" in result.stdout

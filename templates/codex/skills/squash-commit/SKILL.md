@@ -44,6 +44,8 @@ $squash-commit
 ## Execution rules
 
 - base branch를 먼저 확인합니다. 기본은 `main`이고 저장소 관례가 다르면 실제 base를 사용합니다.
+- 최신 `simplify-cycle` 결과가 있고, `remaining_count == 0` 또는 허용된 종료 사유인지 먼저 확인합니다.
+- 최신 `safe-commit` verdict가 `SAFE`인지 확인합니다.
 - 최종 diff 범위를 확인한 뒤 `git reset --soft <base>` 또는 동등한 방법으로 staged 상태를 만듭니다.
 - 전체 변경이 의도 범위와 일치하는지 다시 확인합니다.
 - 한국어 단일 커밋 메시지로 커밋합니다.
@@ -51,6 +53,7 @@ $squash-commit
 ## Safety rules
 
 - 검증 실패 상태에서는 squash commit 금지
+- `simplify-cycle` 없이 바로 squash 금지
 - unrelated change가 섞여 있으면 먼저 분리
 - force-push가 필요한 상황이면 그 사실을 명시
 - 민감 정보나 생성 산출물이 섞였는지 `safe-commit` 결과를 다시 확인
@@ -74,3 +77,4 @@ squash-commit result:
 3. 커밋 메시지는 한국어로, 범위를 드러내는 짧은 문장으로 작성합니다.
 4. 검증 근거 없이 바로 squash하지 않습니다.
 5. 이미 공유된 브랜치 히스토리를 다시 쓰는 경우 side effect를 명시합니다.
+6. squash 결과는 base branch, verification, safety verdict를 상태/이벤트로 남깁니다.

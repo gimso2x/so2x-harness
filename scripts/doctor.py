@@ -27,14 +27,17 @@ def detect_python() -> tuple[str, str]:
     return ("ERROR", "python3/python not found in PATH")
 
 
-def _load_spec(project_dir: Path) -> dict | None:
-    spec_file = project_dir / "spec.json"
-    if not spec_file.exists():
+def _load_json(path: Path) -> dict | None:
+    if not path.exists():
         return None
     try:
-        return json.loads(spec_file.read_text(encoding="utf-8"))
+        return json.loads(path.read_text(encoding="utf-8"))
     except Exception:
         return None
+
+
+def _load_spec(project_dir: Path) -> dict | None:
+    return _load_json(project_dir / "spec.json")
 
 
 def _execution_items(project_dir: Path) -> list[tuple[str, str, str]]:
@@ -73,6 +76,97 @@ def _execution_items(project_dir: Path) -> list[tuple[str, str, str]]:
     return items
 
 
+def _workflow_status_items(project_dir: Path) -> list[tuple[str, str, str]]:
+    harness_dir = project_dir / ".ai-harness"
+    status_dir = harness_dir / "status"
+    simplify = _load_json(status_dir / "simplify-cycle.json")
+    safe_commit = _load_json(status_dir / "safe-commit.json")
+    squash = _load_json(status_dir / "squash-commit.json")
+    promoted = _load_json(harness_dir / "promoted-rules.json")
+    events_file = harness_dir / "events.jsonl"
+
+    items: list[tuple[str, str, str]] = []
+
+    if simplify:
+        remaining = simplify.get("remaining_count", "?")
+        stop_reason = simplify.get("stop_reason", "unknown")
+        level = "OK" if int(remaining or 0) == 0 else "WARN"
+        items.append((level, "simplify_status", f"remaining={remaining}, stop_reason={stop_reason}"))
+    elif harness_dir.exists():
+        items.append(("WARN", "simplify_status", "missing simplify-cycle.json"))
+
+    if safe_commit:
+        verdict = str(safe_commit.get("safety_verdict", "UNKNOWN"))
+        verification = str(safe_commit.get("verification_status", "UNKNOWN"))
+        level = "OK" if verdict == "SAFE" else "WARN"
+        items.append((level, "safe_commit_status", f"verdict={verdict}, verification={verification}"))
+    elif harness_dir.exists():
+        items.append(("WARN", "safe_commit_status", "missing safe-commit.json"))
+
+    if squash:
+        ready = bool(squash.get("ready", False))
+        reason = str(squash.get("reason", "unknown"))
+        level = "OK" if ready else "WARN"
+        items.append((level, "squash_status", f"ready={ready}, reason={reason}"))
+    elif harness_dir.exists():
+        items.append(("WARN", "squash_status", "missing squash-commit.json"))
+
+    if promoted and isinstance(promoted.get("rules"), list):
+        rules = promoted["rules"]
+        items.append(("OK", "promoted_rules", f"{len(rules)} promoted rule(s)"))
+        latest_rule = ""
+        latest_time = ""
+        for rule in rules:
+            promoted_at = str(rule.get("promoted_at", ""))
+            if promoted_at >= latest_time:
+                latest_time = promoted_at
+                latest_rule = str(rule.get("rule", "")).strip()
+        if latest_rule:
+            items.append(("OK", "latest_promoted_rule", latest_rule))
+    elif harness_dir.exists():
+        items.append(("WARN", "promoted_rules", "missing promoted-rules.json"))
+
+    feedback_count = 0
+    latest_feedback = ""
+    safe_commit_events = 0
+    squash_check_events = 0
+    if events_file.exists():
+        for line in events_file.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entry = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            event_type = entry.get("type")
+            if event_type == "user_feedback_captured":
+                feedback_count += 1
+                latest_feedback = str(entry.get("message", "")).strip() or latest_feedback
+            elif event_type == "safe_commit_completed":
+                safe_commit_events += 1
+            elif event_type == "squash_check_completed":
+                squash_check_events += 1
+    if feedback_count > 0:
+        items.append(("OK", "feedback_events", f"{feedback_count} feedback event(s) captured"))
+        if latest_feedback:
+            items.append(("OK", "latest_feedback", latest_feedback))
+    elif harness_dir.exists():
+        items.append(("WARN", "feedback_events", "no feedback events captured yet"))
+
+    if safe_commit_events > 0:
+        items.append(("OK", "safe_commit_events", f"{safe_commit_events} safe-commit event(s) recorded"))
+    elif harness_dir.exists():
+        items.append(("WARN", "safe_commit_events", "no safe-commit events recorded yet"))
+
+    if squash_check_events > 0:
+        items.append(("OK", "squash_check_events", f"{squash_check_events} squash-check event(s) recorded"))
+    elif harness_dir.exists():
+        items.append(("WARN", "squash_check_events", "no squash-check events recorded yet"))
+
+    return items
+
+
 def _expected_skill_count(project_dir: Path, config_path: Path) -> tuple[int, list[str]] | None:
     if not config_path.exists():
         return None
@@ -95,7 +189,6 @@ def check_project(project_dir: Path) -> list[tuple[str, str, str]]:
         items.append(("ERROR", "project_dir", f"directory not found: {project_dir}"))
         return items
 
-    # Read manifest once
     mf = manifest_path(project_dir)
     manifest_data: dict | None = None
     if mf.exists():
@@ -197,7 +290,6 @@ def check_project(project_dir: Path) -> list[tuple[str, str, str]]:
                     )
                 )
 
-    # Manifest summary
     if manifest_data:
         items.append(("OK", "manifest", str(mf)))
         items.append(("OK", "manifest_version", str(manifest_data.get("version", "unknown"))))
@@ -209,6 +301,7 @@ def check_project(project_dir: Path) -> list[tuple[str, str, str]]:
         items.append(("WARN", "manifest", "manifest not found — harness may not be installed"))
 
     items.extend(_execution_items(project_dir))
+    items.extend(_workflow_status_items(project_dir))
     return items
 
 

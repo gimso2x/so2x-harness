@@ -5,7 +5,24 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
+from cli.commands.learning_tools import (
+    DEFAULT_EVENT_FILE,
+    DEFAULT_HARNESS_DIR,
+    DEFAULT_LEARNING_FILE,
+    DEFAULT_PROMOTED_RULES_FILE,
+    append_event_entries,
+    append_learning_entries,
+    promote_feedback_patterns,
+)
+
 DEFAULT_PATH = Path(".ai-harness/learnings.jsonl")
+
+
+_FEEDBACK_PATTERNS = {
+    "reject": ["아닌", "별로", "다시", "말고"],
+    "refine": ["너무 복잡", "합쳐", "줄여", "단순"],
+    "preference": ["다음엔", "이렇게", "남겨", "유지"],
+}
 
 
 def handle_learn(args: object) -> None:
@@ -16,8 +33,10 @@ def handle_learn(args: object) -> None:
         cmd_search(args)
     elif command == "summary":
         cmd_summary(args)
+    elif command == "feedback":
+        cmd_feedback(args)
     else:
-        print("Usage: so2x-cli learn {add|search|summary}")
+        print("Usage: so2x-cli learn {add|search|summary|feedback}")
 
 
 def cmd_add(args: object) -> None:
@@ -34,8 +53,51 @@ def cmd_add(args: object) -> None:
     }
 
     path = Path(getattr(args, "file", "")) if getattr(args, "file", None) else DEFAULT_PATH
-    _append_entry(path, entry)
+    append_learning_entries([entry], path=path)
     print(f"[learn] added {entry['id']} to {path}")
+
+
+def cmd_feedback(args: object) -> None:
+    message = getattr(args, "message", "").strip()
+    phase = getattr(args, "phase", "general") or "general"
+    source_spec = getattr(args, "spec", "") or ""
+    harness_dir = Path(getattr(args, "dir", "")) if getattr(args, "dir", None) else DEFAULT_HARNESS_DIR
+    event_file = harness_dir / DEFAULT_EVENT_FILE.name
+    learning_file = harness_dir / DEFAULT_LEARNING_FILE.name
+    promoted_rules_file = harness_dir / DEFAULT_PROMOTED_RULES_FILE.name
+    sentiment = _classify_feedback(message)
+
+    event = {
+        "type": "user_feedback_captured",
+        "phase": phase,
+        "source_spec": source_spec,
+        "message": message,
+        "sentiment": sentiment,
+    }
+    append_event_entries([event], path=event_file)
+
+    tags = ["feedback", phase, sentiment]
+    if sentiment != "neutral":
+        rule = f"Respect user feedback in {phase}: {message}"
+        append_learning_entries(
+            [
+                {
+                    "source_spec": source_spec,
+                    "source": "user-feedback",
+                    "category": "decision" if sentiment == "preference" else "anti-pattern",
+                    "problem": f"User feedback ({phase}): {message}",
+                    "cause": phase,
+                    "rule": rule,
+                    "tags": tags,
+                    "severity": "warning" if sentiment in {"reject", "refine"} else "info",
+                }
+            ],
+            path=learning_file,
+        )
+    promoted = promote_feedback_patterns(event_file=event_file, promoted_rules_file=promoted_rules_file)
+    if promoted:
+        print(f"[learn] promoted feedback rules: {len(promoted)} -> {promoted_rules_file}")
+    print(f"[learn] feedback captured ({sentiment}) -> {event_file}")
 
 
 def cmd_search(args: object) -> None:
@@ -76,10 +138,12 @@ def cmd_summary(args: object) -> None:
         print(f"    {cat}: {count}")
 
 
-def _append_entry(path: Path, entry: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "a", encoding="utf-8") as f:
-        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+def _classify_feedback(message: str) -> str:
+    text = message.lower()
+    for sentiment, patterns in _FEEDBACK_PATTERNS.items():
+        if any(pattern in text for pattern in patterns):
+            return sentiment
+    return "neutral"
 
 
 def _read_entries(path: Path) -> list[dict]:
