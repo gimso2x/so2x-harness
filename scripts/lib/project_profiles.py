@@ -22,9 +22,7 @@ def detect_project_profiles(project_dir: Path) -> dict[str, object]:
         package_data = _load_json(package_json)
         deps = _package_deps(package_data)
         package_manager = str(package_data.get("packageManager", "")).lower()
-        has_workspace_config = isinstance(package_data.get("workspaces"), list) and bool(
-            package_data.get("workspaces")
-        )
+        has_workspace_config = _has_workspace_config(package_data.get("workspaces"))
         if "turbo" in deps:
             signals.append("package.json:turborepo")
         if "nx" in deps:
@@ -283,6 +281,15 @@ def _package_deps(package_data: dict) -> set[str]:
         if isinstance(values, dict):
             deps.update(str(name) for name in values.keys())
     return deps
+
+
+def _has_workspace_config(workspaces: object) -> bool:
+    if isinstance(workspaces, list):
+        return bool(workspaces)
+    if isinstance(workspaces, dict):
+        packages = workspaces.get("packages")
+        return isinstance(packages, list) and bool(packages)
+    return False
 
 
 def _is_react_library_package(package_data: dict, deps: set[str]) -> bool:
