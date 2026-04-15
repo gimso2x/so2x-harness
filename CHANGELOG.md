@@ -5,6 +5,21 @@ All notable changes to so2x-harness will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-04-15
+
+### added
+- Codex CLI 플랫폼 지원 (`--platform codex`)
+- 다중 플랫폼 동시 설치 지원 (`--platform claude codex`)
+- `install.sh` / `install.ps1` 인터랙티브 플랫폼 선택 (자동 감지 + 프롬프트)
+- `templates/codex/` 템플릿 (AGENTS.md + skills)
+- `platform_map.py`에 codex 경로 매핑 및 `PLATFORM_CAPABILITIES`
+- `doctor.py` codex 플랫폼 진단
+
+### changed
+- `apply.py`: `--platform` 다중 선택 지원, 중복 제거, manifest platforms add-only 병합
+- `update.py`: manifest platforms 기반 다중 플랫폼 업데이트
+- `doctor.py`: 설치된 플랫폼별 진단 분기
+
 ## [0.4.0] - 2026-04-14
 
 ### added
