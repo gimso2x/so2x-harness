@@ -16,8 +16,10 @@
       "type": "array",
       "items": {
         "type": "string",
-        "enum": ["claude"]
-      }
+        "enum": ["claude", "codex"]
+      },
+      "minItems": 1,
+      "uniqueItems": true
     },
     "installed_at": {
       "type": "string",
