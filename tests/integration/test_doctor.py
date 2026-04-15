@@ -67,3 +67,38 @@ def test_doctor_detects_rules(tmp_project: Path) -> None:
     )
     assert "rules_dir" in result.stdout
     assert "skills_dir" in result.stdout
+
+
+def _apply_codex(project: Path) -> None:
+    import subprocess
+
+    subprocess.run(
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(project),
+            "--platform",
+            "codex",
+            "--preset",
+            "general",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+
+def test_doctor_on_codex_project(tmp_project: Path) -> None:
+    import subprocess
+
+    _apply_codex(tmp_project)
+    result = subprocess.run(
+        ["python3", str(ROOT_DIR / "scripts/doctor.py"), "--project", str(tmp_project)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0
+    assert "[OK]" in result.stdout
+    assert "skills" in result.stdout.lower()
