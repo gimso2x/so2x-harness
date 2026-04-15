@@ -12,9 +12,9 @@ ROOT_DIR = CURRENT_DIR.parent
 sys.path.insert(0, str(CURRENT_DIR))
 
 from lib.checksum import sha256_text
-from lib.manifest import write_manifest
+from lib.manifest import load_manifest, manifest_path, write_manifest
 from lib.markers import extract_marker_block, upsert_marker_block
-from lib.platform_map import PROJECT_PATHS
+from lib.platform_map import PLATFORM_CAPABILITIES, PROJECT_PATHS
 from lib.render import render_template
 
 MARKER = "SO2X-HARNESS"
@@ -104,25 +104,40 @@ def install_project_config(
     return sha256_text(config_path.read_text(encoding="utf-8"))
 
 
-def apply_claude(project_dir: Path, preset_name: str) -> dict:
-    paths = PROJECT_PATHS["claude"]
+def apply_platform(project_dir: Path, platform: str, preset_name: str) -> dict:
+    paths = PROJECT_PATHS[platform]
+    caps = PLATFORM_CAPABILITIES[platform]
     files: dict[str, dict[str, str]] = {}
 
-    claude_template = ROOT_DIR / "templates/claude/CLAUDE.md"
-    claude_target = project_dir / paths["claude_md_path"]
-    files[str(paths["claude_md_path"])] = {
-        "mode": "marker",
-        "marker": MARKER,
-        "checksum": install_marker_file(claude_template, claude_target),
-    }
+    # Platform-specific marker file (CLAUDE.md for claude only)
+    claude_md_path = paths.get("claude_md_path")
+    if claude_md_path:
+        claude_template = ROOT_DIR / "templates/claude/CLAUDE.md"
+        claude_target = project_dir / claude_md_path
+        files[str(claude_md_path)] = {
+            "mode": "marker",
+            "marker": MARKER,
+            "checksum": install_marker_file(claude_template, claude_target),
+        }
 
-    agents_template = ROOT_DIR / "templates/shared/AGENTS.md"
-    agents_target = project_dir / paths["agents_path"]
-    files[str(paths["agents_path"])] = {
-        "mode": "skip_if_exists",
-        "checksum": install_skip_if_exists(agents_template, agents_target),
-    }
+    # AGENTS.md - codex uses merged template with rules, claude uses shared
+    agents_path = paths["agents_path"]
+    agents_target = project_dir / agents_path
+    if platform == "codex":
+        agents_template = ROOT_DIR / "templates/codex/AGENTS.md"
+        files[str(agents_path)] = {
+            "mode": "marker",
+            "marker": MARKER,
+            "checksum": install_marker_file(agents_template, agents_target),
+        }
+    else:
+        agents_template = ROOT_DIR / "templates/shared/AGENTS.md"
+        files[str(agents_path)] = {
+            "mode": "skip_if_exists",
+            "checksum": install_skip_if_exists(agents_template, agents_target),
+        }
 
+    # Shared docs
     shared_docs_src = ROOT_DIR / "templates/shared/docs"
     for src in sorted(shared_docs_src.glob("*.md")):
         rel = paths["shared_docs_dir"] / src.name
@@ -131,6 +146,7 @@ def apply_claude(project_dir: Path, preset_name: str) -> dict:
             "checksum": install_copy_file(src, project_dir / rel),
         }
 
+    # Shared snippets
     shared_snippets_src = ROOT_DIR / "templates/shared/snippets"
     for src in sorted(shared_snippets_src.glob("*.md")):
         rel = paths["shared_snippets_dir"] / src.name
@@ -139,45 +155,54 @@ def apply_claude(project_dir: Path, preset_name: str) -> dict:
             "checksum": install_copy_file(src, project_dir / rel),
         }
 
-    rules_src = ROOT_DIR / "templates/claude/rules"
-    for src in sorted(rules_src.glob("*.md")):
-        rel = paths["rules_dir"] / src.name
-        files[str(rel)] = {
-            "mode": "overwrite",
-            "checksum": install_copy_file(src, project_dir / rel),
-        }
-
-    skills_src = ROOT_DIR / "templates/claude/skills"
-    for skill_dir in sorted(skills_src.iterdir()):
-        if not skill_dir.is_dir():
-            continue
-        skill_file = skill_dir / "SKILL.md"
-        if not skill_file.exists():
-            continue
-        rel = paths["skills_dir"] / skill_dir.name / "SKILL.md"
-        files[str(rel)] = {
-            "mode": "overwrite",
-            "checksum": install_copy_file(skill_file, project_dir / rel),
-        }
-
-    agents_src = ROOT_DIR / "templates/claude/agents"
-    if agents_src.exists():
-        for src in sorted(agents_src.glob("*.md")):
-            rel = paths["agents_dir"] / src.name
+    # Rules (claude only)
+    if caps["rules"]:
+        rules_src = ROOT_DIR / f"templates/{platform}/rules"
+        for src in sorted(rules_src.glob("*.md")):
+            rel = paths["rules_dir"] / src.name
             files[str(rel)] = {
                 "mode": "overwrite",
                 "checksum": install_copy_file(src, project_dir / rel),
             }
 
-    hooks_src = ROOT_DIR / "templates/claude/hooks"
-    for src in sorted(hooks_src.iterdir()):
-        if src.is_file():
-            rel = paths["hooks_dir"] / src.name
+    # Skills
+    if caps["skills"]:
+        skills_src = ROOT_DIR / f"templates/{platform}/skills"
+        for skill_dir in sorted(skills_src.iterdir()):
+            if not skill_dir.is_dir():
+                continue
+            skill_file = skill_dir / "SKILL.md"
+            if not skill_file.exists():
+                continue
+            rel = paths["skills_dir"] / skill_dir.name / "SKILL.md"
             files[str(rel)] = {
                 "mode": "overwrite",
-                "checksum": install_copy_file(src, project_dir / rel),
+                "checksum": install_copy_file(skill_file, project_dir / rel),
             }
 
+    # Agents (claude only)
+    if caps["agents"]:
+        agents_src = ROOT_DIR / f"templates/{platform}/agents"
+        if agents_src.exists():
+            for src in sorted(agents_src.glob("*.md")):
+                rel = paths["agents_dir"] / src.name
+                files[str(rel)] = {
+                    "mode": "overwrite",
+                    "checksum": install_copy_file(src, project_dir / rel),
+                }
+
+    # Hooks (claude only)
+    if caps["hooks"]:
+        hooks_src = ROOT_DIR / f"templates/{platform}/hooks"
+        for src in sorted(hooks_src.iterdir()):
+            if src.is_file():
+                rel = paths["hooks_dir"] / src.name
+                files[str(rel)] = {
+                    "mode": "overwrite",
+                    "checksum": install_copy_file(src, project_dir / rel),
+                }
+
+    # Config
     config_rel = paths["config_path"]
     project_name = project_dir.name
     files[str(config_rel)] = {
@@ -187,33 +212,51 @@ def apply_claude(project_dir: Path, preset_name: str) -> dict:
         ),
     }
 
-    manifest = {
-        "name": "so2x-harness",
-        "version": VERSION,
-        "platforms": ["claude"],
-        "installed_at": datetime.now(timezone.utc).isoformat(),
-        "files": files,
-    }
-    write_manifest(project_dir, manifest)
-    return manifest
+    return files
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--project", required=True)
-    parser.add_argument("--platform", default="claude")
+    parser.add_argument(
+        "--platform",
+        nargs="+",
+        default=["claude"],
+        choices=["claude", "codex"],
+    )
     parser.add_argument("--preset", default="general")
     args = parser.parse_args()
 
     project = Path(args.project).resolve()
     project.mkdir(parents=True, exist_ok=True)
 
-    if args.platform != "claude":
-        raise SystemExit(f"unsupported platform: {args.platform} (currently supported: claude)")
+    platforms = list(dict.fromkeys(args.platform))
+    all_files: dict[str, dict[str, str]] = {}
+    for platform in platforms:
+        platform_files = apply_platform(project, platform, args.preset)
+        all_files.update(platform_files)
 
-    manifest = apply_claude(project, args.preset)
+    # Merge with existing manifest platforms (add-only)
+    existing_platforms: list[str] = []
+    if manifest_path(project).exists():
+        try:
+            existing = load_manifest(project)
+            existing_platforms = existing.get("platforms", [])
+        except Exception:
+            pass
+    merged_platforms = list(dict.fromkeys(existing_platforms + platforms))
+
+    manifest = {
+        "name": "so2x-harness",
+        "version": VERSION,
+        "platforms": merged_platforms,
+        "installed_at": datetime.now(timezone.utc).isoformat(),
+        "files": all_files,
+    }
+    write_manifest(project, manifest)
     print(
-        f"[so2x-harness] installed version={manifest['version']} platform=claude project={project}"
+        f"[so2x-harness] installed version={manifest['version']} "
+        f"platforms={','.join(merged_platforms)} project={project}"
     )
     print(f"[so2x-harness] preset={args.preset}")
     print(f"[so2x-harness] wrote {len(manifest['files'])} managed file entries")
