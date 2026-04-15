@@ -49,6 +49,19 @@ def keep_existing_file(target_path: Path) -> str:
     return sha256_text(target_path.read_text(encoding="utf-8"))
 
 
+def _install_glob_files(src_dir: Path, rel_dir: Path, project_dir: Path) -> dict[str, dict[str, str]]:
+    if not src_dir.exists():
+        return {}
+    files: dict[str, dict[str, str]] = {}
+    for src in sorted(src_dir.glob("*.md")):
+        rel = rel_dir / src.name
+        files[str(rel)] = {
+            "mode": "overwrite",
+            "checksum": install_copy_file(src, project_dir / rel),
+        }
+    return files
+
+
 def install_platform_assets(
     root_dir: Path,
     project_dir: Path,
@@ -59,30 +72,11 @@ def install_platform_assets(
     """Install docs, snippets, rules, skills, agents, hooks for a platform."""
     files: dict[str, dict[str, str]] = {}
 
-    shared_docs_src = root_dir / "templates/shared/docs"
-    for src in sorted(shared_docs_src.glob("*.md")):
-        rel = paths["shared_docs_dir"] / src.name
-        files[str(rel)] = {
-            "mode": "overwrite",
-            "checksum": install_copy_file(src, project_dir / rel),
-        }
-
-    shared_snippets_src = root_dir / "templates/shared/snippets"
-    for src in sorted(shared_snippets_src.glob("*.md")):
-        rel = paths["shared_snippets_dir"] / src.name
-        files[str(rel)] = {
-            "mode": "overwrite",
-            "checksum": install_copy_file(src, project_dir / rel),
-        }
+    files.update(_install_glob_files(root_dir / "templates/shared/docs", paths["shared_docs_dir"], project_dir))
+    files.update(_install_glob_files(root_dir / "templates/shared/snippets", paths["shared_snippets_dir"], project_dir))
 
     if caps[Capability.RULES]:
-        rules_src = root_dir / f"templates/{platform}/rules"
-        for src in sorted(rules_src.glob("*.md")):
-            rel = paths["rules_dir"] / src.name
-            files[str(rel)] = {
-                "mode": "overwrite",
-                "checksum": install_copy_file(src, project_dir / rel),
-            }
+        files.update(_install_glob_files(root_dir / f"templates/{platform}/rules", paths["rules_dir"], project_dir))
 
     if caps[Capability.SKILLS]:
         skills_src = root_dir / f"templates/{platform}/skills"
@@ -99,14 +93,7 @@ def install_platform_assets(
             }
 
     if caps[Capability.AGENTS]:
-        agents_src = root_dir / f"templates/{platform}/agents"
-        if agents_src.exists():
-            for src in sorted(agents_src.glob("*.md")):
-                rel = paths["agents_dir"] / src.name
-                files[str(rel)] = {
-                    "mode": "overwrite",
-                    "checksum": install_copy_file(src, project_dir / rel),
-                }
+        files.update(_install_glob_files(root_dir / f"templates/{platform}/agents", paths["agents_dir"], project_dir))
 
     if caps[Capability.HOOKS]:
         hooks_src = root_dir / f"templates/{platform}/hooks"
