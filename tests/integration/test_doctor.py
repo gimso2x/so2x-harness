@@ -104,6 +104,51 @@ def test_doctor_on_codex_project(tmp_project: Path) -> None:
     assert "skills" in result.stdout.lower()
 
 
+def test_doctor_surfaces_empty_auto_recommendation_fields(tmp_path: Path) -> None:
+    import subprocess
+
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "package.json").write_text('{"name":"plain-project"}\n', encoding="utf-8")
+
+    apply = subprocess.run(
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(project),
+            "--platform",
+            "claude",
+            "codex",
+            "--preset",
+            "auto",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert apply.returncode == 0
+
+    result = subprocess.run(
+        ["python3", str(ROOT_DIR / "scripts/doctor.py"), "--project", str(project)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert "detected_profiles: none" in result.stdout
+    assert "detection_signals: none" in result.stdout
+    assert "optional_skills: none" in result.stdout
+    assert "enabled_optional_skills: none" in result.stdout
+    assert "policy_promoted_skills: none" in result.stdout
+    assert "current_detected_profiles: none" in result.stdout
+    assert "current_detection_signals: none" in result.stdout
+    assert "current_optional_skills: none" in result.stdout
+    assert "current_enabled_optional_skills: none" in result.stdout
+    assert "current_policy_promoted_skills: none" in result.stdout
+
+
 def test_doctor_reports_workflow_status_surface(tmp_project: Path) -> None:
     import json
     import subprocess

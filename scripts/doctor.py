@@ -54,6 +54,29 @@ def _append_skill_recommendation_items(
         items.append(("OK", f"{label_prefix}skill_recommendation.{skill_name}", summary))
 
 
+def _append_list_surface(
+    items: list[tuple[str, str, str]],
+    label: str,
+    values: list[object],
+    *,
+    level: str = "OK",
+) -> None:
+    if values:
+        items.append((level, label, ", ".join(str(value) for value in values)))
+    else:
+        items.append((level, label, "none"))
+
+
+def _append_policy_surface(items: list[tuple[str, str, str]], label: str, policy_promoted_skills: object) -> None:
+    if isinstance(policy_promoted_skills, dict) and policy_promoted_skills:
+        summary = "; ".join(
+            f"{skill}={reason}" for skill, reason in sorted(policy_promoted_skills.items())
+        )
+        items.append(("OK", label, summary))
+    else:
+        items.append(("OK", label, "none"))
+
+
 def _execution_items(project_dir: Path) -> list[tuple[str, str, str]]:
     spec = _load_spec(project_dir)
     if not spec:
@@ -154,31 +177,17 @@ def _workflow_status_items(project_dir: Path) -> list[tuple[str, str, str]]:
         enabled_optional_skills = config.get("enabled_optional_skills", [])
         policy_promoted_skills = config.get("policy_promoted_skills", {})
         skill_recommendations = config.get("skill_recommendations", {})
-        if profiles:
-            items.append(("OK", "detected_profiles", ", ".join(str(p) for p in profiles)))
-        if signals:
-            items.append(("OK", "detection_signals", ", ".join(str(s) for s in signals)))
-        if enabled_skills:
-            items.append(("OK", "enabled_skills", ", ".join(str(skill) for skill in enabled_skills)))
-        if recommended_skills:
-            items.append(
-                ("OK", "recommended_skills", ", ".join(str(skill) for skill in recommended_skills))
-            )
-        if optional_skills:
-            items.append(("OK", "optional_skills", ", ".join(str(skill) for skill in optional_skills)))
-        if enabled_optional_skills:
-            items.append(
-                (
-                    "OK",
-                    "enabled_optional_skills",
-                    ", ".join(str(skill) for skill in enabled_optional_skills),
-                )
-            )
-        if isinstance(policy_promoted_skills, dict) and policy_promoted_skills:
-            summary = "; ".join(
-                f"{skill}={reason}" for skill, reason in sorted(policy_promoted_skills.items())
-            )
-            items.append(("OK", "policy_promoted_skills", summary))
+        _append_list_surface(items, "detected_profiles", [str(p) for p in profiles])
+        _append_list_surface(items, "detection_signals", [str(s) for s in signals])
+        _append_list_surface(items, "enabled_skills", [str(skill) for skill in enabled_skills])
+        _append_list_surface(items, "recommended_skills", [str(skill) for skill in recommended_skills])
+        _append_list_surface(items, "optional_skills", [str(skill) for skill in optional_skills])
+        _append_list_surface(
+            items,
+            "enabled_optional_skills",
+            [str(skill) for skill in enabled_optional_skills],
+        )
+        _append_policy_surface(items, "policy_promoted_skills", policy_promoted_skills)
         _append_skill_recommendation_items(items, skill_recommendations)
 
         if str(config.get("preset", "")) == "auto":
@@ -189,59 +198,37 @@ def _workflow_status_items(project_dir: Path) -> list[tuple[str, str, str]]:
                 platforms=[str(platform) for platform in config.get("platforms", ["claude"])],
                 enabled_optional_skills=[str(skill) for skill in config.get("enabled_optional_skills", [])],
             )
-            if current["detected_profiles"]:
-                items.append(
-                    (
-                        "OK",
-                        "current_detected_profiles",
-                        ", ".join(str(profile) for profile in current["detected_profiles"]),
-                    )
-                )
-            if current["detection_signals"]:
-                items.append(
-                    (
-                        "OK",
-                        "current_detection_signals",
-                        ", ".join(str(signal) for signal in current["detection_signals"]),
-                    )
-                )
-            if current_plan["enabled_skills"]:
-                items.append(
-                    (
-                        "OK",
-                        "current_enabled_skills",
-                        ", ".join(str(skill) for skill in current_plan["enabled_skills"]),
-                    )
-                )
-            if current_plan["recommended_skills"]:
-                items.append(
-                    (
-                        "OK",
-                        "current_recommended_skills",
-                        ", ".join(str(skill) for skill in current_plan["recommended_skills"]),
-                    )
-                )
-            if current_plan["optional_skills"]:
-                items.append(
-                    (
-                        "OK",
-                        "current_optional_skills",
-                        ", ".join(str(skill) for skill in current_plan["optional_skills"]),
-                    )
-                )
-            if current_plan["enabled_optional_skills"]:
-                items.append(
-                    (
-                        "OK",
-                        "current_enabled_optional_skills",
-                        ", ".join(str(skill) for skill in current_plan["enabled_optional_skills"]),
-                    )
-                )
-            if current_plan["policy_promoted_skills"]:
-                current_policy_summary = "; ".join(
-                    f"{skill}={reason}" for skill, reason in sorted(current_plan["policy_promoted_skills"].items())
-                )
-                items.append(("OK", "current_policy_promoted_skills", current_policy_summary))
+            _append_list_surface(
+                items,
+                "current_detected_profiles",
+                [str(profile) for profile in current["detected_profiles"]],
+            )
+            _append_list_surface(
+                items,
+                "current_detection_signals",
+                [str(signal) for signal in current["detection_signals"]],
+            )
+            _append_list_surface(
+                items,
+                "current_enabled_skills",
+                [str(skill) for skill in current_plan["enabled_skills"]],
+            )
+            _append_list_surface(
+                items,
+                "current_recommended_skills",
+                [str(skill) for skill in current_plan["recommended_skills"]],
+            )
+            _append_list_surface(
+                items,
+                "current_optional_skills",
+                [str(skill) for skill in current_plan["optional_skills"]],
+            )
+            _append_list_surface(
+                items,
+                "current_enabled_optional_skills",
+                [str(skill) for skill in current_plan["enabled_optional_skills"]],
+            )
+            _append_policy_surface(items, "current_policy_promoted_skills", current_plan["policy_promoted_skills"])
             _append_skill_recommendation_items(
                 items, current_plan["skill_recommendations"], label_prefix="current_"
             )
