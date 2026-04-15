@@ -1,80 +1,116 @@
 ---
 name: specify
-description: Derive requirements from intent through 6-layer chain with gated validation
+description: Turn a goal into requirements, decisions, tasks, and verification-ready output before implementation.
 validate_prompt: |
   Output must include:
-  - spec.json path created/updated
-  - Derivation status per layer (L0-L5)
-  - Gate results (pass/fail per gate)
-  - Issues found (if any)
+  - Goal
+  - Current context summary
+  - Key decisions
+  - Requirements
+  - Tasks
+  - Verification plan
 ---
 
 # specify
 
-spec.json 파생 체인을 통해 의도를 검증된 구현 계획으로 변환합니다.
+목표를 바로 구현하지 말고, 구현 가능한 요구사항과 작업 순서로 먼저 정리합니다.
 
 ## When to use
 
-- 새로운 기능이나 변경을 시작하기 전
-- "add dark mode", "implement OAuth" 같은 요청을 받았을 때
-- `/specify "목표 설명"` 형태로 호출
+- 새로운 기능이나 큰 변경을 시작하기 전
+- 여러 파일이나 단계가 함께 바뀔 가능성이 있을 때
+- 구현 전에 결정해야 할 정책, 예외, 상태 변화가 있을 때
+- 코딩 전에 검증 기준을 먼저 세우고 싶을 때
 
-## Pipeline
+## Codex-friendly invocation
 
-```
-L0: Goal          ← Interviewer가 질문으로 명확화
- │  게이트: so2x-cli spec check --gate l0_to_l1
- ↓
-L1: Context       ← Code Explorer가 프로젝트 분석
- │  게이트: so2x-cli spec check --gate l1_to_l2
- ↓
-L2: Decisions     ← Interviewer + 분석으로 결정 도출
- │  게이트: so2x-cli spec check --gate l2_to_l3
- ↓
-L3: Requirements  ← Spec Writer가 검증 가능한 요구사항 작성
- │  게이트: so2x-cli spec check --gate l3_to_l3
- ↓
-L4: Tasks         ← Planner가 태스크 분해
- │  게이트: so2x-cli spec check --gate l4_to_l5
- ↓
-L5: Review        ← Reviewer가 최종 검토
-    게이트: so2x-cli spec validate
+```text
+$specify OAuth2 Google/GitHub 로그인 추가
 ```
 
-## How to use
+또는 자연어로 직접 요청해도 되지만, Codex에서는 `$specify`처럼 명시적으로 부르는 예시를 우선 사용합니다.
 
-```
-/specify "OAuth2 Google/GitHub 로그인 추가"
-```
+## What this skill should produce
 
-1. `so2x-cli spec init "목표"`로 spec.json 생성
-2. Interviewer 에이전트가 L0 명확화 질문
-3. Code Explorer가 L1 컨텍스트 분석
-4. Interviewer가 L2 결정 도출
-5. Spec Writer가 L3 요구사항 작성
-6. Planner가 L4 태스크 분해
-7. Reviewer가 L5 최종 검토
-8. 각 단계마다 `so2x-cli spec check --gate` 실행
+1. Goal
+   - 무엇을 바꾸는지 한두 문장으로 정리
+2. Current context
+   - 현재 코드/화면/흐름에서 관련된 지점 요약
+3. Key decisions
+   - 구현 전에 정해야 하는 선택과 이유
+4. Requirements
+   - 검증 가능한 요구사항 목록
+5. Tasks
+   - 작은 구현 단계 순서
+6. Verification
+   - 완료 여부를 확인할 테스트/시나리오
+
+## Recommended output shape
+
+```markdown
+### Goal
+...
+
+### Current context
+...
+
+### Key decisions
+- Decision: ...
+  - Chosen direction: ...
+  - Reason: ...
+
+### Requirements
+- ...
+- ...
+
+### Tasks
+1. ...
+2. ...
+3. ...
+
+### Verification
+- ...
+- ...
+```
 
 ## Rules
 
-1. **spec.json만 수정** — 다른 파일 변경하지 않음
-2. **게이트 통과해야 다음 단계** — 실패 시 현재 단계 보완
-3. **append-only** — 기존 항목 수정하지 않고 추가만
-4. **각 에이전트는 독립적** — 한 에이전트의 출력이 다음 에이전트의 입력
+1. 코드부터 쓰지 말고 먼저 요구사항과 결정사항을 정리합니다.
+2. 숨은 가정이 보이면 명시적으로 드러냅니다.
+3. 검증 불가능한 추상 표현보다 테스트 가능한 요구사항을 우선합니다.
+4. Claude 전용 slash command, hook, sub-agent chain을 전제로 설명하지 않습니다.
+5. 이 문서만 읽어도 Codex 사용자가 바로 실행할 수 있어야 합니다.
 
-## Output
+## Example
 
-```
-specify result:
-  Spec: spec.json
-  Status: approved | draft (with pending gates)
-  Layers:
-    L0: defined
-    L1: 3 assumptions, 2 constraints
-    L2: 2 decisions
-    L3: 3 requirements, 7 scenarios
-    L4: 4 tasks
-    L5: pass
-  Gates: all passed | X failed
+```markdown
+### Goal
+OAuth2 Google/GitHub 로그인을 추가해 사용자가 외부 계정으로 로그인할 수 있게 한다.
+
+### Current context
+현재 로그인은 이메일/비밀번호만 지원하고, 계정 연결 정책은 아직 없다.
+
+### Key decisions
+- Decision: 신규 계정 자동 생성 여부
+  - Chosen direction: 첫 로그인 시 자동 생성
+  - Reason: 가입 장벽을 낮추기 위해
+- Decision: 동일 이메일 계정 병합 정책
+  - Chosen direction: 명시 확인 전까지 자동 병합하지 않음
+  - Reason: 잘못된 계정 연결 위험 방지
+
+### Requirements
+- 사용자는 Google 또는 GitHub 버튼으로 로그인할 수 있어야 한다.
+- 첫 OAuth 로그인 시 계정이 없으면 새 계정을 만든다.
+- 동일 이메일의 기존 로컬 계정은 자동 병합하지 않는다.
+
+### Tasks
+1. OAuth provider 설정 지점 정리
+2. 로그인 시작/콜백 처리 추가
+3. 계정 생성/연결 정책 구현
+4. 성공/실패 시나리오 검증
+
+### Verification
+- Google 로그인 성공
+- GitHub 로그인 성공
+- 기존 로컬 계정과 이메일 충돌 시 자동 병합되지 않음
 ```
