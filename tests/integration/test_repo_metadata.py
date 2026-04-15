@@ -20,6 +20,8 @@ def test_readme_documents_blocked_task_and_doctor_examples() -> None:
     assert "set-task-status" in readme
     assert "blocked on task T1" in readme
     assert "latest summary: Waiting for approval from product owner" in readme
+    assert "current_detected_profiles" in readme
+    assert "current_recommended_skills" in readme
 
 
 def test_readme_documents_review_cycle_artifacts() -> None:
@@ -33,6 +35,8 @@ def test_architecture_documents_spec_and_doctor_status_surface() -> None:
     assert "spec.json이 canonical execution state" in architecture
     assert "execution_status" in architecture
     assert "blocked on task" in architecture
+    assert "current_detected_profiles" in architecture
+    assert "current_recommended_skills" in architecture
 
 
 def test_apply_unsupported_platform_message_lists_supported_platforms(tmp_path: Path) -> None:

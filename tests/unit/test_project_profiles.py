@@ -108,6 +108,25 @@ def test_detect_project_profiles_for_turborepo_workspace(tmp_path: Path) -> None
     assert "workspace:pnpm" in detected["detection_signals"]
 
 
+def test_detect_project_profiles_for_plain_workspace_monorepo_recommends_review_cycle(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "package.json").write_text(
+        '{"workspaces":["apps/*","packages/*"],"dependencies":{"react":"19.0.0"}}\n',
+        encoding="utf-8",
+    )
+
+    detected = detect_project_profiles(project)
+
+    assert "frontend" in detected["detected_profiles"]
+    assert "monorepo" in detected["detected_profiles"]
+    assert "package.json:workspaces" in detected["detection_signals"]
+    assert "review-cycle" in detected["recommended_skills"]
+    assert "specify-lite" in detected["recommended_skills"]
+    assert "execute" in detected["enabled_skills"]
+    assert "spec-validate" in detected["enabled_skills"]
+
+
 def test_detect_project_profiles_for_nx_workspace(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()

@@ -179,6 +179,43 @@ def _workflow_status_items(project_dir: Path) -> list[tuple[str, str, str]]:
                 platforms=[str(platform) for platform in config.get("platforms", ["claude"])],
                 enabled_optional_skills=[str(skill) for skill in config.get("enabled_optional_skills", [])],
             )
+            if current["detected_profiles"]:
+                items.append(
+                    (
+                        "OK",
+                        "current_detected_profiles",
+                        ", ".join(str(profile) for profile in current["detected_profiles"]),
+                    )
+                )
+            if current["detection_signals"]:
+                items.append(
+                    (
+                        "OK",
+                        "current_detection_signals",
+                        ", ".join(str(signal) for signal in current["detection_signals"]),
+                    )
+                )
+            if current_plan["recommended_skills"]:
+                items.append(
+                    (
+                        "OK",
+                        "current_recommended_skills",
+                        ", ".join(str(skill) for skill in current_plan["recommended_skills"]),
+                    )
+                )
+            if current_plan["optional_skills"]:
+                items.append(
+                    (
+                        "OK",
+                        "current_optional_skills",
+                        ", ".join(str(skill) for skill in current_plan["optional_skills"]),
+                    )
+                )
+            if current_plan["policy_promoted_skills"]:
+                current_policy_summary = "; ".join(
+                    f"{skill}={reason}" for skill, reason in sorted(current_plan["policy_promoted_skills"].items())
+                )
+                items.append(("OK", "current_policy_promoted_skills", current_policy_summary))
             if profiles != current["detected_profiles"] or signals != current["detection_signals"]:
                 items.append(
                     (

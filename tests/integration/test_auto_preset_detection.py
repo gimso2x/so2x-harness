@@ -77,3 +77,52 @@ def test_apply_auto_preset_detects_frontend_monorepo_and_surfaces_in_doctor(tmp_
     assert "recommended_skills" in doctor.stdout
     assert "specify" in doctor.stdout
     assert "execute" in doctor.stdout
+    assert "current_detected_profiles" in doctor.stdout
+    assert "current_recommended_skills" in doctor.stdout
+
+
+def test_apply_auto_preset_detects_workspace_only_monorepo(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "package.json").write_text(
+        json.dumps({"workspaces": ["apps/*", "packages/*"], "dependencies": {"react": "19.0.0"}}) + "\n",
+        encoding="utf-8",
+    )
+
+    apply = subprocess.run(
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(project),
+            "--platform",
+            "claude",
+            "codex",
+            "--preset",
+            "auto",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert apply.returncode == 0
+
+    config = json.loads((project / ".ai-harness" / "config.json").read_text(encoding="utf-8"))
+    assert config["detected_profiles"] == ["frontend", "monorepo"]
+    assert "package.json:workspaces" in config["detection_signals"]
+    assert "review-cycle" in config["enabled_skills"]
+    assert "specify-lite" in config["enabled_skills"]
+    assert "execute" in config["enabled_skills"]
+    assert "spec-validate" in config["enabled_skills"]
+
+    doctor = subprocess.run(
+        ["python3", str(ROOT_DIR / "scripts/doctor.py"), "--project", str(project)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert doctor.returncode == 0
+    assert "frontend, monorepo" in doctor.stdout
+    assert "package.json:workspaces" in doctor.stdout
+    assert "review-cycle" in doctor.stdout
+    assert "specify-lite" in doctor.stdout
