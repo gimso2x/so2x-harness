@@ -15,18 +15,22 @@ def test_detect_project_profiles_for_next_monorepo(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()
     (project / "package.json").write_text(
-        '{"dependencies":{"next":"15.0.0","react":"19.0.0"}}\n',
+        '{"packageManager":"pnpm@9.0.0","dependencies":{"next":"15.0.0","react":"19.0.0"}}\n',
         encoding="utf-8",
     )
+    (project / "pnpm-workspace.yaml").write_text("packages:\n  - apps/*\n  - packages/*\n", encoding="utf-8")
     (project / "apps").mkdir()
     (project / "packages").mkdir()
 
     detected = detect_project_profiles(project)
 
     assert "frontend" in detected["detected_profiles"]
+    assert "next-app" in detected["detected_profiles"]
     assert "monorepo" in detected["detected_profiles"]
+    assert "pnpm-monorepo" in detected["detected_profiles"]
     assert "package.json:next" in detected["detection_signals"]
     assert "workspace:apps+packages" in detected["detection_signals"]
+    assert "workspace:pnpm" in detected["detection_signals"]
     assert "review-cycle" in detected["recommended_skills"]
     assert "specify-lite" in detected["recommended_skills"]
     assert "execute" in detected["optional_skills"]
@@ -47,11 +51,44 @@ def test_detect_project_profiles_for_fastapi_package(tmp_path: Path) -> None:
     detected = detect_project_profiles(project)
 
     assert "backend" in detected["detected_profiles"]
+    assert "fastapi-service" in detected["detected_profiles"]
     assert "python-package" in detected["detected_profiles"]
     assert "pyproject.toml:fastapi" in detected["detection_signals"]
     assert "spec-validate" in detected["recommended_skills"]
     assert "changelog" in detected["recommended_skills"]
     assert "specify" in detected["optional_skills"]
+
+
+def test_detect_project_profiles_for_django_service(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "pyproject.toml").write_text(
+        '[project]\nname = "svc"\ndependencies = ["django"]\n',
+        encoding="utf-8",
+    )
+
+    detected = detect_project_profiles(project)
+
+    assert "backend" in detected["detected_profiles"]
+    assert "django-service" in detected["detected_profiles"]
+    assert "pyproject.toml:django" in detected["detection_signals"]
+
+
+def test_detect_project_profiles_for_react_library(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "package.json").write_text(
+        '{"peerDependencies":{"react":"^19.0.0"},"devDependencies":{"tsup":"^8.0.0"},"exports":{".":"./dist/index.js"}}\n',
+        encoding="utf-8",
+    )
+
+    detected = detect_project_profiles(project)
+
+    assert "frontend" in detected["detected_profiles"]
+    assert "react-lib" in detected["detected_profiles"]
+    assert "js-package" in detected["detected_profiles"]
+    assert "package.json:react-lib" in detected["detection_signals"]
+    assert "changelog" in detected["recommended_skills"]
 
 
 def test_recommend_skills_for_empty_profiles_returns_core() -> None:

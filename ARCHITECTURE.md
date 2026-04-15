@@ -120,6 +120,8 @@ apply.py --project ./my-app --preset auto
 
 - tier: `core` / `recommended` / `optional`
 - applies_to: 어떤 project profile에 붙는지
+  - coarse: `frontend`, `backend`, `monorepo`, `python-package`, `js-package`
+  - fine-grained: `next-app`, `react-lib`, `fastapi-service`, `django-service`, `pnpm-monorepo`
 - platforms: Claude/Codex parity 확인용
 - signals_any: 어떤 파일 시그널에서 활성화되는지
 - rationale: config와 doctor에 남길 추천 이유

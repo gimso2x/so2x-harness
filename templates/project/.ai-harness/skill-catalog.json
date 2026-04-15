@@ -71,6 +71,7 @@
     "signals_any": [
       "package.json:next",
       "package.json:react",
+      "package.json:react-lib",
       "package.json:vite",
       "package.json:frontend-framework",
       "pyproject.toml:fastapi",
@@ -91,6 +92,7 @@
     "signals_any": [
       "package.json:next",
       "package.json:react",
+      "package.json:react-lib",
       "package.json:vite",
       "package.json:frontend-framework",
       "pyproject.toml:fastapi",
@@ -124,7 +126,7 @@
     "applies_to": ["python-package", "js-package"],
     "platforms": ["claude", "codex"],
     "priority": 70,
-    "signals_any": ["pyproject.toml:python-package", "package.json:js-package"],
+    "signals_any": ["pyproject.toml:python-package", "package.json:js-package", "package.json:react-lib"],
     "rationale": "Package repos benefit from release-note discipline."
   },
   "execute": {

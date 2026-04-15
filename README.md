@@ -106,6 +106,12 @@ catalog 원본은 `templates/project/.ai-harness/skill-catalog.json`에 있고, 
   - Code Quality Review
   - Efficiency Review
 - frontend/backend/monorepo/package profile은 파일 시그널로 감지
+- 세부 profile도 같이 잡습니다
+  - next-app
+  - react-lib
+  - fastapi-service
+  - django-service
+  - pnpm-monorepo
 - Claude/Codex는 같은 추천 로직을 공유하고, 플랫폼 미지원 스킬만 제외
 
 optional 후보를 실제 설치로 올리고 싶으면 다음처럼 사용할 수 있습니다.

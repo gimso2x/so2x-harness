@@ -20,10 +20,19 @@ def detect_project_profiles(project_dir: Path) -> dict[str, object]:
     if package_json.exists():
         package_data = _load_json(package_json)
         deps = _package_deps(package_data)
+        package_manager = str(package_data.get("packageManager", "")).lower()
+        has_workspace_config = isinstance(package_data.get("workspaces"), list) and bool(
+            package_data.get("workspaces")
+        )
         if any(dep in deps for dep in {"next", "react", "vite", "@remix-run/react"}):
             profiles.append("frontend")
             if "next" in deps:
+                profiles.append("next-app")
                 signals.append("package.json:next")
+            elif _is_react_library_package(package_data, deps):
+                profiles.append("react-lib")
+                profiles.append("js-package")
+                signals.append("package.json:react-lib")
             elif "react" in deps:
                 signals.append("package.json:react")
             elif "vite" in deps:
@@ -33,6 +42,10 @@ def detect_project_profiles(project_dir: Path) -> dict[str, object]:
         if deps and not any(dep in deps for dep in {"next", "react", "vite", "@remix-run/react"}):
             profiles.append("js-package")
             signals.append("package.json:js-package")
+        if package_manager.startswith("pnpm@") and (
+            (project_dir / "pnpm-workspace.yaml").exists() or has_workspace_config
+        ):
+            signals.append("packageManager:pnpm")
 
     pyproject = project_dir / "pyproject.toml"
     if pyproject.exists():
@@ -40,8 +53,10 @@ def detect_project_profiles(project_dir: Path) -> dict[str, object]:
         if any(token in text for token in {"fastapi", "django", "flask", "sqlalchemy", "uvicorn"}):
             profiles.append("backend")
             if "fastapi" in text:
+                profiles.append("fastapi-service")
                 signals.append("pyproject.toml:fastapi")
             elif "django" in text:
+                profiles.append("django-service")
                 signals.append("pyproject.toml:django")
             else:
                 signals.append("pyproject.toml:backend-framework")
@@ -63,6 +78,10 @@ def detect_project_profiles(project_dir: Path) -> dict[str, object]:
     if (project_dir / "apps").exists() and (project_dir / "packages").exists():
         profiles.append("monorepo")
         signals.append("workspace:apps+packages")
+
+    if (project_dir / "pnpm-workspace.yaml").exists() or "packageManager:pnpm" in signals:
+        profiles.append("pnpm-monorepo")
+        signals.append("workspace:pnpm")
 
     profiles = _dedupe(profiles)
     signals = _dedupe(signals)
@@ -195,6 +214,18 @@ def _package_deps(package_data: dict) -> set[str]:
         if isinstance(values, dict):
             deps.update(str(name) for name in values.keys())
     return deps
+
+
+def _is_react_library_package(package_data: dict, deps: set[str]) -> bool:
+    if "react" not in deps:
+        return False
+    if "next" in deps:
+        return False
+    exports = package_data.get("exports")
+    has_library_entry = any(
+        bool(package_data.get(key)) for key in ("main", "module", "types", "typesVersions", "bin")
+    ) or isinstance(exports, (dict, str))
+    return has_library_entry or any(dep in deps for dep in {"tsup", "rollup", "vite", "storybook"})
 
 
 def _dedupe(items: list[str]) -> list[str]:
