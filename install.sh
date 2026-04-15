@@ -2,7 +2,7 @@
 set -eu
 
 PROJECT_DIR="${1:-.}"
-PLATFORM="${PLATFORM:-claude}"
+PLATFORM="${PLATFORM:-}"
 PRESET="${PRESET:-general}"
 REPO_URL="${SO2X_REPO_URL:-https://github.com/gimso2x/so2x-harness.git}"
 REPO_REF="${SO2X_REPO_REF:-main}"
@@ -51,6 +51,13 @@ resolve_root_dir() {
   printf '%s\n' "$TEMP_ROOT/repo"
 }
 
+detect_platforms() {
+  found=""
+  command -v claude >/dev/null 2>&1 && found="claude"
+  command -v codex >/dev/null 2>&1 && found="$found codex"
+  echo "$found"
+}
+
 if command -v python3 >/dev/null 2>&1; then
   PYTHON_BIN="python3"
 elif command -v python >/dev/null 2>&1; then
@@ -63,10 +70,29 @@ if [ ! -d "$PROJECT_DIR" ]; then
   fail "대상 프로젝트 디렉터리가 없습니다: $PROJECT_DIR"
 fi
 
-case "$PLATFORM" in
-  claude) ;;
-  *) fail "현재 지원하지 않는 platform입니다: $PLATFORM (지원: claude)" ;;
-esac
+# Platform detection + interactive selection
+if [ -z "$PLATFORM" ]; then
+  DETECTED=$(detect_platforms)
+  if [ -z "$DETECTED" ]; then
+    DETECTED="claude"
+  fi
+  printf '[so2x-harness] 감지된 플랫폼: %s\n' "$DETECTED"
+  if [ -t 0 ]; then
+    printf '설치할 플랫폼을 선택하세요:\n'
+    printf '  1) claude\n'
+    printf '  2) codex\n'
+    printf '  3) 둘 다\n'
+    printf '선택 [1-3]: '
+    read -r choice
+    case "$choice" in
+      2) PLATFORM="codex" ;;
+      3) PLATFORM="claude codex" ;;
+      *) PLATFORM="claude" ;;
+    esac
+  else
+    PLATFORM="claude"
+  fi
+fi
 
 case "$PRESET" in
   general) ;;
@@ -82,7 +108,10 @@ info "preset=$PRESET"
 info "python=$PYTHON_BIN"
 info "source=$ROOT_DIR"
 
-"$PYTHON_BIN" "$ROOT_DIR/scripts/apply.py" --project "$PROJECT_DIR_ABS" --platform "$PLATFORM" --preset "$PRESET"
+"$PYTHON_BIN" "$ROOT_DIR/scripts/apply.py" \
+  --project "$PROJECT_DIR_ABS" \
+  --platform $PLATFORM \
+  --preset "$PRESET"
 
 info "설치가 끝났습니다. 확인하려면 아래를 실행하세요:"
 info "  $PYTHON_BIN $ROOT_DIR/scripts/doctor.py --project $PROJECT_DIR_ABS"
