@@ -24,13 +24,17 @@ def write_text(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
 
 
-def install_marker_file(template_path: Path, target_path: Path, marker: str = MARKER) -> str:
-    template_text = template_path.read_text(encoding="utf-8")
-    marker_block = extract_marker_block(template_text, marker)
+def install_marker_content(content: str, target_path: Path, marker: str = MARKER) -> str:
+    marker_block = extract_marker_block(content, marker)
     existing = target_path.read_text(encoding="utf-8") if target_path.exists() else ""
     merged = upsert_marker_block(existing, marker_block, marker)
     write_text(target_path, merged)
     return sha256_text(marker_block)
+
+
+def install_marker_file(template_path: Path, target_path: Path, marker: str = MARKER) -> str:
+    template_text = template_path.read_text(encoding="utf-8")
+    return install_marker_content(template_text, target_path, marker)
 
 
 def install_copy_file(template_path: Path, target_path: Path) -> str:
@@ -72,6 +76,7 @@ def install_platform_assets(
     platform: str,
     paths: dict,
     caps: dict,
+    enabled_skills: list[str] | None = None,
 ) -> dict[str, dict[str, str]]:
     """Install docs, snippets, rules, skills, agents, hooks for a platform."""
     files: dict[str, dict[str, str]] = {}
@@ -102,8 +107,11 @@ def install_platform_assets(
 
     if caps[Capability.SKILLS]:
         skills_src = root_dir / f"templates/{platform}/skills"
+        enabled = set(enabled_skills or [])
         for skill_dir in sorted(skills_src.iterdir()):
             if not skill_dir.is_dir():
+                continue
+            if enabled and skill_dir.name not in enabled:
                 continue
             skill_file = skill_dir / "SKILL.md"
             if not skill_file.exists():

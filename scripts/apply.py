@@ -16,6 +16,7 @@ from lib.install import (
     DEFAULT_PLATFORM,
     MARKER,
     SUPPORTED_PLATFORMS,
+    install_marker_content,
     install_marker_file,
     install_platform_assets,
     install_skip_if_exists,
@@ -33,6 +34,41 @@ def load_preset(preset_name: str) -> dict:
     if not preset_path.exists():
         raise SystemExit(f"unknown preset: {preset_name} (supported: general)")
     return json.loads(preset_path.read_text(encoding="utf-8"))
+
+
+def sync_config_data(
+    existing: dict,
+    preset: dict,
+    project_name: str,
+    preset_name: str,
+    platforms: list[str],
+) -> dict:
+    updated = dict(existing)
+    updated["project_name"] = project_name
+    updated["preset"] = preset_name
+    updated["platforms"] = platforms
+    updated["enabled_rules"] = preset["enabled_rules"]
+    updated["enabled_skills"] = preset["enabled_skills"]
+    extras = {
+        k: v
+        for k, v in preset.items()
+        if k
+        not in {
+            "preset",
+            "platforms",
+            "language",
+            "comment_language",
+            "enabled_rules",
+            "enabled_skills",
+        }
+    }
+    updated.update(extras)
+    return updated
+
+
+def build_installed_skills_md(enabled_skills: list[str]) -> str:
+    lines = "\n".join(f"- {skill}" for skill in enabled_skills)
+    return lines + ("\n" if lines else "")
 
 
 def build_extra_fields_json(preset: dict) -> str:
@@ -70,6 +106,7 @@ def install_project_config(
 ) -> str:
     template = ROOT_DIR / "templates/project/.ai-harness/config.json.tmpl"
     preset = load_preset(preset_name)
+    enabled_skills = preset["enabled_skills"]
     rendered = render_template(
         template,
         {
@@ -77,9 +114,7 @@ def install_project_config(
             "preset": preset_name,
             "platforms_json": json.dumps(platforms, ensure_ascii=False, indent=2),
             "enabled_rules_json": json.dumps(preset["enabled_rules"], ensure_ascii=False, indent=2),
-            "enabled_skills_json": json.dumps(
-                preset["enabled_skills"], ensure_ascii=False, indent=2
-            ),
+            "enabled_skills_json": json.dumps(enabled_skills, ensure_ascii=False, indent=2),
             "extra_fields_json": build_extra_fields_json(preset),
         },
     )
@@ -88,12 +123,27 @@ def install_project_config(
         return sha256_text(rendered)
 
     existing = json.loads(config_path.read_text(encoding="utf-8"))
-    existing["project_name"] = project_name
-    existing["preset"] = preset_name
-    existing["platforms"] = platforms
-    updated = json.dumps(existing, ensure_ascii=False, indent=2) + "\n"
+    updated_data = sync_config_data(existing, preset, project_name, preset_name, platforms)
+    updated = json.dumps(updated_data, ensure_ascii=False, indent=2) + "\n"
     write_text(config_path, updated)
     return sha256_text(updated)
+
+
+def cleanup_stale_skill_dirs(project_dir: Path, skills_dir: Path, enabled_skills: list[str]) -> None:
+    target_dir = project_dir / skills_dir
+    if not target_dir.exists():
+        return
+    enabled = set(enabled_skills)
+    for skill_dir in target_dir.iterdir():
+        if skill_dir.is_dir() and skill_dir.name not in enabled:
+            for child in skill_dir.rglob("*"):
+                if child.is_file():
+                    child.unlink()
+            for child_dir in sorted(
+                [p for p in skill_dir.rglob("*") if p.is_dir()], key=lambda p: len(p.parts), reverse=True
+            ):
+                child_dir.rmdir()
+            skill_dir.rmdir()
 
 
 def apply_platform(
@@ -104,6 +154,8 @@ def apply_platform(
 ) -> dict:
     paths = PROJECT_PATHS[platform]
     caps = PLATFORM_CAPABILITIES[platform]
+    preset = load_preset(preset_name)
+    enabled_skills = preset["enabled_skills"]
     files: dict[str, dict[str, str]] = {}
 
     # Platform-specific marker file (CLAUDE.md for claude only)
@@ -111,10 +163,14 @@ def apply_platform(
     if claude_md_path:
         claude_template = ROOT_DIR / "templates/claude/CLAUDE.md"
         claude_target = project_dir / claude_md_path
+        claude_content = render_template(
+            claude_template,
+            {"installed_skills_md": build_installed_skills_md(enabled_skills)},
+        )
         files[str(claude_md_path)] = {
             "mode": "marker",
             "marker": MARKER,
-            "checksum": install_marker_file(claude_template, claude_target),
+            "checksum": install_marker_content(claude_content, claude_target),
         }
 
     # AGENTS.md
@@ -134,7 +190,18 @@ def apply_platform(
             "checksum": install_skip_if_exists(agents_template, agents_target),
         }
 
-    files.update(install_platform_assets(ROOT_DIR, project_dir, platform, paths, caps))
+    files.update(
+        install_platform_assets(
+            ROOT_DIR,
+            project_dir,
+            platform,
+            paths,
+            caps,
+            enabled_skills=enabled_skills,
+        )
+    )
+    if caps["skills"]:
+        cleanup_stale_skill_dirs(project_dir, paths["skills_dir"], enabled_skills)
 
     # Config
     config_rel = paths["config_path"]
