@@ -14,6 +14,7 @@ sys.path.insert(0, str(CURRENT_DIR))
 from lib.install import Capability
 from lib.manifest import manifest_path
 from lib.platform_map import PLATFORM_CAPABILITIES, PROJECT_PATHS
+from lib.project_profiles import detect_project_profiles, recommend_skill_plan
 
 
 def status_line(level: str, label: str, detail: str) -> str:
@@ -169,6 +170,37 @@ def _workflow_status_items(project_dir: Path) -> list[tuple[str, str, str]]:
                     continue
                 summary = " | ".join(str(reason) for reason in reasons)
                 items.append(("OK", f"skill_recommendation.{skill_name}", summary))
+
+        if str(config.get("preset", "")) == "auto":
+            current = detect_project_profiles(project_dir)
+            current_plan = recommend_skill_plan(
+                current["detected_profiles"],
+                current["detection_signals"],
+                platforms=[str(platform) for platform in config.get("platforms", ["claude"])],
+                enabled_optional_skills=[str(skill) for skill in config.get("enabled_optional_skills", [])],
+            )
+            if profiles != current["detected_profiles"] or signals != current["detection_signals"]:
+                items.append(
+                    (
+                        "WARN",
+                        "auto_profile_drift",
+                        "config profiles="
+                        f"{profiles} signals={signals} != current profiles={current['detected_profiles']} "
+                        f"signals={current['detection_signals']}",
+                    )
+                )
+            if recommended_skills != current_plan["recommended_skills"] or optional_skills != current_plan[
+                "optional_skills"
+            ]:
+                items.append(
+                    (
+                        "WARN",
+                        "recommendation_drift",
+                        "config recommended="
+                        f"{recommended_skills} optional={optional_skills} != current recommended="
+                        f"{current_plan['recommended_skills']} optional={current_plan['optional_skills']}",
+                    )
+                )
 
     feedback_count = 0
     latest_feedback = ""

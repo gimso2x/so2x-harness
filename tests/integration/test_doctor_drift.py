@@ -105,3 +105,51 @@ def test_doctor_warns_when_workflow_status_files_are_missing() -> None:
     assert "feedback_events" in result.stdout
     assert "safe_commit_events" in result.stdout
     assert "squash_check_events" in result.stdout
+
+
+def test_doctor_warns_when_auto_profile_detection_drifts_from_config(tmp_path: Path) -> None:
+    import subprocess
+
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "package.json").write_text(
+        json.dumps({"dependencies": {"next": "15.0.0", "react": "19.0.0"}}) + "\n",
+        encoding="utf-8",
+    )
+    app_dir = project / "app"
+    app_dir.mkdir()
+    (app_dir / "page.tsx").write_text("export default function Page() { return null }\n", encoding="utf-8")
+
+    apply = subprocess.run(
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(project),
+            "--platform",
+            "claude",
+            "codex",
+            "--preset",
+            "auto",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert apply.returncode == 0
+
+    (project / "package.json").write_text(json.dumps({"name": "plain-project"}) + "\n", encoding="utf-8")
+    (app_dir / "page.tsx").unlink()
+
+    result = subprocess.run(
+        ["python3", str(ROOT_DIR / "scripts/doctor.py"), "--project", str(project)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert "auto_profile_drift" in result.stdout
+    assert "config profiles=" in result.stdout
+    assert "current profiles=" in result.stdout
+    assert "recommendation_drift" in result.stdout
