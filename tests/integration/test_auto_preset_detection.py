@@ -78,7 +78,9 @@ def test_apply_auto_preset_detects_frontend_monorepo_and_surfaces_in_doctor(tmp_
     assert "specify" in doctor.stdout
     assert "execute" in doctor.stdout
     assert "current_detected_profiles" in doctor.stdout
+    assert "current_enabled_skills" in doctor.stdout
     assert "current_recommended_skills" in doctor.stdout
+    assert "review-cycle" in doctor.stdout
 
 
 def test_apply_auto_preset_detects_workspace_only_monorepo(tmp_path: Path) -> None:

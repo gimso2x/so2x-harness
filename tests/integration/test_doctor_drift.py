@@ -261,6 +261,10 @@ def test_doctor_warns_when_enabled_optional_skills_are_no_longer_recommended(tmp
     )
 
     assert result.returncode == 0
+    assert "current_enabled_skills" in result.stdout
+    assert "enabled_skill_drift" in result.stdout
+    assert "config enabled_skills=" in result.stdout
+    assert "current enabled_skills=" in result.stdout
     assert "enabled_optional_skill_drift" in result.stdout
     assert "config enabled_optional_skills=['execute']" in result.stdout
     assert "current eligible_optional_skills=[]" in result.stdout

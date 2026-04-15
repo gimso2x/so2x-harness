@@ -135,6 +135,7 @@ def _workflow_status_items(project_dir: Path) -> list[tuple[str, str, str]]:
     if config:
         profiles = config.get("detected_profiles", [])
         signals = config.get("detection_signals", [])
+        enabled_skills = config.get("enabled_skills", [])
         recommended_skills = config.get("recommended_skills", [])
         optional_skills = config.get("optional_skills", [])
         enabled_optional_skills = config.get("enabled_optional_skills", [])
@@ -144,6 +145,8 @@ def _workflow_status_items(project_dir: Path) -> list[tuple[str, str, str]]:
             items.append(("OK", "detected_profiles", ", ".join(str(p) for p in profiles)))
         if signals:
             items.append(("OK", "detection_signals", ", ".join(str(s) for s in signals)))
+        if enabled_skills:
+            items.append(("OK", "enabled_skills", ", ".join(str(skill) for skill in enabled_skills)))
         if recommended_skills:
             items.append(
                 ("OK", "recommended_skills", ", ".join(str(skill) for skill in recommended_skills))
@@ -195,6 +198,14 @@ def _workflow_status_items(project_dir: Path) -> list[tuple[str, str, str]]:
                         ", ".join(str(signal) for signal in current["detection_signals"]),
                     )
                 )
+            if current_plan["enabled_skills"]:
+                items.append(
+                    (
+                        "OK",
+                        "current_enabled_skills",
+                        ", ".join(str(skill) for skill in current_plan["enabled_skills"]),
+                    )
+                )
             if current_plan["recommended_skills"]:
                 items.append(
                     (
@@ -224,6 +235,15 @@ def _workflow_status_items(project_dir: Path) -> list[tuple[str, str, str]]:
                         "config profiles="
                         f"{profiles} signals={signals} != current profiles={current['detected_profiles']} "
                         f"signals={current['detection_signals']}",
+                    )
+                )
+            if enabled_skills != current_plan["enabled_skills"]:
+                items.append(
+                    (
+                        "WARN",
+                        "enabled_skill_drift",
+                        "config enabled_skills="
+                        f"{enabled_skills} != current enabled_skills={current_plan['enabled_skills']}",
                     )
                 )
             if recommended_skills != current_plan["recommended_skills"] or optional_skills != current_plan[

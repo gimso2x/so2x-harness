@@ -116,7 +116,7 @@ apply.py --project ./my-app --preset auto
         → manifest.json (파일별 mode, checksum 기록)
 ```
 
-`project_profiles.py`는 단순 profile bundle이 아니라 외부 skill metadata catalog(`templates/project/.ai-harness/skill-catalog.json`)를 사용합니다. catalog 구조는 `schemas/skill-catalog.schema.json`으로 검증합니다. `doctor.py`는 저장된 `detected_profiles`/`recommended_skills`뿐 아니라 현재 working tree 기준으로 다시 계산한 `current_detected_profiles`, `current_detection_signals`, `current_recommended_skills`, `current_optional_skills`, `current_policy_promoted_skills`를 함께 보여줘서 install 시점과 현재 상태의 차이를 바로 확인하게 합니다.
+`project_profiles.py`는 단순 profile bundle이 아니라 외부 skill metadata catalog(`templates/project/.ai-harness/skill-catalog.json`)를 사용합니다. catalog 구조는 `schemas/skill-catalog.schema.json`으로 검증합니다. `doctor.py`는 저장된 `detected_profiles`/`recommended_skills`뿐 아니라 현재 working tree 기준으로 다시 계산한 `current_detected_profiles`, `current_detection_signals`, `current_enabled_skills`, `current_recommended_skills`, `current_optional_skills`, `current_policy_promoted_skills`를 함께 보여줘서 install 시점과 현재 상태의 차이를 바로 확인하게 합니다.
 
 - tier: `core` / `recommended` / `optional`
 - applies_to: 어떤 project profile에 붙는지
