@@ -158,12 +158,24 @@ def build_updated_manifest(project_dir: Path, old_manifest: dict) -> dict:
     preset_name = "general"
     if config_path.exists():
         try:
-            preset_name = json.loads(config_path.read_text(encoding="utf-8")).get(
-                "preset", "general"
+            config_data = json.loads(config_path.read_text(encoding="utf-8"))
+            preset_name = config_data.get("preset", "general")
+            enabled_optional = config_data.get("enabled_optional_skills", [])
+            enabled_optional_skills = (
+                [str(skill) for skill in enabled_optional] if isinstance(enabled_optional, list) else []
             )
         except json.JSONDecodeError:
             preset_name = "general"
-    preset = resolve_preset(project_dir, preset_name, load_preset(preset_name), platforms=platforms)
+            enabled_optional_skills = []
+    else:
+        enabled_optional_skills = []
+    preset = resolve_preset(
+        project_dir,
+        preset_name,
+        load_preset(preset_name),
+        platforms=platforms,
+        enabled_optional_skills=enabled_optional_skills,
+    )
     enabled_skills = preset["enabled_skills"]
     all_files: dict[str, dict[str, str]] = {}
 

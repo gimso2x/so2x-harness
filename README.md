@@ -93,6 +93,7 @@ auto 추천 기준은 메타데이터 기반입니다.
 - `enabled_skills`: 실제로 설치되는 core/recommended 스킬
 - `recommended_skills`: 현재 프로젝트에 맞다고 판단된 전체 추천 스킬
 - `optional_skills`: 당장 설치하지는 않지만 후보로 남기는 스킬
+- `enabled_optional_skills`: optional 중 사용자가 설치 승격한 스킬
 - `skill_recommendations`: 왜 추천됐는지 남기는 이유 목록
 
 기본 원칙은 다음과 같습니다.
@@ -104,6 +105,13 @@ auto 추천 기준은 메타데이터 기반입니다.
   - Efficiency Review
 - frontend/backend/monorepo/package profile은 파일 시그널로 감지
 - Claude/Codex는 같은 추천 로직을 공유하고, 플랫폼 미지원 스킬만 제외
+
+optional 후보를 실제 설치로 올리고 싶으면 다음처럼 사용할 수 있습니다.
+
+```bash
+so2x-cli skills recommend --project ./my-app
+so2x-cli skills enable execute specify --project ./my-app
+```
 
 ---
 

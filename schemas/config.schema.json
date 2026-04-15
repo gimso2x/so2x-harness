@@ -53,6 +53,12 @@
         "type": "string"
       }
     },
+    "enabled_optional_skills": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "skill_recommendations": {
       "type": "object",
       "additionalProperties": {

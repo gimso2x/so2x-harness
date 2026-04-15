@@ -243,7 +243,23 @@ def main() -> None:
     project = Path(args.project).resolve()
     project.mkdir(parents=True, exist_ok=True)
     platforms = list(dict.fromkeys(args.platform))
-    preset = resolve_preset(project, args.preset, load_preset(args.preset), platforms=platforms)
+    enabled_optional_skills: list[str] = []
+    config_path = project / ".ai-harness" / "config.json"
+    if config_path.exists():
+        try:
+            existing_config = json.loads(config_path.read_text(encoding="utf-8"))
+            existing_optional = existing_config.get("enabled_optional_skills", [])
+            if isinstance(existing_optional, list):
+                enabled_optional_skills = [str(skill) for skill in existing_optional]
+        except json.JSONDecodeError:
+            enabled_optional_skills = []
+    preset = resolve_preset(
+        project,
+        args.preset,
+        load_preset(args.preset),
+        platforms=platforms,
+        enabled_optional_skills=enabled_optional_skills,
+    )
 
     # Merge with existing manifest platforms (add-only)
     existing_platforms: list[str] = []

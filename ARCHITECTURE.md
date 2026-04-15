@@ -102,7 +102,7 @@ apply.py --project ./my-app --preset auto
   │
   ├── detect_project_profiles()
   │     → detected_profiles / detection_signals
-  │     → enabled_skills / recommended_skills / optional_skills / skill_recommendations
+  │     → enabled_skills / recommended_skills / optional_skills / enabled_optional_skills / skill_recommendations
   │
   ├── for each template file:
   │     ├── marker 파일: extract_marker_block → upsert_marker_block
@@ -124,6 +124,9 @@ apply.py --project ./my-app --preset auto
 - signals_any: 어떤 파일 시그널에서 활성화되는지
 - rationale: config와 doctor에 남길 추천 이유
 - workflow_tags: 반복 simplify 흐름 같은 우선 워크플로 태그
+
+사용자가 optional skill을 직접 승격하면 `enabled_optional_skills`에 저장되고,
+다음 `update.py` 실행에서도 설치 집합에 다시 합쳐집니다.
 
 현재는 `simplify-cycle`, `squash-commit`, `safe-commit`이 공통 core이며,
 `simplify-cycle`에는 아래 3개 lens를 first-class tag로 둡니다.

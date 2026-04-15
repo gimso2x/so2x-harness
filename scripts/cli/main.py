@@ -104,6 +104,19 @@ def main() -> None:
     run_parser = subparsers.add_parser("run", help="Run agent pipeline")
     run_sub = run_parser.add_subparsers(dest="run_command")
 
+    # skills subcommand
+    skills_parser = subparsers.add_parser("skills", help="Inspect and promote recommended skills")
+    skills_sub = skills_parser.add_subparsers(dest="skills_command")
+
+    recommend_p = skills_sub.add_parser("recommend", help="Show auto skill recommendations")
+    recommend_p.add_argument("--project", default=".", help="Project directory")
+
+    enable_p = skills_sub.add_parser(
+        "enable", help="Promote optional skills into the installed skill set"
+    )
+    enable_p.add_argument("skills", nargs="+", help="Optional skill names to enable")
+    enable_p.add_argument("--project", default=".", help="Project directory")
+
     specify_p = run_sub.add_parser("specify", help="Run specify pipeline")
     specify_p.add_argument("goal", help="Goal description")
     specify_p.add_argument("--output", default="spec.json", help="Output spec file")
@@ -142,6 +155,10 @@ def main() -> None:
         from cli.commands.run import handle_run
 
         handle_run(args)
+    elif args.command == "skills":
+        from cli.commands.skills import handle_skills
+
+        handle_skills(args)
     else:
         parser.print_help()
         sys.exit(1)

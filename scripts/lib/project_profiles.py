@@ -220,8 +220,10 @@ def recommend_skill_plan(
     profiles: list[str],
     signals: list[str],
     platforms: list[str] | None = None,
+    enabled_optional_skills: list[str] | None = None,
 ) -> dict[str, object]:
     selected_platforms = _dedupe(platforms or ["claude", "codex"])
+    selected_optional = _dedupe(enabled_optional_skills or [])
     enabled: list[str] = []
     recommended: list[str] = []
     optional: list[str] = []
@@ -247,6 +249,9 @@ def recommend_skill_plan(
             enabled.append(skill_name)
             recommended.append(skill_name)
         else:
+            if skill_name in selected_optional:
+                enabled.append(skill_name)
+                recommended.append(skill_name)
             optional.append(skill_name)
 
     return {
@@ -262,6 +267,7 @@ def resolve_preset(
     preset_name: str,
     base_preset: dict,
     platforms: list[str] | None = None,
+    enabled_optional_skills: list[str] | None = None,
 ) -> dict:
     if preset_name != "auto":
         return dict(base_preset)
@@ -270,10 +276,12 @@ def resolve_preset(
         detected["detected_profiles"],
         detected["detection_signals"],
         platforms=platforms,
+        enabled_optional_skills=enabled_optional_skills,
     )
     resolved = dict(base_preset)
     resolved.update(detected)
     resolved.update(recommendations)
+    resolved["enabled_optional_skills"] = _dedupe(enabled_optional_skills or [])
     return resolved
 
 
