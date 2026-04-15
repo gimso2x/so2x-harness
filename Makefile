@@ -1,4 +1,4 @@
-.PHONY: test lint coverage doctor clean install check
+.PHONY: test lint coverage doctor clean install check release-check
 
 PYTHON ?= python3
 PROJECT ?= .
@@ -21,6 +21,20 @@ doctor:
 	$(PYTHON) scripts/doctor.py --project $(PROJECT)
 
 check: lint test
+
+release-check:
+	@command -v $(PYTHON) >/dev/null || (echo "$(PYTHON) not found" && exit 1)
+	@$(PYTHON) -m build --version >/dev/null 2>&1 || (echo "$(PYTHON) -m build not available. Install package 'build' first." && exit 1)
+	@$(PYTHON) -m venv --help >/dev/null 2>&1 || (echo "$(PYTHON) venv support not available. Install python3-venv first." && exit 1)
+	@rm -rf .release-check-venv dist build
+	@set -e; \
+	trap 'rm -rf .release-check-venv' EXIT; \
+	$(PYTHON) -m venv .release-check-venv; \
+	. .release-check-venv/bin/activate; \
+	pip install --upgrade pip build; \
+	python -m build; \
+	pip install dist/*.whl; \
+	test "$$(so2x-cli --version)" = "so2x-cli $$(cat VERSION)"
 
 clean:
 	rm -rf htmlcov/ .pytest_cache/ tests/__pycache__/

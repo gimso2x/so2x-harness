@@ -19,11 +19,19 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: |
-          pip install pytest ruff
+          pip install build pytest ruff
       - name: Test
         run: make test
       - name: Lint
         run: make lint
+      - name: Package smoke test
+        run: |
+          python -m venv .release-venv
+          . .release-venv/bin/activate
+          pip install --upgrade pip build
+          python -m build
+          pip install dist/*.whl
+          test "$(so2x-cli --version)" = "so2x-cli $(cat VERSION)"
       - name: Get version
         id: version
         run: echo "version=$(cat VERSION)" >> $GITHUB_OUTPUT

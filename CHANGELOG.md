@@ -24,23 +24,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### added
 - `review-cycle` skill for artifact-first code review using `.review-artifacts/{branch-name}/`
+- Agent orchestration pipeline runner (so2x-cli run specify/execute)
+- Sequential pipeline: Interviewer → Code Explorer → Spec Writer → Planner → Reviewer → Verifier
+- Gate checks between each pipeline stage
+- Agent template auto-loading with instruction generation
+- Task status tracking (pending/in_progress/done)
 
 ### changed
 - `review` skill now points broad or risky changes to `/review-cycle`
 - `review` now checks `design-intent.md`, `code-quality-guide.md`, and explicit side effects/tradeoffs when present
 - README, CLAUDE template, preset, and architecture docs now document the review-cycle flow
 - integration tests now verify review-cycle installation and documentation coverage
-
-### changed
 - preset 구조를 단순화하고 `general` 단일 preset으로 정리
 - plugin 배포를 쓰지 않도록 `plugin.json`과 `.claude-plugin` 설치/점검 경로 제거
-
-### added
-- Agent orchestration pipeline runner (so2x-cli run specify/execute)
-- Sequential pipeline: Interviewer → Code Explorer → Spec Writer → Planner → Reviewer → Verifier
-- Gate checks between each pipeline stage
-- Agent template auto-loading with instruction generation
-- Task status tracking (pending/in_progress/done)
 
 ## [0.3.0] - 2026-04-14
 
