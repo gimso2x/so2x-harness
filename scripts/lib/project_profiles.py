@@ -23,6 +23,7 @@ def detect_project_profiles(project_dir: Path) -> dict[str, object]:
         deps = _package_deps(package_data)
         package_manager = str(package_data.get("packageManager", "")).lower()
         has_workspace_config = _has_workspace_config(package_data.get("workspaces"))
+        workspace_package_manager = _detect_workspace_package_manager(project_dir, package_manager, has_workspace_config)
         if "turbo" in deps:
             signals.append("package.json:turborepo")
         if "nx" in deps:
@@ -47,15 +48,13 @@ def detect_project_profiles(project_dir: Path) -> dict[str, object]:
         if deps and not any(dep in deps for dep in {"next", "react", "vite", "@remix-run/react"}):
             profiles.append("js-package")
             signals.append("package.json:js-package")
-        if package_manager.startswith("pnpm@") and (
-            (project_dir / "pnpm-workspace.yaml").exists() or has_workspace_config
-        ):
+        if workspace_package_manager == "pnpm":
             signals.append("packageManager:pnpm")
-        if package_manager.startswith("yarn@") and has_workspace_config:
+        if workspace_package_manager == "yarn":
             signals.append("packageManager:yarn")
-        if package_manager.startswith("npm@") and has_workspace_config:
+        if workspace_package_manager == "npm":
             signals.append("packageManager:npm")
-        if package_manager.startswith("bun@") and has_workspace_config:
+        if workspace_package_manager == "bun":
             signals.append("packageManager:bun")
 
     pyproject = project_dir / "pyproject.toml"
@@ -317,6 +316,21 @@ def _has_workspace_config(workspaces: object) -> bool:
         packages = workspaces.get("packages")
         return isinstance(packages, list) and bool(packages)
     return False
+
+
+def _detect_workspace_package_manager(project_dir: Path, package_manager: str, has_workspace_config: bool) -> str | None:
+    if package_manager.startswith("pnpm@") and ((project_dir / "pnpm-workspace.yaml").exists() or has_workspace_config):
+        return "pnpm"
+    if has_workspace_config:
+        if package_manager.startswith("yarn@") or (project_dir / "yarn.lock").exists():
+            return "yarn"
+        if package_manager.startswith("npm@") or (project_dir / "package-lock.json").exists():
+            return "npm"
+        if package_manager.startswith("bun@") or any(
+            (project_dir / candidate).exists() for candidate in ("bun.lockb", "bun.lock")
+        ):
+            return "bun"
+    return None
 
 
 def _is_react_library_package(package_data: dict, deps: set[str]) -> bool:

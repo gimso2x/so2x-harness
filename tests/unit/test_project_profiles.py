@@ -238,6 +238,30 @@ def test_detect_project_profiles_for_object_workspaces_monorepo(tmp_path: Path) 
     assert "specify-lite" in detected["recommended_skills"]
 
 
+def test_detect_project_profiles_for_lockfile_only_workspace_monorepos(tmp_path: Path) -> None:
+    for lockfile_name, profile_name, signal_name in (
+        ("yarn.lock", "yarn-monorepo", "workspace:yarn"),
+        ("package-lock.json", "npm-monorepo", "workspace:npm"),
+        ("bun.lockb", "bun-monorepo", "workspace:bun"),
+    ):
+        project = tmp_path / lockfile_name.replace('.', '-')
+        project.mkdir()
+        (project / "package.json").write_text(
+            '{"workspaces":["apps/*","packages/*"],"dependencies":{"react":"19.0.0"}}\n',
+            encoding="utf-8",
+        )
+        (project / lockfile_name).write_text("lockfile\n", encoding="utf-8")
+
+        detected = detect_project_profiles(project)
+
+        assert "monorepo" in detected["detected_profiles"]
+        assert profile_name in detected["detected_profiles"]
+        assert signal_name in detected["detection_signals"]
+        assert "review-cycle" in detected["recommended_skills"]
+        assert "execute" in detected["enabled_skills"]
+        assert "spec-validate" in detected["enabled_skills"]
+
+
 def test_detect_project_profiles_for_object_pnpm_workspaces_monorepo(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()
