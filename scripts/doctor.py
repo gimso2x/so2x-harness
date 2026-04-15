@@ -201,6 +201,21 @@ def _workflow_status_items(project_dir: Path) -> list[tuple[str, str, str]]:
                         f"{current_plan['recommended_skills']} optional={current_plan['optional_skills']}",
                     )
                 )
+            stale_enabled_optional = [
+                str(skill)
+                for skill in enabled_optional_skills
+                if str(skill) not in current_plan["optional_skills"]
+            ]
+            if stale_enabled_optional:
+                items.append(
+                    (
+                        "WARN",
+                        "enabled_optional_skill_drift",
+                        "config enabled_optional_skills="
+                        f"{enabled_optional_skills} include stale skills={stale_enabled_optional}; current "
+                        f"eligible_optional_skills={current_plan['optional_skills']}",
+                    )
+                )
             if policy_promoted_skills != current_plan["policy_promoted_skills"]:
                 items.append(
                     (

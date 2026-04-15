@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
@@ -203,3 +204,63 @@ def test_doctor_warns_when_auto_policy_rationale_drifts_from_config(tmp_path: Pa
     assert "recommendation_rationale_drift" in result.stdout
     assert "config skill_recommendations=" in result.stdout
     assert "current skill_recommendations=" in result.stdout
+
+
+def test_doctor_warns_when_enabled_optional_skills_are_no_longer_recommended(tmp_path: Path) -> None:
+    import subprocess
+
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "package.json").write_text(
+        json.dumps({"dependencies": {"next": "15.0.0", "react": "19.0.0"}}) + "\n",
+        encoding="utf-8",
+    )
+
+    apply = subprocess.run(
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(project),
+            "--platform",
+            "claude",
+            "codex",
+            "--preset",
+            "auto",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert apply.returncode == 0
+
+    enable = subprocess.run(
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/cli/main.py"),
+            "skills",
+            "enable",
+            "execute",
+            "--project",
+            str(project),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        env={**os.environ, "PYTHONPATH": str(ROOT_DIR / "scripts")},
+    )
+    assert enable.returncode == 0
+
+    (project / "package.json").write_text(json.dumps({"name": "plain-project"}) + "\n", encoding="utf-8")
+
+    result = subprocess.run(
+        ["python3", str(ROOT_DIR / "scripts/doctor.py"), "--project", str(project)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert "enabled_optional_skill_drift" in result.stdout
+    assert "config enabled_optional_skills=['execute']" in result.stdout
+    assert "current eligible_optional_skills=[]" in result.stdout
