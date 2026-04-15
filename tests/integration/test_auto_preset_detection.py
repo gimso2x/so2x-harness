@@ -229,6 +229,18 @@ def test_apply_auto_preset_detects_config_only_workspace_tool_signals(tmp_path: 
         assert "review-cycle" in config["enabled_skills"]
         assert "execute" in config["enabled_skills"]
         assert "spec-validate" in config["enabled_skills"]
+        assert any(
+            "matched signals:" in reason
+            and "package.json:workspaces" in reason
+            and signal_name in reason
+            for reason in config["skill_recommendations"]["review-cycle"]
+        )
+        assert any(
+            "matched signals:" in reason
+            and "package.json:workspaces" in reason
+            and signal_name in reason
+            for reason in config["skill_recommendations"]["specify-lite"]
+        )
 
         doctor = subprocess.run(
             ["python3", str(ROOT_DIR / "scripts/doctor.py"), "--project", str(project)],
@@ -240,6 +252,9 @@ def test_apply_auto_preset_detects_config_only_workspace_tool_signals(tmp_path: 
         assert "frontend, monorepo" in doctor.stdout
         assert doctor_fragment in doctor.stdout
         assert "review-cycle" in doctor.stdout
+        assert "matched signals:" in doctor.stdout
+        assert "package.json:workspaces" in doctor.stdout
+        assert signal_name in doctor.stdout
 
 
 def test_apply_auto_preset_detects_go_workspace_monorepo(tmp_path: Path) -> None:

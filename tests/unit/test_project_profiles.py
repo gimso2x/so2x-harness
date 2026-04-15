@@ -180,6 +180,18 @@ def test_detect_project_profiles_for_config_only_workspace_tools(tmp_path: Path)
         assert "monorepo" in detected["detected_profiles"]
         assert signal_name in detected["detection_signals"]
         assert "review-cycle" in detected["recommended_skills"]
+        assert any(
+            "matched signals:" in reason
+            and "package.json:workspaces" in reason
+            and signal_name in reason
+            for reason in detected["skill_recommendations"]["review-cycle"]
+        )
+        assert any(
+            "matched signals:" in reason
+            and "package.json:workspaces" in reason
+            and signal_name in reason
+            for reason in detected["skill_recommendations"]["specify-lite"]
+        )
 
 
 def test_detect_project_profiles_for_cargo_workspace_monorepo(tmp_path: Path) -> None:

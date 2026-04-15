@@ -33,6 +33,7 @@ def test_readme_documents_review_cycle_artifacts() -> None:
     assert "workspace:bun" in readme
     assert "package.json:workspaces" in readme
     assert "go.work:workspace" in readme
+    assert "workspace:turborepo" in readme
 
 
 def test_architecture_documents_spec_and_doctor_status_surface() -> None:
@@ -47,6 +48,7 @@ def test_architecture_documents_spec_and_doctor_status_surface() -> None:
     assert "workspace:bun" in architecture
     assert "package.json:workspaces" in architecture
     assert "go.work:workspace" in architecture
+    assert "workspace:turborepo" in architecture
 
 
 def test_apply_unsupported_platform_message_lists_supported_platforms(tmp_path: Path) -> None:
