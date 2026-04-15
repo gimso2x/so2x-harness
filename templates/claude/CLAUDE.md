@@ -12,11 +12,4 @@ Add project-specific notes above or below the managed section.
 4. Verify before claiming completion
 
 ## Installed Skills
-- planning
-- implementation
-- debugging
-- review
-- review-cycle
-- specify-lite
-- check-harness
-<!-- SO2X-HARNESS:END -->
+{{ installed_skills_md }}<!-- SO2X-HARNESS:END -->

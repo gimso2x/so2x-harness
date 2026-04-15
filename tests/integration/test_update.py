@@ -124,3 +124,28 @@ def test_update_recreates_valid_config_with_platforms(tmp_project: Path) -> None
     data = json.loads(config.read_text(encoding="utf-8"))
     assert data["preset"] == "general"
     assert data["platforms"] == ["codex"]
+
+
+def test_update_resyncs_enabled_skills_from_preset(tmp_project: Path) -> None:
+    _apply(tmp_project)
+    config = tmp_project / ".ai-harness" / "config.json"
+    data = json.loads(config.read_text(encoding="utf-8"))
+    data["enabled_skills"] = ["execute"]
+    config.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+    _update(tmp_project)
+
+    updated = json.loads(config.read_text(encoding="utf-8"))
+    assert "planning" in updated["enabled_skills"]
+    assert "execute" not in updated["enabled_skills"]
+
+
+def test_update_removes_stale_skill_directories(tmp_project: Path) -> None:
+    _apply(tmp_project)
+    stale_dir = tmp_project / ".claude" / "skills" / "execute"
+    stale_dir.mkdir(parents=True)
+    (stale_dir / "SKILL.md").write_text("stale", encoding="utf-8")
+
+    _update(tmp_project)
+
+    assert not stale_dir.exists()
