@@ -115,10 +115,11 @@ Info "preset=$Preset"
 Info "python=$pythonCmd"
 Info "source=$ResolvedRoot"
 
-# Build argument list with each platform as separate --platform argument
+# Build argument list. Pass multi-platform values after a single --platform flag
 $applyArgs = @("$ResolvedRoot/scripts/apply.py", "--project", $projectAbs, "--preset", $Preset)
-foreach ($p in $Platform) {
-  $applyArgs += @("--platform", $p)
+if ($Platform.Count -gt 0) {
+  $applyArgs += "--platform"
+  $applyArgs += $Platform
 }
 & $pythonCmd @applyArgs
 
