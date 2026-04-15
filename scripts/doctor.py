@@ -154,7 +154,8 @@ def check_project(project_dir: Path) -> list[tuple[str, str, str]]:
             items.append(("OK", f"{prefix}config", str(config_path)))
             try:
                 config_data = json.loads(config_path.read_text(encoding="utf-8"))
-                items.append(("OK", f"{prefix}config_preset", str(config_data.get("preset", "unknown"))))
+                preset = str(config_data.get("preset", "unknown"))
+                items.append(("OK", f"{prefix}config_preset", preset))
             except Exception as exc:
                 items.append(("ERROR", f"{prefix}config_parse", f"failed to parse config: {exc}"))
         else:

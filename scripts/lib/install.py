@@ -49,7 +49,11 @@ def keep_existing_file(target_path: Path) -> str:
     return sha256_text(target_path.read_text(encoding="utf-8"))
 
 
-def _install_glob_files(src_dir: Path, rel_dir: Path, project_dir: Path) -> dict[str, dict[str, str]]:
+def _install_glob_files(
+    src_dir: Path,
+    rel_dir: Path,
+    project_dir: Path,
+) -> dict[str, dict[str, str]]:
     if not src_dir.exists():
         return {}
     files: dict[str, dict[str, str]] = {}
@@ -72,11 +76,29 @@ def install_platform_assets(
     """Install docs, snippets, rules, skills, agents, hooks for a platform."""
     files: dict[str, dict[str, str]] = {}
 
-    files.update(_install_glob_files(root_dir / "templates/shared/docs", paths["shared_docs_dir"], project_dir))
-    files.update(_install_glob_files(root_dir / "templates/shared/snippets", paths["shared_snippets_dir"], project_dir))
+    files.update(
+        _install_glob_files(
+            root_dir / "templates/shared/docs",
+            paths["shared_docs_dir"],
+            project_dir,
+        )
+    )
+    files.update(
+        _install_glob_files(
+            root_dir / "templates/shared/snippets",
+            paths["shared_snippets_dir"],
+            project_dir,
+        )
+    )
 
     if caps[Capability.RULES]:
-        files.update(_install_glob_files(root_dir / f"templates/{platform}/rules", paths["rules_dir"], project_dir))
+        files.update(
+            _install_glob_files(
+                root_dir / f"templates/{platform}/rules",
+                paths["rules_dir"],
+                project_dir,
+            )
+        )
 
     if caps[Capability.SKILLS]:
         skills_src = root_dir / f"templates/{platform}/skills"
@@ -93,7 +115,13 @@ def install_platform_assets(
             }
 
     if caps[Capability.AGENTS]:
-        files.update(_install_glob_files(root_dir / f"templates/{platform}/agents", paths["agents_dir"], project_dir))
+        files.update(
+            _install_glob_files(
+                root_dir / f"templates/{platform}/agents",
+                paths["agents_dir"],
+                project_dir,
+            )
+        )
 
     if caps[Capability.HOOKS]:
         hooks_src = root_dir / f"templates/{platform}/hooks"

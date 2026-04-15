@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/gimso2x/so2x-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/gimso2x/so2x-harness/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Platform: Claude Code](https://img.shields.io/badge/Platform-Claude_Code-blueviolet)](https://docs.anthropic.com/en/docs/claude-code)
+[![Platform: Claude + Codex](https://img.shields.io/badge/Platform-Claude%20%2B%20Codex-blueviolet)](#install)
 [![Version](https://img.shields.io/badge/Version-0.5.0-green)](https://github.com/gimso2x/so2x-harness/blob/main/VERSION)
 
 [Quick Start](#quick-start) · [Usage](#usage) · [Spec Engine](#spec-engine) · [Agents](#agents) · [Skills](#skills) · [CLI](#cli) · [Install](#install) · [Docs](#docs)

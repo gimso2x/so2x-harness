@@ -2,6 +2,20 @@ from __future__ import annotations
 
 import argparse
 import sys
+from importlib import metadata
+from pathlib import Path
+
+PACKAGE_NAME = "so2x-cli"
+ROOT_DIR = Path(__file__).resolve().parents[2]
+
+
+def get_version(root_dir: Path | None = None) -> str:
+    version_root = root_dir or ROOT_DIR
+    version_file = version_root / "VERSION"
+    if version_file.exists():
+        return version_file.read_text(encoding="utf-8").strip()
+
+    return metadata.version(PACKAGE_NAME)
 
 
 def main() -> None:
@@ -85,7 +99,7 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.version:
-        print("so2x-cli 0.4.0")
+        print(f"so2x-cli {get_version()}")
         return
 
     if args.command == "spec":
