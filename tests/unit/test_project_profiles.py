@@ -190,6 +190,24 @@ def test_detect_project_profiles_for_poetry_backend(tmp_path: Path) -> None:
     assert "pyproject.toml:poetry" in detected["detection_signals"]
 
 
+def test_detect_project_profiles_for_uv_workspace_monorepo(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "pyproject.toml").write_text(
+        '[project]\nname = "workspace-root"\nversion = "0.1.0"\n[tool.uv.workspace]\nmembers = ["apps/api", "packages/shared"]\n',
+        encoding="utf-8",
+    )
+
+    detected = detect_project_profiles(project)
+
+    assert "python-package" in detected["detected_profiles"]
+    assert "monorepo" in detected["detected_profiles"]
+    assert "pyproject.toml:uv" in detected["detection_signals"]
+    assert "pyproject.toml:uv-workspace" in detected["detection_signals"]
+    assert "execute" in detected["enabled_skills"]
+    assert "spec-validate" in detected["enabled_skills"]
+
+
 def test_detect_project_profiles_for_django_manage_py_project(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()

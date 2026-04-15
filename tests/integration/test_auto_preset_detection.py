@@ -188,3 +188,52 @@ def test_apply_auto_preset_detects_object_workspaces_monorepo(tmp_path: Path) ->
     assert "package.json:workspaces" in doctor.stdout
     assert "packageManager:pnpm" in doctor.stdout
     assert "workspace:pnpm" in doctor.stdout
+
+
+def test_apply_auto_preset_detects_uv_workspace_monorepo(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "pyproject.toml").write_text(
+        '[project]\nname = "workspace-root"\nversion = "0.1.0"\n[tool.uv.workspace]\nmembers = ["apps/api", "packages/shared"]\n',
+        encoding="utf-8",
+    )
+
+    apply = subprocess.run(
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(project),
+            "--platform",
+            "claude",
+            "codex",
+            "--preset",
+            "auto",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert apply.returncode == 0
+    assert "detected_profiles=" in apply.stdout
+    assert "monorepo" in apply.stdout
+    assert "python-package" in apply.stdout
+
+    config = json.loads((project / ".ai-harness" / "config.json").read_text(encoding="utf-8"))
+    assert config["detected_profiles"] == ["monorepo", "python-package"]
+    assert "pyproject.toml:uv" in config["detection_signals"]
+    assert "pyproject.toml:uv-workspace" in config["detection_signals"]
+    assert "execute" in config["enabled_skills"]
+    assert "spec-validate" in config["enabled_skills"]
+
+    doctor = subprocess.run(
+        ["python3", str(ROOT_DIR / "scripts/doctor.py"), "--project", str(project)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert doctor.returncode == 0
+    assert "monorepo, python-package" in doctor.stdout
+    assert "pyproject.toml:uv-workspace" in doctor.stdout
+    assert "execute" in doctor.stdout
+    assert "spec-validate" in doctor.stdout

@@ -87,7 +87,8 @@
       "requirements.txt:python-backend",
       "go.mod:backend-service",
       "Cargo.toml:backend-service",
-      "workspace:apps+packages"
+      "workspace:apps+packages",
+      "pyproject.toml:uv-workspace"
     ],
     "rationale": "Multi-step review loops help app/service repos converge safely."
   },
@@ -133,7 +134,8 @@
       "requirements.txt:python-backend",
       "go.mod:backend-service",
       "Cargo.toml:backend-service",
-      "workspace:apps+packages"
+      "workspace:apps+packages",
+      "pyproject.toml:uv-workspace"
     ],
     "rationale": "Backends, Python packages, and monorepos benefit from spec verification."
   },

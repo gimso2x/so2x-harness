@@ -59,6 +59,9 @@ def detect_project_profiles(project_dir: Path) -> dict[str, object]:
             signals.append("pyproject.toml:poetry")
         if "[tool.uv" in text:
             signals.append("pyproject.toml:uv")
+        if "[tool.uv.workspace]" in text:
+            profiles.append("monorepo")
+            signals.append("pyproject.toml:uv-workspace")
         if "[tool.hatch" in text:
             signals.append("pyproject.toml:hatch")
         if any(token in text for token in {"fastapi", "django", "flask", "sqlalchemy", "uvicorn"}):

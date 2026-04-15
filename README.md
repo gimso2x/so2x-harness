@@ -112,6 +112,7 @@ catalog 원본은 `templates/project/.ai-harness/skill-catalog.json`에 있고, 
   - fastapi-service
   - django-service
   - pnpm-monorepo
+  - uv workspace monorepo (`[tool.uv.workspace]`)
 - signal도 더 세분화해서 잡습니다
   - turborepo / nx / lerna workspace
   - poetry / uv / hatch python toolchain
