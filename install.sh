@@ -3,6 +3,7 @@ set -eu
 
 PROJECT_DIR="${1:-.}"
 PLATFORM="${PLATFORM:-}"
+WITH_CLI="${WITH_CLI:-}"
 PRESET="${PRESET:-general}"
 REPO_URL="${SO2X_REPO_URL:-https://github.com/gimso2x/so2x-harness.git}"
 REPO_REF="${SO2X_REPO_REF:-main}"
@@ -25,6 +26,18 @@ fail() {
 }
 
 trap cleanup EXIT INT TERM
+
+install_so2x_cli() {
+  root_dir="$1"
+  info "so2x-cli 설치를 진행합니다."
+  if command -v pip3 >/dev/null 2>&1; then
+    pip3 install "$root_dir"
+  elif command -v pip >/dev/null 2>&1; then
+    pip install "$root_dir"
+  else
+    "$PYTHON_BIN" -m pip install "$root_dir"
+  fi
+}
 
 resolve_root_dir() {
   candidate=""
@@ -112,6 +125,15 @@ if [ -z "$PLATFORM" ]; then
   fi
 fi
 
+if [ -z "$WITH_CLI" ] && [ -t 0 ]; then
+  printf 'so2x-cli도 설치할까요? [y/N]: '
+  read -r reply
+  case "$reply" in
+    y|Y|yes|YES) WITH_CLI="1" ;;
+    *) WITH_CLI="" ;;
+  esac
+fi
+
 case "$PRESET" in
   general) ;;
   *) fail "현재 지원하지 않는 preset입니다: $PRESET (지원: general)" ;;
@@ -134,6 +156,12 @@ for p in $PLATFORM; do
   set -- "$@" "$p"
 done
 "$@"
+
+if [ -n "$WITH_CLI" ]; then
+  install_so2x_cli "$ROOT_DIR"
+else
+  info "so2x-cli 설치를 건너뜁니다. 필요하면 repo에서 pip install -e . 하세요."
+fi
 
 info "설치가 끝났습니다. 확인하려면 아래를 실행하세요:"
 info "  $PYTHON_BIN $ROOT_DIR/scripts/doctor.py --project $PROJECT_DIR_ABS"
