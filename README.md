@@ -23,8 +23,16 @@ curl -sSfL https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.s
 ```
 
 ```powershell
-# Windows (PowerShell)
+# Windows (PowerShell) — 대화형 설치
 powershell -c "irm https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.ps1 | iex"
+```
+
+```powershell
+# Windows (PowerShell) — 둘 다 확실히 설치하려면
+$repo = Join-Path $env:TEMP "so2x-harness"
+if (Test-Path $repo) { Remove-Item -Recurse -Force $repo }
+git clone https://github.com/gimso2x/so2x-harness.git $repo
+python "$repo\scripts\apply.py" --project . --platform claude codex --preset general
 ```
 
 ---

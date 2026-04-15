@@ -54,6 +54,33 @@ if (-not (Test-Path $Project -PathType Container)) {
   Fail "대상 프로젝트 디렉터리가 없습니다: $Project"
 }
 
+function Resolve-PlatformSelection($choice, [string[]]$detectedPlatforms) {
+  $normalized = (($choice | ForEach-Object { $_.ToString().Trim().ToLowerInvariant() }) -join " ").Trim()
+  switch ($normalized) {
+    "" { return $detectedPlatforms }
+    "1" { return @("claude") }
+    "2" { return @("codex") }
+    "3" { return @("claude", "codex") }
+    "claude" { return @("claude") }
+    "codex" { return @("codex") }
+    "claude codex" { return @("claude", "codex") }
+    "codex claude" { return @("claude", "codex") }
+    "claude,codex" { return @("claude", "codex") }
+    "codex,claude" { return @("claude", "codex") }
+    "둘다" { return @("claude", "codex") }
+    "둘 다" { return @("claude", "codex") }
+    default {
+      if ($normalized -match "claude" -and $normalized -match "codex") {
+        return @("claude", "codex")
+      }
+      if ($normalized -match "codex") {
+        return @("codex")
+      }
+      return @("claude")
+    }
+  }
+}
+
 # Platform detection + interactive selection
 $detected = @()
 if (Get-Command claude -ErrorAction SilentlyContinue) { $detected += "claude" }
@@ -66,11 +93,12 @@ if ($Platform.Count -eq 0) {
   Write-Host "  1) claude"
   Write-Host "  2) codex"
   Write-Host "  3) 둘 다"
-  $choice = Read-Host "선택 [1-3]"
-  switch ($choice) {
-    "2" { $Platform = @("codex") }
-    "3" { $Platform = @("claude", "codex") }
-    default { $Platform = @("claude") }
+  Write-Host "  Enter) 감지 결과 그대로 설치"
+  Write-Host "  직접 입력도 가능: claude / codex / claude,codex"
+  $choice = Read-Host "선택 [Enter/1/2/3]"
+  $Platform = Resolve-PlatformSelection $choice $detected
+  if ([string]::IsNullOrWhiteSpace($choice)) {
+    Info "입력이 없어서 감지된 플랫폼 그대로 설치합니다."
   }
 }
 
