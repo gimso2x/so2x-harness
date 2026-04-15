@@ -1,7 +1,8 @@
 param(
   [string]$Project = ".",
   [string[]]$Platform = @(),
-  [string]$Preset = "general"
+  [string]$Preset = "general",
+  [switch]$WithCli
 )
 
 $ErrorActionPreference = "Stop"
@@ -23,6 +24,20 @@ function Fail($msg) {
   Write-Host "[so2x-harness] ERROR: $msg" -ForegroundColor Red
   if ($TempRoot -and (Test-Path $TempRoot)) { Remove-Item -Recurse -Force $TempRoot -ErrorAction SilentlyContinue }
   exit 1
+}
+
+function Install-So2xCli($rootDir, $pythonCommand) {
+  Info "so2x-cli 설치를 진행합니다."
+  $pipCmd = if ($pythonCommand -eq "python") { "pip" } else { "pip3" }
+  if (-not (Get-Command $pipCmd -ErrorAction SilentlyContinue)) {
+    $pipCmd = "$pythonCommand -m pip"
+  }
+
+  if ($pipCmd -is [string] -and $pipCmd.Contains(" ")) {
+    & $pythonCommand -m pip install $rootDir
+  } else {
+    & $pipCmd install $rootDir
+  }
 }
 
 function Resolve-RootDir {
@@ -102,6 +117,13 @@ if ($Platform.Count -eq 0) {
   }
 }
 
+if (-not $PSBoundParameters.ContainsKey("WithCli")) {
+  $reply = Read-Host "so2x-cli도 설치할까요? [y/N]"
+  if ($reply -match "^(y|yes)$") {
+    $WithCli = $true
+  }
+}
+
 if ($Preset -ne "general") {
   Fail "현재 지원하지 않는 preset입니다: $Preset (지원: general)"
 }
@@ -122,6 +144,12 @@ if ($Platform.Count -gt 0) {
   $applyArgs += $Platform
 }
 & $pythonCmd @applyArgs
+
+if ($WithCli) {
+  Install-So2xCli $ResolvedRoot $pythonCmd
+} else {
+  Info "so2x-cli 설치를 건너뜁니다. 필요하면 repo에서 pip install -e . 하세요."
+}
 
 Info "설치가 끝났습니다. 확인하려면 아래를 실행하세요:"
 Info "  $pythonCmd $ResolvedRoot/scripts/doctor.py --project $projectAbs"

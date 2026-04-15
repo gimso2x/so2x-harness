@@ -20,6 +20,9 @@
 ```bash
 # macOS / Linux — 대화형 설치
 curl -sSfL https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.sh | sh
+
+# macOS / Linux — bootstrap + CLI 설치까지 같이 하려면
+curl -sSfL https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.sh | WITH_CLI=1 sh
 ```
 
 ```bash
@@ -32,6 +35,9 @@ python3 "$REPO_DIR/scripts/apply.py" --project . --platform claude codex --prese
 ```powershell
 # Windows (PowerShell) — 대화형 설치
 powershell -c "irm https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.ps1 | iex"
+
+# Windows (PowerShell) — bootstrap + CLI 설치까지 같이 하려면
+powershell -c "& ([scriptblock]::Create((irm https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.ps1))) -WithCli"
 ```
 
 ```powershell
@@ -72,7 +78,7 @@ Test-Path .agents
 - Codex를 같이 설치했다면 manifest `platforms`에 `codex`가 보여야 합니다.
 - 둘 다 설치했다면 `.claude`와 `.agents`가 둘 다 있어야 합니다.
 
-`so2x-cli`가 필요한 경우는 spec engine/CLI 명령을 직접 쓰고 싶을 때입니다.
+`so2x-cli`가 필요한 경우는 spec engine/CLI 명령을 직접 쓰고 싶을 때입니다. 설치 스크립트에 CLI까지 맡기고 싶으면 Linux/macOS에서는 `WITH_CLI=1 sh`, Windows에서는 `-WithCli`를 사용할 수 있습니다.
 
 ```bash
 git clone https://github.com/gimso2x/so2x-harness.git
