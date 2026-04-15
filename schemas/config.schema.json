@@ -59,6 +59,12 @@
         "type": "string"
       }
     },
+    "policy_promoted_skills": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
     "skill_recommendations": {
       "type": "object",
       "additionalProperties": {

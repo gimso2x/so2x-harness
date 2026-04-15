@@ -222,6 +222,9 @@ def test_recommend_skill_plan_promotes_specify_for_next_app() -> None:
     assert "specify" in plan["recommended_skills"]
     assert "execute" in plan["optional_skills"]
     assert any("policy" in reason for reason in plan["skill_recommendations"]["specify"])
+    assert plan["policy_promoted_skills"] == {
+        "specify": "next-app repos default to full specification workflow"
+    }
 
 
 def test_recommend_skill_plan_promotes_execute_and_spec_validate_for_monorepo() -> None:

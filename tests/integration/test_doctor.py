@@ -163,6 +163,12 @@ def test_doctor_reports_workflow_status_surface(tmp_project: Path) -> None:
         + "\n",
         encoding="utf-8",
     )
+    config_path = harness_dir / "config.json"
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["policy_promoted_skills"] = {
+        "specify": "next-app repos default to full specification workflow"
+    }
+    config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     result = subprocess.run(
         ["python3", str(ROOT_DIR / "scripts/doctor.py"), "--project", str(tmp_project)],
@@ -178,6 +184,7 @@ def test_doctor_reports_workflow_status_surface(tmp_project: Path) -> None:
     assert "promoted_rules" in result.stdout
     assert "latest_promoted_rule" in result.stdout
     assert "Honor repeated user feedback: 더 단순하게" in result.stdout
+    assert "policy_promoted_skills" in result.stdout
     assert "feedback_events" in result.stdout
     assert "latest_feedback" in result.stdout
     assert "safe_commit_events" in result.stdout

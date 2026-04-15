@@ -88,6 +88,7 @@ python3 scripts/doctor.py --project <경로>
 - rules 디렉터리 및 파일 수
 - skills 디렉터리 및 파일 수
 - hooks 디렉터리 및 파일 수
+- auto preset 감지 프로필 / 신호 / 추천 스킬 / 정책 승격 스킬
 - plugin 디렉터리
 
 ### 출력 레벨

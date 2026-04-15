@@ -55,6 +55,11 @@ def test_apply_auto_preset_detects_frontend_monorepo_and_surfaces_in_doctor(tmp_
     assert "execute" in config["enabled_skills"]
     assert "spec-validate" in config["enabled_skills"]
     assert "simplify-cycle" in config["recommended_skills"]
+    assert config["policy_promoted_skills"] == {
+        "specify": "next-app repos default to full specification workflow",
+        "execute": "monorepo repos usually need longer coordinated execution chains",
+        "spec-validate": "monorepo repos benefit from stronger spec verification across packages",
+    }
     assert "workflow tags: code-reuse-review, code-quality-review, efficiency-review" in config[
         "skill_recommendations"
     ]["simplify-cycle"]

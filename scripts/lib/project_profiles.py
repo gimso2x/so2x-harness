@@ -176,6 +176,7 @@ def recommend_skill_plan(
         "enabled_skills": _dedupe(enabled),
         "recommended_skills": _dedupe(recommended),
         "optional_skills": _dedupe(optional),
+        "policy_promoted_skills": policy_promoted,
         "skill_recommendations": {skill: reasons[skill] for skill in _dedupe(recommended + optional)},
     }
 

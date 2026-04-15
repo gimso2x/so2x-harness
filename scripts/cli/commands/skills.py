@@ -39,6 +39,9 @@ def cmd_recommend(args: object) -> None:
     print(f"detection_signals: {', '.join(detected['detection_signals']) or 'none'}")
     print(f"enabled_skills: {', '.join(plan['enabled_skills']) or 'none'}")
     print(f"optional_skills: {', '.join(plan['optional_skills']) or 'none'}")
+    print("policy_promoted_skills:")
+    for skill_name, reason in sorted(plan["policy_promoted_skills"].items()):
+        print(f"  - {skill_name}: {reason}")
     print("skill_recommendations:")
     for skill_name in sorted(plan["skill_recommendations"]):
         print(f"  - {skill_name}")

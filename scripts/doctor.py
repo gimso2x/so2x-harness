@@ -137,6 +137,7 @@ def _workflow_status_items(project_dir: Path) -> list[tuple[str, str, str]]:
         recommended_skills = config.get("recommended_skills", [])
         optional_skills = config.get("optional_skills", [])
         enabled_optional_skills = config.get("enabled_optional_skills", [])
+        policy_promoted_skills = config.get("policy_promoted_skills", {})
         if profiles:
             items.append(("OK", "detected_profiles", ", ".join(str(p) for p in profiles)))
         if signals:
@@ -155,6 +156,11 @@ def _workflow_status_items(project_dir: Path) -> list[tuple[str, str, str]]:
                     ", ".join(str(skill) for skill in enabled_optional_skills),
                 )
             )
+        if isinstance(policy_promoted_skills, dict) and policy_promoted_skills:
+            summary = "; ".join(
+                f"{skill}={reason}" for skill, reason in sorted(policy_promoted_skills.items())
+            )
+            items.append(("OK", "policy_promoted_skills", summary))
 
     feedback_count = 0
     latest_feedback = ""
