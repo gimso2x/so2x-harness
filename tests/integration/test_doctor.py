@@ -168,6 +168,12 @@ def test_doctor_reports_workflow_status_surface(tmp_project: Path) -> None:
     config["policy_promoted_skills"] = {
         "specify": "next-app repos default to full specification workflow"
     }
+    config["skill_recommendations"] = {
+        "specify": [
+            "Full spec workflow is optional unless the project asks for heavier planning.",
+            "policy promotion: next-app repos default to full specification workflow",
+        ]
+    }
     config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     result = subprocess.run(
@@ -185,6 +191,8 @@ def test_doctor_reports_workflow_status_surface(tmp_project: Path) -> None:
     assert "latest_promoted_rule" in result.stdout
     assert "Honor repeated user feedback: 더 단순하게" in result.stdout
     assert "policy_promoted_skills" in result.stdout
+    assert "skill_recommendation.specify" in result.stdout
+    assert "policy promotion: next-app repos default to full specification workflow" in result.stdout
     assert "feedback_events" in result.stdout
     assert "latest_feedback" in result.stdout
     assert "safe_commit_events" in result.stdout
