@@ -174,6 +174,40 @@ def test_detect_project_profiles_for_pnpm_workspace_yaml_only_monorepo(tmp_path:
     assert "execute" in detected["enabled_skills"]
 
 
+def test_detect_project_profiles_for_pnpm_workspace_yaml_child_next_app(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "package.json").write_text('{"packageManager":"pnpm@9.0.0"}\n', encoding="utf-8")
+    (project / "pnpm-workspace.yaml").write_text("packages:\n  - services/*\n", encoding="utf-8")
+    service = project / "services" / "web"
+    service.mkdir(parents=True)
+    (service / "package.json").write_text(
+        '{"dependencies":{"next":"15.0.0","react":"19.0.0"}}\n',
+        encoding="utf-8",
+    )
+    (service / "src" / "app").mkdir(parents=True)
+    (service / "src" / "app" / "page.tsx").write_text(
+        "export default function Page() { return null; }\n",
+        encoding="utf-8",
+    )
+
+    detected = detect_project_profiles(project)
+
+    assert "frontend" in detected["detected_profiles"]
+    assert "next-app" in detected["detected_profiles"]
+    assert "monorepo" in detected["detected_profiles"]
+    assert "pnpm-monorepo" in detected["detected_profiles"]
+    assert "package.json:next" in detected["detection_signals"]
+    assert "next:app-router" in detected["detection_signals"]
+    assert "workspace:pnpm" in detected["detection_signals"]
+    assert "specify" in detected["enabled_skills"]
+    assert detected["policy_promoted_skills"] == {
+        "specify": "next-app repos default to full specification workflow",
+        "execute": "monorepo repos usually need longer coordinated execution chains",
+        "spec-validate": "monorepo repos benefit from stronger spec verification across packages",
+    }
+
+
 def test_detect_project_profiles_for_plain_workspace_monorepo_recommends_review_cycle(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()

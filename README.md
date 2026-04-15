@@ -121,7 +121,7 @@ catalog 원본은 `templates/project/.ai-harness/skill-catalog.json`에 있고, 
   - django manage.py
   - next app router (`app/` 또는 `src/app/`, 그리고 workspace globs로 찾은 패키지 내부 경로)
   - vite lib mode
-  - pnpm-workspace.yaml만 있는 저장소도 coarse `monorepo` + `pnpm-monorepo`로 함께 감지
+  - pnpm-workspace.yaml만 있는 저장소도 coarse `monorepo` + `pnpm-monorepo`로 함께 감지하고, `packages:` globs 아래 실제 workspace 패키지까지 스캔해서 nested Next app/backend signal을 이어받음
   - yarn packageManager + workspaces도 `yarn-monorepo`와 `workspace:yarn` signal로 함께 감지
   - npm packageManager + workspaces도 `npm-monorepo`와 `workspace:npm` signal로 함께 감지
   - bun packageManager + workspaces도 `bun-monorepo`와 `workspace:bun` signal로 함께 감지

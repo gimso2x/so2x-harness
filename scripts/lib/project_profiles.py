@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import yaml
+
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 SKILL_CATALOG_PATH = ROOT_DIR / "templates" / "project" / ".ai-harness" / "skill-catalog.json"
@@ -25,6 +27,8 @@ def detect_project_profiles(project_dir: Path) -> dict[str, object]:
         deps = _package_deps(package_data)
         package_manager = str(package_data.get("packageManager", "")).lower()
         workspace_globs = _workspace_globs(package_data.get("workspaces"))
+        if not workspace_globs:
+            workspace_globs = _pnpm_workspace_globs(project_dir)
         has_workspace_config = bool(workspace_globs)
         workspace_package_data = _load_workspace_package_data(project_dir, workspace_globs)
         workspace_package_manager = _detect_workspace_package_manager(project_dir, package_manager, has_workspace_config)
@@ -375,6 +379,8 @@ def _workspace_package_dirs(project_dir: Path, workspace_globs: list[str] | None
     if globs is None:
         package_data = _load_json(project_dir / "package.json") if (project_dir / "package.json").exists() else {}
         globs = _workspace_globs(package_data.get("workspaces"))
+        if not globs:
+            globs = _pnpm_workspace_globs(project_dir)
     if not globs:
         globs = ["apps/*", "packages/*"]
     package_dirs: list[Path] = []
@@ -402,6 +408,20 @@ def _has_next_app_router(project_dir: Path) -> bool:
         "layout.js",
     )
     return any(app_root.exists() and any((app_root / name).exists() for name in app_router_files) for app_root in app_roots)
+
+
+def _pnpm_workspace_globs(project_dir: Path) -> list[str]:
+    workspace_file = project_dir / "pnpm-workspace.yaml"
+    if not workspace_file.exists():
+        return []
+    try:
+        parsed = yaml.safe_load(workspace_file.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        return []
+    packages = parsed.get("packages") if isinstance(parsed, dict) else None
+    if not isinstance(packages, list):
+        return []
+    return [str(entry) for entry in packages if isinstance(entry, str) and entry.strip()]
 
 
 def _detect_workspace_package_manager(project_dir: Path, package_manager: str, has_workspace_config: bool) -> str | None:
