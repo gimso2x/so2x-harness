@@ -90,9 +90,13 @@ def main() -> None:
     summary_p = learn_sub.add_parser("summary", help="Show learning summary")
     summary_p.add_argument("--file", help="JSONL file to summarize")
 
-    feedback_p = learn_sub.add_parser("feedback", help="Capture user feedback as events + learnings")
+    feedback_p = learn_sub.add_parser(
+        "feedback", help="Capture user feedback as events + learnings"
+    )
     feedback_p.add_argument("message", help="Raw user feedback message")
-    feedback_p.add_argument("--phase", default="general", help="specify|execute|review|simplify|commit|general")
+    feedback_p.add_argument(
+        "--phase", default="general", help="specify|execute|review|simplify|commit|general"
+    )
     feedback_p.add_argument("--spec", help="Source spec ID")
     feedback_p.add_argument("--dir", help="Harness directory (defaults to .ai-harness)")
 
@@ -110,10 +114,14 @@ def main() -> None:
     status_run_p = run_sub.add_parser("status", help="Show simplify/safe/squash status snapshots")
     status_run_p.add_argument("--dir", help="Harness directory (defaults to .ai-harness)")
 
-    safe_commit_p = run_sub.add_parser("safe-commit", help="Evaluate safe-commit preconditions from simplify status")
+    safe_commit_p = run_sub.add_parser(
+        "safe-commit", help="Evaluate safe-commit preconditions from simplify status"
+    )
     safe_commit_p.add_argument("--dir", help="Harness directory (defaults to .ai-harness)")
 
-    squash_check_p = run_sub.add_parser("squash-check", help="Evaluate squash preconditions from simplify/safe statuses")
+    squash_check_p = run_sub.add_parser(
+        "squash-check", help="Evaluate squash preconditions from simplify/safe statuses"
+    )
     squash_check_p.add_argument("--dir", help="Harness directory (defaults to .ai-harness)")
 
     args = parser.parse_args()

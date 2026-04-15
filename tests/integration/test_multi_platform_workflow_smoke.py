@@ -122,7 +122,9 @@ def test_multi_platform_apply_and_workflow_smoke(tmp_path: Path) -> None:
     assert feedback_b.returncode == 0
     assert doctor.returncode == 0
 
-    promoted = json.loads((project / ".ai-harness" / "promoted-rules.json").read_text(encoding="utf-8"))
+    promoted = json.loads(
+        (project / ".ai-harness" / "promoted-rules.json").read_text(encoding="utf-8")
+    )
     assert any(rule.get("promotion_source") == "feedback-frequency" for rule in promoted["rules"])
 
     doctor_output = doctor.stdout

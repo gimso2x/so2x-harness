@@ -61,7 +61,9 @@ def cmd_feedback(args: object) -> None:
     message = getattr(args, "message", "").strip()
     phase = getattr(args, "phase", "general") or "general"
     source_spec = getattr(args, "spec", "") or ""
-    harness_dir = Path(getattr(args, "dir", "")) if getattr(args, "dir", None) else DEFAULT_HARNESS_DIR
+    harness_dir = (
+        Path(getattr(args, "dir", "")) if getattr(args, "dir", None) else DEFAULT_HARNESS_DIR
+    )
     event_file = harness_dir / DEFAULT_EVENT_FILE.name
     learning_file = harness_dir / DEFAULT_LEARNING_FILE.name
     promoted_rules_file = harness_dir / DEFAULT_PROMOTED_RULES_FILE.name
@@ -94,7 +96,9 @@ def cmd_feedback(args: object) -> None:
             ],
             path=learning_file,
         )
-    promoted = promote_feedback_patterns(event_file=event_file, promoted_rules_file=promoted_rules_file)
+    promoted = promote_feedback_patterns(
+        event_file=event_file, promoted_rules_file=promoted_rules_file
+    )
     if promoted:
         print(f"[learn] promoted feedback rules: {len(promoted)} -> {promoted_rules_file}")
     print(f"[learn] feedback captured ({sentiment}) -> {event_file}")

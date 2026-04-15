@@ -49,7 +49,15 @@ def test_run_specify_includes_relevant_learnings_in_instruction(tmp_path: Path) 
     )
 
     result = subprocess.run(
-        ["python3", str(ROOT_DIR / "scripts/cli/main.py"), "run", "specify", "Add OAuth login", "--output", "spec.json"],
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/cli/main.py"),
+            "run",
+            "specify",
+            "Add OAuth login",
+            "--output",
+            "spec.json",
+        ],
         cwd=project,
         capture_output=True,
         text=True,
@@ -83,7 +91,14 @@ def test_run_execute_appends_auto_learnings_from_task_summaries(tmp_path: Path) 
         "chain": {
             "l0_goal": "Add OAuth login",
             "l1_context": {"assumptions": [], "constraints": [], "patterns": [], "research": ""},
-            "l2_decisions": [{"id": "D1", "decision": "Use env callback", "rationale": "Deploy-safe", "alternatives": []}],
+            "l2_decisions": [
+                {
+                    "id": "D1",
+                    "decision": "Use env callback",
+                    "rationale": "Deploy-safe",
+                    "alternatives": [],
+                }
+            ],
             "l3_requirements": [{"id": "R1", "behavior": "Use env callback", "scenarios": []}],
             "l4_tasks": [
                 {
@@ -124,7 +139,14 @@ def test_run_execute_appends_auto_learnings_from_task_summaries(tmp_path: Path) 
     spec_file.write_text(json.dumps(spec, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     result = subprocess.run(
-        ["python3", str(ROOT_DIR / "scripts/cli/main.py"), "run", "execute", "--file", str(spec_file)],
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/cli/main.py"),
+            "run",
+            "execute",
+            "--file",
+            str(spec_file),
+        ],
         cwd=project,
         capture_output=True,
         text=True,
@@ -137,8 +159,16 @@ def test_run_execute_appends_auto_learnings_from_task_summaries(tmp_path: Path) 
     assert promoted_file.exists()
     assert simplify_status_file.exists()
 
-    lines = [json.loads(line) for line in learning_file.read_text(encoding="utf-8").splitlines() if line.strip()]
-    events = [json.loads(line) for line in event_file.read_text(encoding="utf-8").splitlines() if line.strip()]
+    lines = [
+        json.loads(line)
+        for line in learning_file.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    events = [
+        json.loads(line)
+        for line in event_file.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
     promoted = json.loads(promoted_file.read_text(encoding="utf-8"))
     simplify_status = json.loads(simplify_status_file.read_text(encoding="utf-8"))
 

@@ -53,8 +53,16 @@ def test_learn_feedback_captures_event_learning_and_promotion(tmp_path: Path) ->
 
     assert first.returncode == 0
     assert second.returncode == 0
-    events = [json.loads(line) for line in (harness_dir / "events.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
-    learnings = [json.loads(line) for line in (harness_dir / "learnings.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+    events = [
+        json.loads(line)
+        for line in (harness_dir / "events.jsonl").read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    learnings = [
+        json.loads(line)
+        for line in (harness_dir / "learnings.jsonl").read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
     promoted = json.loads((harness_dir / "promoted-rules.json").read_text(encoding="utf-8"))
     assert any(event["type"] == "user_feedback_captured" for event in events)
     assert any(entry["source"] == "user-feedback" for entry in learnings)
@@ -91,7 +99,11 @@ def test_run_safe_commit_and_squash_check_enforce_status_preconditions(tmp_path:
     )
     assert safe_fail.returncode == 1
     safe_status = json.loads((status_dir / "safe-commit.json").read_text(encoding="utf-8"))
-    events = [json.loads(line) for line in (harness_dir / "events.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+    events = [
+        json.loads(line)
+        for line in (harness_dir / "events.jsonl").read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
     assert safe_status["safety_verdict"] == "UNSAFE"
     assert any(event["type"] == "safe_commit_completed" for event in events)
 
@@ -128,7 +140,11 @@ def test_run_safe_commit_and_squash_check_enforce_status_preconditions(tmp_path:
     )
     assert squash_pass.returncode == 0
     squash_status = json.loads((status_dir / "squash-commit.json").read_text(encoding="utf-8"))
-    events = [json.loads(line) for line in (harness_dir / "events.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+    events = [
+        json.loads(line)
+        for line in (harness_dir / "events.jsonl").read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
     assert squash_status["ready"] is True
     assert any(event["type"] == "squash_check_completed" for event in events)
 
@@ -137,9 +153,15 @@ def test_run_status_reports_snapshot_summary(tmp_path: Path) -> None:
     harness_dir = tmp_path / ".ai-harness"
     status_dir = harness_dir / "status"
     status_dir.mkdir(parents=True)
-    (status_dir / "simplify-cycle.json").write_text('{"remaining_count":0,"stop_reason":"converged_to_zero"}\n', encoding="utf-8")
-    (status_dir / "safe-commit.json").write_text('{"safety_verdict":"SAFE","verification_status":"PASS"}\n', encoding="utf-8")
-    (status_dir / "squash-commit.json").write_text('{"ready":true,"reason":"ready"}\n', encoding="utf-8")
+    (status_dir / "simplify-cycle.json").write_text(
+        '{"remaining_count":0,"stop_reason":"converged_to_zero"}\n', encoding="utf-8"
+    )
+    (status_dir / "safe-commit.json").write_text(
+        '{"safety_verdict":"SAFE","verification_status":"PASS"}\n', encoding="utf-8"
+    )
+    (status_dir / "squash-commit.json").write_text(
+        '{"ready":true,"reason":"ready"}\n', encoding="utf-8"
+    )
 
     result = subprocess.run(
         ["python3", str(CLI), "run", "status", "--dir", str(harness_dir)],

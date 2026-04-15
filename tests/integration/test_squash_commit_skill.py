@@ -6,7 +6,9 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 
 
 def test_claude_and_codex_squash_commit_require_simplify_and_safe_commit() -> None:
-    claude = (ROOT_DIR / "templates/claude/skills/squash-commit/SKILL.md").read_text(encoding="utf-8")
+    claude = (ROOT_DIR / "templates/claude/skills/squash-commit/SKILL.md").read_text(
+        encoding="utf-8"
+    )
     codex = (ROOT_DIR / "templates/codex/skills/squash-commit/SKILL.md").read_text(encoding="utf-8")
 
     for content in (claude, codex):

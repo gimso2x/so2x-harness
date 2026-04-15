@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "so2x-cli"
-version = "0.6.1"
+version = "0.6.2"
 description = "CLI tool for so2x-harness spec engine"
 requires-python = ">=3.10"
 dependencies = [

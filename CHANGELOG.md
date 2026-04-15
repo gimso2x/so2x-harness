@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-04-16
+
+### fixed
+- release workflow lint 단계에서 걸리던 장문 라인들을 포맷/정리해 CI와 로컬 lint 결과를 일치시킴
+- release workflow 테스트/패키징에 필요한 버전 메타데이터를 0.6.2로 재정렬
+
 ## [0.6.1] - 2026-04-16
 
 ### fixed

@@ -91,7 +91,9 @@ def _workflow_status_items(project_dir: Path) -> list[tuple[str, str, str]]:
         remaining = simplify.get("remaining_count", "?")
         stop_reason = simplify.get("stop_reason", "unknown")
         level = "OK" if int(remaining or 0) == 0 else "WARN"
-        items.append((level, "simplify_status", f"remaining={remaining}, stop_reason={stop_reason}"))
+        items.append(
+            (level, "simplify_status", f"remaining={remaining}, stop_reason={stop_reason}")
+        )
     elif harness_dir.exists():
         items.append(("WARN", "simplify_status", "missing simplify-cycle.json"))
 
@@ -99,7 +101,9 @@ def _workflow_status_items(project_dir: Path) -> list[tuple[str, str, str]]:
         verdict = str(safe_commit.get("safety_verdict", "UNKNOWN"))
         verification = str(safe_commit.get("verification_status", "UNKNOWN"))
         level = "OK" if verdict == "SAFE" else "WARN"
-        items.append((level, "safe_commit_status", f"verdict={verdict}, verification={verification}"))
+        items.append(
+            (level, "safe_commit_status", f"verdict={verdict}, verification={verification}")
+        )
     elif harness_dir.exists():
         items.append(("WARN", "safe_commit_status", "missing safe-commit.json"))
 
@@ -155,12 +159,16 @@ def _workflow_status_items(project_dir: Path) -> list[tuple[str, str, str]]:
         items.append(("WARN", "feedback_events", "no feedback events captured yet"))
 
     if safe_commit_events > 0:
-        items.append(("OK", "safe_commit_events", f"{safe_commit_events} safe-commit event(s) recorded"))
+        items.append(
+            ("OK", "safe_commit_events", f"{safe_commit_events} safe-commit event(s) recorded")
+        )
     elif harness_dir.exists():
         items.append(("WARN", "safe_commit_events", "no safe-commit events recorded yet"))
 
     if squash_check_events > 0:
-        items.append(("OK", "squash_check_events", f"{squash_check_events} squash-check event(s) recorded"))
+        items.append(
+            ("OK", "squash_check_events", f"{squash_check_events} squash-check event(s) recorded")
+        )
     elif harness_dir.exists():
         items.append(("WARN", "squash_check_events", "no squash-check events recorded yet"))
 

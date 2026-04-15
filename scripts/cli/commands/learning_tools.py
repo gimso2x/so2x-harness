@@ -128,7 +128,8 @@ def promote_frequent_learnings(
                 {
                     str(entry.get("source_spec", "")).strip()
                     for entry in learnings
-                    if str(entry.get("rule", "")).strip() == rule and str(entry.get("source_spec", "")).strip()
+                    if str(entry.get("rule", "")).strip() == rule
+                    and str(entry.get("source_spec", "")).strip()
                 }
             ),
             "promotion_source": "learning-frequency",
@@ -187,7 +188,11 @@ def find_relevant_learnings(
     promoted_rules_file: Path | None = None,
     limit: int = 5,
 ) -> list[dict]:
-    tokens = {token.lower() for token in goal.replace("/", " ").replace("-", " ").split() if len(token) >= 3}
+    tokens = {
+        token.lower()
+        for token in goal.replace("/", " ").replace("-", " ").split()
+        if len(token) >= 3
+    }
     ranked: list[tuple[int, dict]] = []
     seen_rules: set[str] = set()
 
@@ -497,7 +502,10 @@ def _build_simplify_learning_entries(spec_id: str, goal: str, simplify_status: d
                 "category": "pattern",
                 "problem": f"Simplify cycle found {count} remaining issue(s) in {lens}",
                 "cause": goal,
-                "rule": f"Run simplify-cycle until {lens} remaining count converges to zero or no_safe_gain.",
+                "rule": (
+                    f"Run simplify-cycle until {lens} remaining count "
+                    "converges to zero or no_safe_gain."
+                ),
                 "tags": ["auto", "simplify", lens],
                 "severity": "warning",
                 "lens": lens,

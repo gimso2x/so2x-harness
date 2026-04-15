@@ -113,11 +113,13 @@ def test_doctor_reports_workflow_status_surface(tmp_project: Path) -> None:
     status_dir = harness_dir / "status"
     status_dir.mkdir(parents=True, exist_ok=True)
     (status_dir / "simplify-cycle.json").write_text(
-        json.dumps({"remaining_count": 0, "stop_reason": "converged_to_zero"}, ensure_ascii=False) + "\n",
+        json.dumps({"remaining_count": 0, "stop_reason": "converged_to_zero"}, ensure_ascii=False)
+        + "\n",
         encoding="utf-8",
     )
     (status_dir / "safe-commit.json").write_text(
-        json.dumps({"safety_verdict": "SAFE", "verification_status": "PASS"}, ensure_ascii=False) + "\n",
+        json.dumps({"safety_verdict": "SAFE", "verification_status": "PASS"}, ensure_ascii=False)
+        + "\n",
         encoding="utf-8",
     )
     (status_dir / "squash-commit.json").write_text(
@@ -128,8 +130,14 @@ def test_doctor_reports_workflow_status_surface(tmp_project: Path) -> None:
         json.dumps(
             {
                 "rules": [
-                    {"rule": "Keep simplify-cycle at zero", "promoted_at": "2026-04-15T00:00:00+00:00"},
-                    {"rule": "Honor repeated user feedback: 더 단순하게", "promoted_at": "2026-04-16T00:00:00+00:00"},
+                    {
+                        "rule": "Keep simplify-cycle at zero",
+                        "promoted_at": "2026-04-15T00:00:00+00:00",
+                    },
+                    {
+                        "rule": "Honor repeated user feedback: 더 단순하게",
+                        "promoted_at": "2026-04-16T00:00:00+00:00",
+                    },
                 ]
             },
             ensure_ascii=False,
@@ -140,9 +148,16 @@ def test_doctor_reports_workflow_status_surface(tmp_project: Path) -> None:
     (harness_dir / "events.jsonl").write_text(
         "\n".join(
             [
-                json.dumps({"type": "user_feedback_captured", "message": "더 단순하게"}, ensure_ascii=False),
-                json.dumps({"type": "safe_commit_completed", "reason": "ready_for_commit"}, ensure_ascii=False),
-                json.dumps({"type": "squash_check_completed", "reason": "ready"}, ensure_ascii=False),
+                json.dumps(
+                    {"type": "user_feedback_captured", "message": "더 단순하게"}, ensure_ascii=False
+                ),
+                json.dumps(
+                    {"type": "safe_commit_completed", "reason": "ready_for_commit"},
+                    ensure_ascii=False,
+                ),
+                json.dumps(
+                    {"type": "squash_check_completed", "reason": "ready"}, ensure_ascii=False
+                ),
             ]
         )
         + "\n",

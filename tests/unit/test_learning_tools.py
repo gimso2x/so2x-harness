@@ -49,7 +49,10 @@ def test_find_relevant_learnings_matches_goal_and_deduplicates_by_rule(tmp_path:
             "severity": "info",
         },
     ]
-    learnings.write_text("\n".join(json.dumps(entry, ensure_ascii=False) for entry in entries) + "\n", encoding="utf-8")
+    learnings.write_text(
+        "\n".join(json.dumps(entry, ensure_ascii=False) for entry in entries) + "\n",
+        encoding="utf-8",
+    )
     promoted_rules.write_text(
         json.dumps(
             {
@@ -179,9 +182,17 @@ def test_promote_feedback_patterns_promotes_repeated_feedback_messages(tmp_path:
     event_file.write_text(
         "\n".join(
             [
-                json.dumps({"type": "user_feedback_captured", "message": "더 단순하게 해"}, ensure_ascii=False),
-                json.dumps({"type": "user_feedback_captured", "message": "  좀 더 단순하게 해줘  "}, ensure_ascii=False),
-                json.dumps({"type": "user_feedback_captured", "message": "이건 합쳐"}, ensure_ascii=False),
+                json.dumps(
+                    {"type": "user_feedback_captured", "message": "더 단순하게 해"},
+                    ensure_ascii=False,
+                ),
+                json.dumps(
+                    {"type": "user_feedback_captured", "message": "  좀 더 단순하게 해줘  "},
+                    ensure_ascii=False,
+                ),
+                json.dumps(
+                    {"type": "user_feedback_captured", "message": "이건 합쳐"}, ensure_ascii=False
+                ),
             ]
         )
         + "\n",

@@ -168,7 +168,9 @@ def cmd_execute(args: object) -> None:
 
 
 def cmd_status(args: object) -> None:
-    harness_dir = Path(getattr(args, "dir", "")) if getattr(args, "dir", None) else DEFAULT_HARNESS_DIR
+    harness_dir = (
+        Path(getattr(args, "dir", "")) if getattr(args, "dir", None) else DEFAULT_HARNESS_DIR
+    )
     status_dir = harness_dir / DEFAULT_STATUS_DIR.name
     simplify = read_status("simplify-cycle", status_dir)
     safe_commit = read_status("safe-commit", status_dir)
@@ -176,11 +178,15 @@ def cmd_status(args: object) -> None:
 
     print(f"[run] status dir: {status_dir}")
     if simplify:
-        print(f"  simplify-cycle: remaining={simplify.get('remaining_count')} stop_reason={simplify.get('stop_reason')}")
+        remaining = simplify.get("remaining_count")
+        stop_reason = simplify.get("stop_reason")
+        print(f"  simplify-cycle: remaining={remaining} stop_reason={stop_reason}")
     else:
         print("  simplify-cycle: missing")
     if safe_commit:
-        print(f"  safe-commit: verdict={safe_commit.get('safety_verdict')} verification={safe_commit.get('verification_status')}")
+        verdict = safe_commit.get("safety_verdict")
+        verification = safe_commit.get("verification_status")
+        print(f"  safe-commit: verdict={verdict} verification={verification}")
     else:
         print("  safe-commit: missing")
     if squash:
@@ -190,16 +196,31 @@ def cmd_status(args: object) -> None:
 
 
 def cmd_safe_commit(args: object) -> None:
-    harness_dir = Path(getattr(args, "dir", "")) if getattr(args, "dir", None) else DEFAULT_HARNESS_DIR
+    harness_dir = (
+        Path(getattr(args, "dir", "")) if getattr(args, "dir", None) else DEFAULT_HARNESS_DIR
+    )
     status_dir = harness_dir / DEFAULT_STATUS_DIR.name
     event_file = harness_dir / DEFAULT_EVENT_FILE.name
     simplify = read_status("simplify-cycle", status_dir)
     if not simplify:
-        verdict = {"name": "safe-commit", "safety_verdict": "UNSAFE", "verification_status": "MISSING", "reason": "missing_simplify_cycle"}
+        verdict = {
+            "name": "safe-commit",
+            "safety_verdict": "UNSAFE",
+            "verification_status": "MISSING",
+            "reason": "missing_simplify_cycle",
+        }
         write_status("safe-commit", verdict, status_dir)
-        append_event_entries([
-            {"type": "safe_commit_completed", "safety_verdict": "UNSAFE", "verification_status": "MISSING", "reason": "missing_simplify_cycle"}
-        ], event_file)
+        append_event_entries(
+            [
+                {
+                    "type": "safe_commit_completed",
+                    "safety_verdict": "UNSAFE",
+                    "verification_status": "MISSING",
+                    "reason": "missing_simplify_cycle",
+                }
+            ],
+            event_file,
+        )
         print("[run] safe-commit FAIL: simplify-cycle status missing")
         sys.exit(1)
 
@@ -215,16 +236,19 @@ def cmd_safe_commit(args: object) -> None:
         "reason": "ready_for_commit" if safe else "simplify_not_converged",
     }
     write_status("safe-commit", verdict, status_dir)
-    append_event_entries([
-        {
-            "type": "safe_commit_completed",
-            "safety_verdict": verdict["safety_verdict"],
-            "verification_status": verdict["verification_status"],
-            "remaining_count": remaining,
-            "stop_reason": stop_reason,
-            "reason": verdict["reason"],
-        }
-    ], event_file)
+    append_event_entries(
+        [
+            {
+                "type": "safe_commit_completed",
+                "safety_verdict": verdict["safety_verdict"],
+                "verification_status": verdict["verification_status"],
+                "remaining_count": remaining,
+                "stop_reason": stop_reason,
+                "reason": verdict["reason"],
+            }
+        ],
+        event_file,
+    )
     if not safe:
         print(f"[run] safe-commit FAIL: remaining_count={remaining} stop_reason={stop_reason}")
         sys.exit(1)
@@ -232,7 +256,9 @@ def cmd_safe_commit(args: object) -> None:
 
 
 def cmd_squash_check(args: object) -> None:
-    harness_dir = Path(getattr(args, "dir", "")) if getattr(args, "dir", None) else DEFAULT_HARNESS_DIR
+    harness_dir = (
+        Path(getattr(args, "dir", "")) if getattr(args, "dir", None) else DEFAULT_HARNESS_DIR
+    )
     status_dir = harness_dir / DEFAULT_STATUS_DIR.name
     event_file = harness_dir / DEFAULT_EVENT_FILE.name
     simplify = read_status("simplify-cycle", status_dir)
@@ -241,24 +267,34 @@ def cmd_squash_check(args: object) -> None:
     if not simplify:
         snapshot = {"name": "squash-commit", "ready": False, "reason": "missing_simplify_cycle"}
         write_status("squash-commit", snapshot, status_dir)
-        append_event_entries([
-            {"type": "squash_check_completed", "ready": False, "reason": "missing_simplify_cycle"}
-        ], event_file)
+        append_event_entries(
+            [
+                {
+                    "type": "squash_check_completed",
+                    "ready": False,
+                    "reason": "missing_simplify_cycle",
+                }
+            ],
+            event_file,
+        )
         print("[run] squash-check FAIL: simplify-cycle status missing")
         sys.exit(1)
     if not safe_commit:
         snapshot = {"name": "squash-commit", "ready": False, "reason": "missing_safe_commit"}
         write_status("squash-commit", snapshot, status_dir)
-        append_event_entries([
-            {"type": "squash_check_completed", "ready": False, "reason": "missing_safe_commit"}
-        ], event_file)
+        append_event_entries(
+            [{"type": "squash_check_completed", "ready": False, "reason": "missing_safe_commit"}],
+            event_file,
+        )
         print("[run] squash-check FAIL: safe-commit status missing")
         sys.exit(1)
 
     remaining = int(simplify.get("remaining_count", 0) or 0)
     stop_reason = str(simplify.get("stop_reason", "")).strip()
     safe_verdict = str(safe_commit.get("safety_verdict", "")).strip()
-    ready = (remaining == 0 or stop_reason in _ALLOWED_SIMPLIFY_STOP_REASONS - {"converged_to_zero"}) and safe_verdict == "SAFE"
+    ready = (
+        remaining == 0 or stop_reason in _ALLOWED_SIMPLIFY_STOP_REASONS - {"converged_to_zero"}
+    ) and safe_verdict == "SAFE"
     reason = "ready" if ready else "preconditions_failed"
     snapshot = {
         "name": "squash-commit",
@@ -269,20 +305,31 @@ def cmd_squash_check(args: object) -> None:
         "safe_commit_verdict": safe_verdict,
     }
     write_status("squash-commit", snapshot, status_dir)
-    append_event_entries([
-        {
-            "type": "squash_check_completed",
-            "ready": ready,
-            "reason": reason,
-            "remaining_count": remaining,
-            "stop_reason": stop_reason,
-            "safe_commit_verdict": safe_verdict,
-        }
-    ], event_file)
+    append_event_entries(
+        [
+            {
+                "type": "squash_check_completed",
+                "ready": ready,
+                "reason": reason,
+                "remaining_count": remaining,
+                "stop_reason": stop_reason,
+                "safe_commit_verdict": safe_verdict,
+            }
+        ],
+        event_file,
+    )
     if not ready:
-        print(f"[run] squash-check FAIL: remaining_count={remaining} stop_reason={stop_reason} safe_commit={safe_verdict}")
+        print(
+            "[run] squash-check FAIL: "
+            f"remaining_count={remaining} stop_reason={stop_reason} "
+            f"safe_commit={safe_verdict}"
+        )
         sys.exit(1)
-    print(f"[run] squash-check PASS: safe_commit={safe_verdict} remaining_count={remaining} stop_reason={stop_reason}")
+    print(
+        "[run] squash-check PASS: "
+        f"safe_commit={safe_verdict} remaining_count={remaining} "
+        f"stop_reason={stop_reason}"
+    )
 
 
 def _print_persistence_summary(persistence: dict[str, object], harness_dir: Path) -> None:
@@ -291,7 +338,8 @@ def _print_persistence_summary(persistence: dict[str, object], harness_dir: Path
     promoted = persistence.get("promoted", [])
     statuses = persistence.get("statuses", [])
     print(f"[run] Auto-events captured: {len(added_events)} -> {harness_dir / 'events.jsonl'}")
-    print(f"[run] Auto-learnings captured: {len(added_learnings)} -> {harness_dir / 'learnings.jsonl'}")
+    learnings_path = harness_dir / "learnings.jsonl"
+    print(f"[run] Auto-learnings captured: {len(added_learnings)} -> {learnings_path}")
     print(f"[run] Promoted rules: {len(promoted)} -> {harness_dir / 'promoted-rules.json'}")
     if statuses:
         print(f"[run] Status snapshots updated: {len(statuses)}")
@@ -311,7 +359,9 @@ def _build_instruction(agent_template: Path, spec_file: Path, phase: str) -> str
     return f"[{phase}] 에이전트 지시:\n{content}\n\nSpec file: {spec_file}{spec_summary}"
 
 
-def _update_task_status(spec_file: Path, task_id: str, status: str, summary: str | None = None) -> None:
+def _update_task_status(
+    spec_file: Path, task_id: str, status: str, summary: str | None = None
+) -> None:
     spec = json.loads(spec_file.read_text(encoding="utf-8"))
     for task in spec.get("chain", {}).get("l4_tasks", []):
         if task.get("id") == task_id:
@@ -356,4 +406,5 @@ def _check_l5(spec: dict) -> tuple[bool, list[str]]:
 
 def _now_iso() -> str:
     from datetime import datetime, timezone
+
     return datetime.now(timezone.utc).isoformat()
