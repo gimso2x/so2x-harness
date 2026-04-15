@@ -119,6 +119,7 @@ catalog 원본은 `templates/project/.ai-harness/skill-catalog.json`에 있고, 
   - django manage.py
   - next app router
   - vite lib mode
+  - pnpm-workspace.yaml만 있는 저장소도 coarse `monorepo` + `pnpm-monorepo`로 함께 감지
 - profile policy도 같이 적용합니다
   - next-app / react-lib: `specify`를 기본 추천에서 승격
   - monorepo / pnpm-monorepo: `execute`, `spec-validate`를 기본 추천에서 승격

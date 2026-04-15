@@ -108,6 +108,26 @@ def test_detect_project_profiles_for_turborepo_workspace(tmp_path: Path) -> None
     assert "workspace:pnpm" in detected["detection_signals"]
 
 
+def test_detect_project_profiles_for_pnpm_workspace_yaml_only_monorepo(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "package.json").write_text(
+        '{"packageManager":"pnpm@9.0.0","dependencies":{"react":"19.0.0"}}\n',
+        encoding="utf-8",
+    )
+    (project / "pnpm-workspace.yaml").write_text("packages:\n  - packages/*\n", encoding="utf-8")
+
+    detected = detect_project_profiles(project)
+
+    assert "frontend" in detected["detected_profiles"]
+    assert "monorepo" in detected["detected_profiles"]
+    assert "pnpm-monorepo" in detected["detected_profiles"]
+    assert "packageManager:pnpm" in detected["detection_signals"]
+    assert "workspace:pnpm" in detected["detection_signals"]
+    assert "review-cycle" in detected["recommended_skills"]
+    assert "execute" in detected["enabled_skills"]
+
+
 def test_detect_project_profiles_for_plain_workspace_monorepo_recommends_review_cycle(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()
@@ -233,6 +253,20 @@ def test_detect_project_profiles_for_fastapi_requirements_project(tmp_path: Path
     assert "requirements.txt:fastapi" in detected["detection_signals"]
     assert "review-cycle" in detected["recommended_skills"]
     assert "specify-lite" in detected["recommended_skills"]
+
+
+def test_detect_project_profiles_for_flask_requirements_project(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "requirements.txt").write_text("flask>=3.0\nsqlalchemy>=2.0\n", encoding="utf-8")
+
+    detected = detect_project_profiles(project)
+
+    assert "backend" in detected["detected_profiles"]
+    assert "requirements.txt:backend-framework" in detected["detection_signals"]
+    assert "review-cycle" in detected["recommended_skills"]
+    assert "specify-lite" in detected["recommended_skills"]
+    assert "spec-validate" in detected["recommended_skills"]
 
 
 def test_detect_project_profiles_for_next_app_router_project(tmp_path: Path) -> None:

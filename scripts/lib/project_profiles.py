@@ -112,6 +112,9 @@ def detect_project_profiles(project_dir: Path) -> dict[str, object]:
         profiles.append("monorepo")
         signals.append("package.json:workspaces")
 
+    if (project_dir / "pnpm-workspace.yaml").exists():
+        profiles.append("monorepo")
+
     if (project_dir / "pnpm-workspace.yaml").exists() or "packageManager:pnpm" in signals:
         profiles.append("pnpm-monorepo")
         signals.append("workspace:pnpm")

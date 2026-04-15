@@ -190,6 +190,55 @@ def test_apply_auto_preset_detects_object_workspaces_monorepo(tmp_path: Path) ->
     assert "workspace:pnpm" in doctor.stdout
 
 
+def test_apply_auto_preset_detects_pnpm_workspace_yaml_only_monorepo(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "package.json").write_text(
+        json.dumps({"packageManager": "pnpm@9.0.0", "dependencies": {"react": "19.0.0"}}) + "\n",
+        encoding="utf-8",
+    )
+    (project / "pnpm-workspace.yaml").write_text("packages:\n  - packages/*\n", encoding="utf-8")
+
+    apply = subprocess.run(
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(project),
+            "--platform",
+            "claude",
+            "codex",
+            "--preset",
+            "auto",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert apply.returncode == 0
+    assert "detected_profiles=frontend,monorepo,pnpm-monorepo" in apply.stdout
+
+    config = json.loads((project / ".ai-harness" / "config.json").read_text(encoding="utf-8"))
+    assert config["detected_profiles"] == ["frontend", "monorepo", "pnpm-monorepo"]
+    assert "packageManager:pnpm" in config["detection_signals"]
+    assert "workspace:pnpm" in config["detection_signals"]
+    assert "review-cycle" in config["enabled_skills"]
+    assert "execute" in config["enabled_skills"]
+    assert "spec-validate" in config["enabled_skills"]
+
+    doctor = subprocess.run(
+        ["python3", str(ROOT_DIR / "scripts/doctor.py"), "--project", str(project)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert doctor.returncode == 0
+    assert "frontend, monorepo, pnpm-monorepo" in doctor.stdout
+    assert "packageManager:pnpm" in doctor.stdout
+    assert "workspace:pnpm" in doctor.stdout
+    assert "review-cycle" in doctor.stdout
+
+
 def test_apply_auto_preset_detects_uv_workspace_monorepo(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()
@@ -236,4 +285,49 @@ def test_apply_auto_preset_detects_uv_workspace_monorepo(tmp_path: Path) -> None
     assert "monorepo, python-package" in doctor.stdout
     assert "pyproject.toml:uv-workspace" in doctor.stdout
     assert "execute" in doctor.stdout
+    assert "spec-validate" in doctor.stdout
+
+
+def test_apply_auto_preset_detects_requirements_backend_framework_project(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "requirements.txt").write_text("flask>=3.0\nsqlalchemy>=2.0\n", encoding="utf-8")
+
+    apply = subprocess.run(
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(project),
+            "--platform",
+            "claude",
+            "codex",
+            "--preset",
+            "auto",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert apply.returncode == 0
+    assert "detected_profiles=backend" in apply.stdout
+
+    config = json.loads((project / ".ai-harness" / "config.json").read_text(encoding="utf-8"))
+    assert config["detected_profiles"] == ["backend"]
+    assert "requirements.txt:python-backend" in config["detection_signals"]
+    assert "requirements.txt:backend-framework" in config["detection_signals"]
+    assert "review-cycle" in config["enabled_skills"]
+    assert "specify-lite" in config["enabled_skills"]
+    assert "spec-validate" in config["enabled_skills"]
+
+    doctor = subprocess.run(
+        ["python3", str(ROOT_DIR / "scripts/doctor.py"), "--project", str(project)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert doctor.returncode == 0
+    assert "requirements.txt:backend-framework" in doctor.stdout
+    assert "review-cycle" in doctor.stdout
+    assert "specify-lite" in doctor.stdout
     assert "spec-validate" in doctor.stdout
