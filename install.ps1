@@ -8,7 +8,12 @@ $ErrorActionPreference = "Stop"
 $RepoUrl = if ($env:SO2X_REPO_URL) { $env:SO2X_REPO_URL } else { "https://github.com/gimso2x/so2x-harness.git" }
 $RepoRef = if ($env:SO2X_REPO_REF) { $env:SO2X_REPO_REF } else { "main" }
 $TempRoot = $null
-$Root = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptPath = $MyInvocation.MyCommand.Path
+if ($scriptPath) {
+  $Root = Split-Path -Parent $scriptPath
+} else {
+  $Root = $null
+}
 
 function Info($msg) {
   Write-Host "[so2x-harness] $msg"
