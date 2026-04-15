@@ -21,6 +21,8 @@
     "spec-validate",
     "setup-context",
     "changelog",
-    "safe-commit"
+    "safe-commit",
+    "simplify-cycle",
+    "squash-commit"
   ]
 }

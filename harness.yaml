@@ -25,3 +25,5 @@ default_skills:
   - setup-context
   - changelog
   - safe-commit
+  - simplify-cycle
+  - squash-commit
