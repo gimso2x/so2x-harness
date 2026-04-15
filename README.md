@@ -44,6 +44,44 @@ python "$repo\scripts\apply.py" --project . --platform claude codex --preset gen
 
 ---
 
+### 설치 후 바로 확인하기
+
+harness bootstrap 설치는 프로젝트에 규칙/skills/hooks를 배포하는 용도입니다. 이 단계만으로 `so2x-cli`가 전역 설치되지는 않습니다.
+
+즉, 아래처럼 보이면 bootstrap은 실패가 아니라 정상일 수 있습니다.
+
+```bash
+so2x-cli not found
+```
+
+먼저 프로젝트에 플랫폼 자산이 들어왔는지 확인하세요.
+
+```bash
+cat .ai-harness/manifest.json
+test -d .claude && echo ".claude ok"
+test -d .agents && echo ".agents ok"
+```
+
+```powershell
+Get-Content .ai-harness\manifest.json
+Test-Path .claude
+Test-Path .agents
+```
+
+- Claude를 같이 설치했다면 manifest `platforms`에 `claude`가 보여야 합니다.
+- Codex를 같이 설치했다면 manifest `platforms`에 `codex`가 보여야 합니다.
+- 둘 다 설치했다면 `.claude`와 `.agents`가 둘 다 있어야 합니다.
+
+`so2x-cli`가 필요한 경우는 spec engine/CLI 명령을 직접 쓰고 싶을 때입니다.
+
+```bash
+git clone https://github.com/gimso2x/so2x-harness.git
+cd so2x-harness && pip install -e .
+so2x-cli --version
+```
+
+---
+
 ## Usage
 
 harness를 설치하면 Claude Code에서 slash 명령으로 바로 사용할 수 있습니다.
