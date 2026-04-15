@@ -101,7 +101,7 @@
   },
   "specify-lite": {
     "tier": "recommended",
-    "applies_to": ["frontend", "backend"],
+    "applies_to": ["frontend", "backend", "monorepo"],
     "platforms": ["claude", "codex"],
     "priority": 80,
     "signals_any": [
@@ -124,9 +124,15 @@
       "go.mod:backend-service",
       "go.work:workspace",
       "Cargo.toml:backend-service",
-      "Cargo.toml:workspace"
+      "Cargo.toml:workspace",
+      "package.json:workspaces",
+      "workspace:pnpm",
+      "workspace:yarn",
+      "workspace:npm",
+      "workspace:bun",
+      "pyproject.toml:uv-workspace"
     ],
-    "rationale": "Service/UI repos benefit from lighter spec capture before implementation."
+    "rationale": "Service/UI repos and workspace roots benefit from lighter spec capture before implementation."
   },
   "spec-validate": {
     "tier": "recommended",

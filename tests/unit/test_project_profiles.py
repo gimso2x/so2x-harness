@@ -530,6 +530,22 @@ def test_recommend_skill_plan_matches_catalog_signals_for_workspace_only_bun_mon
     assert "specify" in plan["optional_skills"]
 
 
+def test_recommend_skill_plan_recommends_specify_lite_for_workspace_only_monorepos() -> None:
+    plan = recommend_skill_plan(
+        ["monorepo", "pnpm-monorepo"],
+        ["package.json:workspaces", "workspace:pnpm"],
+        platforms=["claude", "codex"],
+    )
+
+    assert "review-cycle" in plan["enabled_skills"]
+    assert "specify-lite" in plan["enabled_skills"]
+    assert any("matched profiles: monorepo" in reason for reason in plan["skill_recommendations"]["specify-lite"])
+    assert any(
+        "matched signals: package.json:workspaces, workspace:pnpm" in reason
+        for reason in plan["skill_recommendations"]["specify-lite"]
+    )
+
+
 def test_load_skill_catalog_reads_external_catalog_file() -> None:
     catalog = load_skill_catalog()
 
