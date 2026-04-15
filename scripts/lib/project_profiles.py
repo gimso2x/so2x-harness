@@ -157,9 +157,7 @@ def detect_project_profiles(project_dir: Path) -> dict[str, object]:
         profiles.append("bun-monorepo")
         signals.append("workspace:bun")
 
-    if (project_dir / "app").exists() and any(
-        (project_dir / "app" / name).exists() for name in ("page.tsx", "layout.tsx", "page.js", "layout.js")
-    ):
+    if _has_next_app_router(project_dir):
         signals.append("next:app-router")
 
     vite_config = _read_first_existing(project_dir / "vite.config.ts", project_dir / "vite.config.js")
@@ -337,6 +335,12 @@ def _has_workspace_config(workspaces: object) -> bool:
         packages = workspaces.get("packages")
         return isinstance(packages, list) and bool(packages)
     return False
+
+
+def _has_next_app_router(project_dir: Path) -> bool:
+    app_roots = [project_dir / "app", project_dir / "src" / "app"]
+    app_router_files = ("page.tsx", "layout.tsx", "page.js", "layout.js")
+    return any(app_root.exists() and any((app_root / name).exists() for name in app_router_files) for app_root in app_roots)
 
 
 def _detect_workspace_package_manager(project_dir: Path, package_manager: str, has_workspace_config: bool) -> str | None:

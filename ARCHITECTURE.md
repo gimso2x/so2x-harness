@@ -125,6 +125,7 @@ apply.py --project ./my-app --preset auto
   - workspace-aware Python: `pyproject.toml:uv-workspace` signal promotes the repo into the shared `monorepo` policy path
 - platforms: Claude/Codex parity 확인용
 - signals_any: 어떤 파일 시그널에서 활성화되는지
+  - 예: Next app router는 `app/` 뿐 아니라 `src/app/`도 `next:app-router`로 감지
 - rationale: config와 doctor에 남길 추천 이유
 - workflow_tags: 반복 simplify 흐름 같은 우선 워크플로 태그
 

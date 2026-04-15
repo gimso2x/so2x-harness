@@ -119,7 +119,7 @@ catalog 원본은 `templates/project/.ai-harness/skill-catalog.json`에 있고, 
   - turborepo / nx / lerna workspace
   - poetry / uv / hatch python toolchain
   - django manage.py
-  - next app router
+  - next app router (`app/` 또는 `src/app/`)
   - vite lib mode
   - pnpm-workspace.yaml만 있는 저장소도 coarse `monorepo` + `pnpm-monorepo`로 함께 감지
   - yarn packageManager + workspaces도 `yarn-monorepo`와 `workspace:yarn` signal로 함께 감지

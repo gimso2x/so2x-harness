@@ -86,6 +86,60 @@ def test_apply_auto_preset_detects_frontend_monorepo_and_surfaces_in_doctor(tmp_
     assert "review-cycle" in doctor.stdout
 
 
+def test_apply_auto_preset_detects_src_app_next_router_and_surfaces_in_doctor(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "package.json").write_text(
+        json.dumps({"dependencies": {"next": "15.0.0", "react": "19.0.0"}}) + "\n",
+        encoding="utf-8",
+    )
+    src_app_dir = project / "src" / "app"
+    src_app_dir.mkdir(parents=True)
+    (src_app_dir / "layout.tsx").write_text(
+        "export default function RootLayout({ children }) { return children }\n",
+        encoding="utf-8",
+    )
+
+    apply = subprocess.run(
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(project),
+            "--platform",
+            "claude",
+            "codex",
+            "--preset",
+            "auto",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert apply.returncode == 0
+    assert "detected_profiles=frontend,next-app" in apply.stdout
+
+    config = json.loads((project / ".ai-harness" / "config.json").read_text(encoding="utf-8"))
+    assert config["detected_profiles"] == ["frontend", "next-app"]
+    assert "package.json:next" in config["detection_signals"]
+    assert "next:app-router" in config["detection_signals"]
+    assert "specify" in config["enabled_skills"]
+    assert config["policy_promoted_skills"] == {
+        "specify": "next-app repos default to full specification workflow"
+    }
+
+    doctor = subprocess.run(
+        ["python3", str(ROOT_DIR / "scripts/doctor.py"), "--project", str(project)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert doctor.returncode == 0
+    assert "frontend, next-app" in doctor.stdout
+    assert "next:app-router" in doctor.stdout
+    assert "policy promotion: next-app repos default to full specification workflow" in doctor.stdout
+
+
 def test_apply_auto_preset_detects_workspace_only_monorepo(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()
