@@ -246,6 +246,62 @@ def test_apply_auto_preset_detects_yarn_workspace_monorepo(tmp_path: Path) -> No
     assert "workspace:yarn" in doctor.stdout
 
 
+def test_apply_auto_preset_detects_npm_workspace_monorepo(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "package.json").write_text(
+        json.dumps(
+            {
+                "packageManager": "npm@10.8.2",
+                "workspaces": ["apps/*", "packages/*"],
+                "dependencies": {"react": "19.0.0"},
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    apply = subprocess.run(
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(project),
+            "--platform",
+            "claude",
+            "codex",
+            "--preset",
+            "auto",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert apply.returncode == 0
+    assert "detected_profiles=frontend,monorepo,npm-monorepo" in apply.stdout
+
+    config = json.loads((project / ".ai-harness" / "config.json").read_text(encoding="utf-8"))
+    assert config["detected_profiles"] == ["frontend", "monorepo", "npm-monorepo"]
+    assert "package.json:workspaces" in config["detection_signals"]
+    assert "packageManager:npm" in config["detection_signals"]
+    assert "workspace:npm" in config["detection_signals"]
+    assert "review-cycle" in config["enabled_skills"]
+    assert "specify-lite" in config["enabled_skills"]
+    assert "execute" in config["enabled_skills"]
+    assert "spec-validate" in config["enabled_skills"]
+
+    doctor = subprocess.run(
+        ["python3", str(ROOT_DIR / "scripts/doctor.py"), "--project", str(project)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert doctor.returncode == 0
+    assert "frontend, monorepo, npm-monorepo" in doctor.stdout
+    assert "packageManager:npm" in doctor.stdout
+    assert "workspace:npm" in doctor.stdout
+
+
 def test_apply_auto_preset_detects_pnpm_workspace_yaml_only_monorepo(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()
