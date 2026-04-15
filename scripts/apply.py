@@ -24,6 +24,7 @@ from lib.install import (
 )
 from lib.manifest import load_manifest, write_manifest
 from lib.platform_map import PLATFORM_CAPABILITIES, PROJECT_PATHS
+from lib.project_profiles import resolve_preset
 from lib.render import render_template
 
 VERSION = (ROOT_DIR / "VERSION").read_text(encoding="utf-8").strip()
@@ -32,7 +33,7 @@ VERSION = (ROOT_DIR / "VERSION").read_text(encoding="utf-8").strip()
 def load_preset(preset_name: str) -> dict:
     preset_path = ROOT_DIR / f"templates/project/.ai-harness/presets/{preset_name}.json"
     if not preset_path.exists():
-        raise SystemExit(f"unknown preset: {preset_name} (supported: general)")
+        raise SystemExit(f"unknown preset: {preset_name} (supported: auto, general)")
     return json.loads(preset_path.read_text(encoding="utf-8"))
 
 
@@ -103,9 +104,9 @@ def install_project_config(
     config_path: Path,
     preset_name: str,
     platforms: list[str],
+    preset: dict,
 ) -> str:
     template = ROOT_DIR / "templates/project/.ai-harness/config.json.tmpl"
-    preset = load_preset(preset_name)
     enabled_skills = preset["enabled_skills"]
     rendered = render_template(
         template,
@@ -157,10 +158,10 @@ def apply_platform(
     platform: str,
     preset_name: str,
     config_platforms: list[str],
+    preset: dict,
 ) -> dict:
     paths = PROJECT_PATHS[platform]
     caps = PLATFORM_CAPABILITIES[platform]
-    preset = load_preset(preset_name)
     enabled_skills = preset["enabled_skills"]
     files: dict[str, dict[str, str]] = {}
 
@@ -220,6 +221,7 @@ def apply_platform(
             project_dir / config_rel,
             preset_name,
             config_platforms,
+            preset,
         ),
     }
 
@@ -240,8 +242,8 @@ def main() -> None:
 
     project = Path(args.project).resolve()
     project.mkdir(parents=True, exist_ok=True)
-
     platforms = list(dict.fromkeys(args.platform))
+    preset = resolve_preset(project, args.preset, load_preset(args.preset), platforms=platforms)
 
     # Merge with existing manifest platforms (add-only)
     existing_platforms: list[str] = []
@@ -254,7 +256,7 @@ def main() -> None:
 
     all_files: dict[str, dict[str, str]] = {}
     for platform in merged_platforms:
-        platform_files = apply_platform(project, platform, args.preset, merged_platforms)
+        platform_files = apply_platform(project, platform, args.preset, merged_platforms, preset)
         all_files.update(platform_files)
 
     manifest = {
@@ -270,6 +272,19 @@ def main() -> None:
         f"platforms={','.join(merged_platforms)} project={project}"
     )
     print(f"[so2x-harness] preset={args.preset}")
+    if args.preset == "auto":
+        print(
+            "[so2x-harness] detected_profiles="
+            f"{','.join(preset.get('detected_profiles', [])) or 'none'}"
+        )
+        print(
+            "[so2x-harness] recommended_skills="
+            f"{','.join(preset.get('recommended_skills', [])) or 'none'}"
+        )
+        print(
+            "[so2x-harness] optional_skills="
+            f"{','.join(preset.get('optional_skills', [])) or 'none'}"
+        )
     print(f"[so2x-harness] wrote {len(manifest['files'])} managed file entries")
 
 

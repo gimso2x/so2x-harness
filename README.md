@@ -29,7 +29,7 @@ curl -sSfL https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.s
 # macOS / Linux — 둘 다 확실히 설치하려면
 REPO_DIR="$(mktemp -d)"
 git clone https://github.com/gimso2x/so2x-harness.git "$REPO_DIR"
-python3 "$REPO_DIR/scripts/apply.py" --project . --platform claude codex --preset general
+python3 "$REPO_DIR/scripts/apply.py" --project . --platform claude codex --preset auto
 ```
 
 ```powershell
@@ -45,7 +45,7 @@ powershell -c "& ([scriptblock]::Create((irm https://raw.githubusercontent.com/g
 $repo = Join-Path $env:TEMP "so2x-harness"
 if (Test-Path $repo) { Remove-Item -Recurse -Force $repo }
 git clone https://github.com/gimso2x/so2x-harness.git $repo
-python "$repo\scripts\apply.py" --project . --platform claude codex --preset general
+python "$repo\scripts\apply.py" --project . --platform claude codex --preset auto
 ```
 
 ---
@@ -85,6 +85,25 @@ git clone https://github.com/gimso2x/so2x-harness.git
 cd so2x-harness && pip install -e .
 so2x-cli --version
 ```
+
+`--preset auto`는 프로젝트 파일 시그널(`package.json`, `pyproject.toml`, `apps/`, `packages/` 등)을 보고 `detected_profiles`, `detection_signals`, `enabled_skills`, `recommended_skills`, `optional_skills`, `skill_recommendations`를 계산해서 더 맞는 skill 조합을 적용합니다. 강제로 고정 skill 셋을 쓰고 싶으면 `--preset general`을 사용하면 됩니다.
+
+auto 추천 기준은 메타데이터 기반입니다.
+
+- `enabled_skills`: 실제로 설치되는 core/recommended 스킬
+- `recommended_skills`: 현재 프로젝트에 맞다고 판단된 전체 추천 스킬
+- `optional_skills`: 당장 설치하지는 않지만 후보로 남기는 스킬
+- `skill_recommendations`: 왜 추천됐는지 남기는 이유 목록
+
+기본 원칙은 다음과 같습니다.
+
+- `simplify-cycle`, `squash-commit`, `safe-commit`은 공통 core로 유지
+- `simplify-cycle`은 항상 3개 review lens를 우선 반영
+  - Code Reuse Review
+  - Code Quality Review
+  - Efficiency Review
+- frontend/backend/monorepo/package profile은 파일 시그널로 감지
+- Claude/Codex는 같은 추천 로직을 공유하고, 플랫폼 미지원 스킬만 제외
 
 ---
 

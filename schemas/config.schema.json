@@ -10,7 +10,7 @@
     },
     "preset": {
       "type": "string",
-      "enum": ["general"]
+      "enum": ["auto", "general"]
     },
     "platforms": {
       "type": "array",
@@ -39,6 +39,27 @@
       "type": "array",
       "items": {
         "type": "string"
+      }
+    },
+    "recommended_skills": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "optional_skills": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "skill_recommendations": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
       }
     }
   },

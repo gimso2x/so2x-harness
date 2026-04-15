@@ -130,6 +130,23 @@ def _workflow_status_items(project_dir: Path) -> list[tuple[str, str, str]]:
     elif harness_dir.exists():
         items.append(("WARN", "promoted_rules", "missing promoted-rules.json"))
 
+    config = _load_json(harness_dir / "config.json") if harness_dir.exists() else None
+    if config:
+        profiles = config.get("detected_profiles", [])
+        signals = config.get("detection_signals", [])
+        recommended_skills = config.get("recommended_skills", [])
+        optional_skills = config.get("optional_skills", [])
+        if profiles:
+            items.append(("OK", "detected_profiles", ", ".join(str(p) for p in profiles)))
+        if signals:
+            items.append(("OK", "detection_signals", ", ".join(str(s) for s in signals)))
+        if recommended_skills:
+            items.append(
+                ("OK", "recommended_skills", ", ".join(str(skill) for skill in recommended_skills))
+            )
+        if optional_skills:
+            items.append(("OK", "optional_skills", ", ".join(str(skill) for skill in optional_skills)))
+
     feedback_count = 0
     latest_feedback = ""
     safe_commit_events = 0

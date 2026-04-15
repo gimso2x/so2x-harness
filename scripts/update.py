@@ -24,6 +24,7 @@ from lib.install import (
 )
 from lib.manifest import load_manifest, write_manifest
 from lib.platform_map import PLATFORM_CAPABILITIES, PROJECT_PATHS
+from lib.project_profiles import resolve_preset
 from lib.render import render_template
 
 VERSION = (ROOT_DIR / "VERSION").read_text(encoding="utf-8").strip()
@@ -32,7 +33,7 @@ VERSION = (ROOT_DIR / "VERSION").read_text(encoding="utf-8").strip()
 def load_preset(preset_name: str) -> dict:
     preset_path = ROOT_DIR / f"templates/project/.ai-harness/presets/{preset_name}.json"
     if not preset_path.exists():
-        raise SystemExit(f"unknown preset: {preset_name} (supported: general)")
+        raise SystemExit(f"unknown preset: {preset_name} (supported: auto, general)")
     return json.loads(preset_path.read_text(encoding="utf-8"))
 
 
@@ -102,9 +103,9 @@ def update_project_config(
     config_path: Path,
     preset_name: str,
     platforms: list[str],
+    preset: dict,
 ) -> str:
     template = ROOT_DIR / "templates/project/.ai-harness/config.json.tmpl"
-    preset = load_preset(preset_name)
     enabled_skills = preset["enabled_skills"]
     rendered = render_template(
         template,
@@ -153,8 +154,16 @@ def cleanup_stale_skill_dirs(
 
 def build_updated_manifest(project_dir: Path, old_manifest: dict) -> dict:
     platforms = old_manifest.get("platforms", ["claude"])
+    config_path = project_dir / ".ai-harness" / "config.json"
     preset_name = "general"
-    preset = load_preset(preset_name)
+    if config_path.exists():
+        try:
+            preset_name = json.loads(config_path.read_text(encoding="utf-8")).get(
+                "preset", "general"
+            )
+        except json.JSONDecodeError:
+            preset_name = "general"
+    preset = resolve_preset(project_dir, preset_name, load_preset(preset_name), platforms=platforms)
     enabled_skills = preset["enabled_skills"]
     all_files: dict[str, dict[str, str]] = {}
 
@@ -227,6 +236,7 @@ def build_updated_manifest(project_dir: Path, old_manifest: dict) -> dict:
                 project_dir / paths["config_path"],
                 preset_name,
                 platforms,
+                preset,
             ),
         }
 
