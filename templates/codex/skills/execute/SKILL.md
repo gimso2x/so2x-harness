@@ -1,72 +1,88 @@
 ---
 name: execute
-description: Execute spec-driven implementation with verification
+description: Implement work from an approved spec or task breakdown and verify completion against explicit checks.
 validate_prompt: |
   Output must include:
   - Tasks completed count
-  - Scenarios verified count (pass/fail)
-  - Gate results
+  - Verification results
+  - Remaining risks or blockers
   - Overall verdict: ship or needs_fixes
 ---
 
 # execute
 
-spec.json에 정의된 태스크를 구현하고 시나리오별로 검증합니다.
+정리된 요구사항이나 spec를 바탕으로 실제 구현과 검증을 진행합니다.
 
 ## When to use
 
-- `/specify`로 spec.json이 작성된 후
-- `/execute`로 구현 시작
-- 태스크 단위로 구현 → 검증 반복
+- 요구사항/태스크가 이미 정리된 뒤
+- 승인된 spec, task list, 또는 구현 체크리스트가 있을 때
+- 작업 단위를 순서대로 구현하고 검증해야 할 때
 
-## Pipeline
+## Codex-friendly invocation
 
-```
-1. Load spec.json
-   → l4_tasks에서 pending 태스크 확인
-
-2. For each pending task:
-   ├── Implement (작은 범위, 300줄 이하)
-   ├── Verify scenarios for related requirements
-   │   └── so2x-cli spec check --gate l3_to_l4
-   └── Update task status to "done"
-
-3. Final verification
-   ├── Verifier 에이전트가 모든 시나리오 독립 검증
-   └── so2x-cli spec validate
-
-4. Result
-   ├── all pass → ship
-   └── any fail → needs_fixes (어떤 시나리오가 실패했는지 보고)
+```text
+$execute
 ```
 
-## How to use
+또는 현재 문맥에 있는 spec/task list를 기준으로 “이제 구현해”라고 직접 요청할 수 있습니다.
 
-```
-/execute
-```
+## Expected workflow
 
-1. 프로젝트의 `.ai-harness/specs/*/spec.json` 탐색
-2. status가 "approved"인 spec 선택
-3. l4_tasks를 순서대로 구현
-4. 각 태스크 완료 후 관련 시나리오 검증
-5. 모든 태스크 완료 후 전체 검증
+1. 입력으로 받은 spec 또는 task list 확인
+2. pending 또는 미완료 작업부터 순서대로 구현
+3. 각 작업 후 관련 검증 수행
+4. 실패한 검증이 있으면 원인과 보완점 기록
+5. 모든 작업 완료 후 최종 verdict 제시
+
+## Recommended output shape
+
+```markdown
+### Source
+- spec/task reference: ...
+
+### Tasks completed
+1. ...
+2. ...
+
+### Verification
+- test/manual check: pass | fail
+- ...
+
+### Remaining risks
+- ...
+
+### Verdict
+ship | needs_fixes
+```
 
 ## Rules
 
-1. **spec.json의 태스크만 구현** — 범위를 벗어나지 않음
-2. **태스크당 300줄 이하** — 크면 분해
-3. **시나리오 검증 필수** — 구현만 하고 검증 건너뛰지 않음
-4. **spec.json gates 섹션에 결과 기록**
-5. **append-only** — 새 태스크 추가 가능하지만 기존 태스크 수정 불가
+1. 정리되지 않은 요구사항을 임의로 확정하지 않습니다.
+2. 현재 spec/task 범위를 벗어나는 구현은 분리해서 제안합니다.
+3. 구현만 하지 말고 관련 검증 결과를 함께 남깁니다.
+4. Claude 전용 slash command, hook, agent orchestration을 전제로 설명하지 않습니다.
+5. 이 문서만 읽어도 Codex 사용자가 바로 실행할 수 있어야 합니다.
 
-## Output
+## Example
 
-```
-execute result:
-  Spec: SPEC-AUTH-001
-  Tasks: 4/4 done
-  Scenarios: 3/3 passed
-  Gates: all passed
-  Verdict: ship
+```markdown
+### Source
+- spec/task reference: OAuth 로그인 spec v1
+
+### Tasks completed
+1. Google OAuth 시작 endpoint 추가
+2. GitHub OAuth callback 처리 추가
+3. 신규 사용자 생성 로직 연결
+
+### Verification
+- Google 로그인 성공: pass
+- GitHub 로그인 성공: pass
+- 이메일 충돌 자동 병합 방지: pass
+
+### Remaining risks
+- provider 설정값 누락 시 배포 환경에서 실패할 수 있음
+
+### Verdict
+ship
 ```
