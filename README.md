@@ -18,8 +18,15 @@
 현재 설치 엔진이 공식 지원하는 대상 플랫폼은 Claude Code와 Codex CLI입니다. `--platform claude`, `--platform codex`, 또는 `--platform claude codex`로 다중 플랫폼 동시 설치가 가능합니다.
 
 ```bash
-# macOS / Linux
+# macOS / Linux — 대화형 설치
 curl -sSfL https://raw.githubusercontent.com/gimso2x/so2x-harness/main/install.sh | sh
+```
+
+```bash
+# macOS / Linux — 둘 다 확실히 설치하려면
+REPO_DIR="$(mktemp -d)"
+git clone https://github.com/gimso2x/so2x-harness.git "$REPO_DIR"
+python3 "$REPO_DIR/scripts/apply.py" --project . --platform claude codex --preset general
 ```
 
 ```powershell
