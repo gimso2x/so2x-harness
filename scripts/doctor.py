@@ -201,6 +201,26 @@ def _workflow_status_items(project_dir: Path) -> list[tuple[str, str, str]]:
                         f"{current_plan['recommended_skills']} optional={current_plan['optional_skills']}",
                     )
                 )
+            if policy_promoted_skills != current_plan["policy_promoted_skills"]:
+                items.append(
+                    (
+                        "WARN",
+                        "policy_promotion_drift",
+                        "config policy_promoted_skills="
+                        f"{policy_promoted_skills} != current policy_promoted_skills="
+                        f"{current_plan['policy_promoted_skills']}",
+                    )
+                )
+            if skill_recommendations != current_plan["skill_recommendations"]:
+                items.append(
+                    (
+                        "WARN",
+                        "recommendation_rationale_drift",
+                        "config skill_recommendations="
+                        f"{skill_recommendations} != current skill_recommendations="
+                        f"{current_plan['skill_recommendations']}",
+                    )
+                )
 
     feedback_count = 0
     latest_feedback = ""

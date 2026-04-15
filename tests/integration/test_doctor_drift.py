@@ -153,3 +153,53 @@ def test_doctor_warns_when_auto_profile_detection_drifts_from_config(tmp_path: P
     assert "config profiles=" in result.stdout
     assert "current profiles=" in result.stdout
     assert "recommendation_drift" in result.stdout
+
+
+def test_doctor_warns_when_auto_policy_rationale_drifts_from_config(tmp_path: Path) -> None:
+    import subprocess
+
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "package.json").write_text(
+        json.dumps({"dependencies": {"next": "15.0.0", "react": "19.0.0"}}) + "\n",
+        encoding="utf-8",
+    )
+
+    apply = subprocess.run(
+        [
+            "python3",
+            str(ROOT_DIR / "scripts/apply.py"),
+            "--project",
+            str(project),
+            "--platform",
+            "claude",
+            "codex",
+            "--preset",
+            "auto",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert apply.returncode == 0
+
+    config_path = project / ".ai-harness" / "config.json"
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["policy_promoted_skills"] = {"specify": "stale-policy-reason"}
+    config["skill_recommendations"]["specify"] = ["stale rationale"]
+    config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+    result = subprocess.run(
+        ["python3", str(ROOT_DIR / "scripts/doctor.py"), "--project", str(project)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert "policy_promotion_drift" in result.stdout
+    assert "config policy_promoted_skills=" in result.stdout
+    assert "current policy_promoted_skills=" in result.stdout
+    assert "recommendation_rationale_drift" in result.stdout
+    assert "config skill_recommendations=" in result.stdout
+    assert "current skill_recommendations=" in result.stdout
