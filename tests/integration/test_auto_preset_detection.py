@@ -190,6 +190,58 @@ def test_apply_auto_preset_detects_object_workspaces_monorepo(tmp_path: Path) ->
     assert "workspace:pnpm" in doctor.stdout
 
 
+def test_apply_auto_preset_detects_config_only_workspace_tool_signals(tmp_path: Path) -> None:
+    for config_name, signal_name, doctor_fragment in (
+        ("turbo.json", "workspace:turborepo", "turborepo"),
+        ("nx.json", "workspace:nx", "workspace:nx"),
+        ("lerna.json", "workspace:lerna", "workspace:lerna"),
+    ):
+        project = tmp_path / config_name.replace(".", "-")
+        project.mkdir()
+        (project / "package.json").write_text(
+            json.dumps({"workspaces": ["apps/*", "packages/*"], "dependencies": {"react": "19.0.0"}}) + "\n",
+            encoding="utf-8",
+        )
+        (project / config_name).write_text("{}\n", encoding="utf-8")
+
+        apply = subprocess.run(
+            [
+                "python3",
+                str(ROOT_DIR / "scripts/apply.py"),
+                "--project",
+                str(project),
+                "--platform",
+                "claude",
+                "codex",
+                "--preset",
+                "auto",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert apply.returncode == 0
+
+        config = json.loads((project / ".ai-harness" / "config.json").read_text(encoding="utf-8"))
+        assert config["detected_profiles"] == ["frontend", "monorepo"]
+        assert "package.json:workspaces" in config["detection_signals"]
+        assert signal_name in config["detection_signals"]
+        assert "review-cycle" in config["enabled_skills"]
+        assert "execute" in config["enabled_skills"]
+        assert "spec-validate" in config["enabled_skills"]
+
+        doctor = subprocess.run(
+            ["python3", str(ROOT_DIR / "scripts/doctor.py"), "--project", str(project)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert doctor.returncode == 0
+        assert "frontend, monorepo" in doctor.stdout
+        assert doctor_fragment in doctor.stdout
+        assert "review-cycle" in doctor.stdout
+
+
 def test_apply_auto_preset_detects_yarn_workspace_monorepo(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()

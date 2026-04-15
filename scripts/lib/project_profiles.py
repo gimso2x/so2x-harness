@@ -113,6 +113,15 @@ def detect_project_profiles(project_dir: Path) -> dict[str, object]:
         profiles.append("monorepo")
         signals.append("workspace:apps+packages")
 
+    if (project_dir / "turbo.json").exists():
+        signals.append("workspace:turborepo")
+
+    if (project_dir / "nx.json").exists():
+        signals.append("workspace:nx")
+
+    if (project_dir / "lerna.json").exists():
+        signals.append("workspace:lerna")
+
     if has_workspace_config:
         profiles.append("monorepo")
         signals.append("package.json:workspaces")

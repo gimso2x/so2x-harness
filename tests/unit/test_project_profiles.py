@@ -161,6 +161,30 @@ def test_detect_project_profiles_for_nx_workspace(tmp_path: Path) -> None:
     assert "package.json:nx" in detected["detection_signals"]
 
 
+def test_detect_project_profiles_for_config_only_workspace_tools(tmp_path: Path) -> None:
+    for config_name, signal_name in (
+        ("turbo.json", "workspace:turborepo"),
+        ("nx.json", "workspace:nx"),
+        ("lerna.json", "workspace:lerna"),
+    ):
+        project = tmp_path / config_name.replace(".", "-")
+        project.mkdir()
+        (project / "package.json").write_text(
+            '{"workspaces":["apps/*","packages/*"]}\n',
+            encoding="utf-8",
+        )
+        (project / config_name).write_text("{}\n", encoding="utf-8")
+
+        detected = detect_project_profiles(project)
+
+        assert "monorepo" in detected["detected_profiles"]
+        assert "package.json:workspaces" in detected["detection_signals"]
+        assert signal_name in detected["detection_signals"]
+        assert "review-cycle" in detected["recommended_skills"]
+        assert "execute" in detected["enabled_skills"]
+        assert "spec-validate" in detected["enabled_skills"]
+
+
 def test_detect_project_profiles_for_yarn_workspace_monorepo(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()
