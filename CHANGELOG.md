@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-04-16
+
+### fixed
+- release workflow 테스트 단계에 `jsonschema`, `pyyaml` 의존성 설치 누락을 수정
+- 저장소 버전 메타데이터(`VERSION`, `pyproject.toml`, `harness.yaml`, README 배지) 정합성을 0.6.1로 재정렬
+
 ## [0.6.0] - 2026-04-16
 
 ### added
