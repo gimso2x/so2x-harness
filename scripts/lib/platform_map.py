@@ -13,5 +13,17 @@ PROJECT_PATHS = {
         "agents_path": Path("AGENTS.md"),
         "claude_md_path": Path("CLAUDE.md"),
         "config_path": Path(".ai-harness/config.json"),
-    }
+    },
+    "codex": {
+        "skills_dir": Path(".agents/skills"),
+        "shared_docs_dir": Path(".ai-harness/docs"),
+        "shared_snippets_dir": Path(".ai-harness/snippets"),
+        "agents_path": Path("AGENTS.md"),
+        "config_path": Path(".ai-harness/config.json"),
+    },
+}
+
+PLATFORM_CAPABILITIES = {
+    "claude": {"rules": True, "skills": True, "agents": True, "hooks": True},
+    "codex": {"rules": False, "skills": True, "agents": False, "hooks": False},
 }
