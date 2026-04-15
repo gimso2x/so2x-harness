@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### added
+- `run specify`에 목표 기반 관련 learning 자동 주입
+- `run execute`에 task summary / review finding 기반 auto-learning 축적
+- 신규 helper/test: learning_tools, run learning integration coverage
 - 신규 스킬: `simplify-cycle`, `squash-commit` (Claude/Codex 공통 배포)
 - `general` preset에 반복 simplify → safe-commit → squash-commit 마무리 흐름 추가
 

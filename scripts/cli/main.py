@@ -7,6 +7,11 @@ from pathlib import Path
 
 PACKAGE_NAME = "so2x-cli"
 ROOT_DIR = Path(__file__).resolve().parents[2]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+SCRIPTS_DIR = ROOT_DIR / "scripts"
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
 
 
 def get_version(root_dir: Path | None = None) -> str:

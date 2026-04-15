@@ -344,6 +344,7 @@ so2x-cli run execute --file spec.json    # 실행 파이프라인
 ## Knowledge System
 
 각 프로젝트에 학습이 축적됩니다. `/specify` 실행 시 관련 학습이 자동으로 주입됩니다.
+`run execute`는 task summary와 review finding을 읽어 `.ai-harness/learnings.jsonl`에 자동 학습 항목을 추가합니다.
 
 ```bash
 # 학습 기록
@@ -353,6 +354,12 @@ so2x-cli learn add \
   --rule "callback URL은 항상 환경 변수로 설정" \
   --category anti-pattern \
   --tags "oauth,config"
+
+# 자동 주입 확인
+so2x-cli run specify "OAuth 로그인 추가"
+# Relevant learnings:
+# - [anti-pattern] OAuth callback이 배포마다 다름
+#   Rule: callback URL은 항상 환경 변수로 설정
 
 # 검색
 so2x-cli learn search "oauth"

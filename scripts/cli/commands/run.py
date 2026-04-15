@@ -6,6 +6,13 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from cli.commands.learning_tools import (
+    DEFAULT_LEARNING_FILE,
+    append_learning_entries,
+    build_auto_learning_entries,
+    format_relevant_learnings,
+)
+
 AGENT_DIR = Path(__file__).resolve().parent.parent.parent.parent / "templates/claude/agents"
 
 
@@ -22,8 +29,12 @@ def handle_run(args: object) -> None:
 def cmd_specify(args: object) -> None:
     goal = getattr(args, "goal", "")
     spec_file = Path(getattr(args, "output", "spec.json"))
+    learning_file = spec_file.parent / DEFAULT_LEARNING_FILE
 
     print(f"[run] specifying: {goal}")
+    relevant_learnings = format_relevant_learnings(goal, learning_file=learning_file)
+    if relevant_learnings:
+        print(relevant_learnings)
 
     # Step 0: Init spec
     subprocess.run(
@@ -74,6 +85,7 @@ def cmd_specify(args: object) -> None:
 
 def cmd_execute(args: object) -> None:
     spec_file = Path(getattr(args, "file", "spec.json"))
+    learning_file = spec_file.parent / DEFAULT_LEARNING_FILE
 
     if not spec_file.exists():
         print(f"[run] spec not found: {spec_file}")
@@ -85,6 +97,11 @@ def cmd_execute(args: object) -> None:
 
     if not pending:
         print("[run] no pending tasks")
+        added = append_learning_entries(build_auto_learning_entries(spec), path=learning_file)
+        if added:
+            print(f"[run] Auto-learnings captured: {len(added)} -> {learning_file}")
+        else:
+            print("[run] Auto-learnings captured: 0")
         return
 
     print(f"[run] executing {len(pending)} tasks from {spec_file}")
@@ -117,6 +134,13 @@ def cmd_execute(args: object) -> None:
         text=True,
     )
     print(result.stdout)
+
+    refreshed_spec = json.loads(spec_file.read_text(encoding="utf-8"))
+    added = append_learning_entries(build_auto_learning_entries(refreshed_spec), path=learning_file)
+    if added:
+        print(f"[run] Auto-learnings captured: {len(added)} -> {learning_file}")
+    else:
+        print("[run] Auto-learnings captured: 0")
 
     print(f"\n[run] execute complete: {spec_file}")
 
