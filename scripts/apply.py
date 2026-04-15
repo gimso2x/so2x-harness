@@ -129,7 +129,11 @@ def install_project_config(
     return sha256_text(updated)
 
 
-def cleanup_stale_skill_dirs(project_dir: Path, skills_dir: Path, enabled_skills: list[str]) -> None:
+def cleanup_stale_skill_dirs(
+    project_dir: Path,
+    skills_dir: Path,
+    enabled_skills: list[str],
+) -> None:
     target_dir = project_dir / skills_dir
     if not target_dir.exists():
         return
@@ -140,7 +144,9 @@ def cleanup_stale_skill_dirs(project_dir: Path, skills_dir: Path, enabled_skills
                 if child.is_file():
                     child.unlink()
             for child_dir in sorted(
-                [p for p in skill_dir.rglob("*") if p.is_dir()], key=lambda p: len(p.parts), reverse=True
+                [p for p in skill_dir.rglob("*") if p.is_dir()],
+                key=lambda p: len(p.parts),
+                reverse=True,
             ):
                 child_dir.rmdir()
             skill_dir.rmdir()
