@@ -79,6 +79,22 @@ def test_load_latest_meta_harness_state_prefers_most_recent_file(tmp_path: Path)
     assert state["status"] == "awaiting_input"
 
 
+def test_load_latest_meta_harness_state_honors_explicit_run_id(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    old_dir = project / "outputs" / "run-old"
+    new_dir = project / "outputs" / "run-new"
+    old_dir.mkdir(parents=True)
+    new_dir.mkdir(parents=True)
+    (old_dir / "_state.json").write_text('{"run_id": "run-old", "status": "running", "current_stage": "stage-1-plan"}\n', encoding="utf-8")
+    (new_dir / "_state.json").write_text('{"run_id": "run-new", "status": "awaiting_input", "current_stage": "stage-3-review"}\n', encoding="utf-8")
+
+    state = load_latest_meta_harness_state(project, run_id="run-old")
+
+    assert state is not None
+    assert state["run_id"] == "run-old"
+    assert state["current_stage"] == "stage-1-plan"
+
+
 def test_build_prompt_includes_meta_harness_resume_context() -> None:
     spec = {
         "meta": {"goal": "OAuth 로그인 추가"},
@@ -288,6 +304,161 @@ def test_run_command_includes_meta_harness_state_in_runner_prompt(tmp_path: Path
     assert "RUN_ID: run-1" in prompt_text
     assert "STATUS: awaiting_input" in prompt_text
     assert "CURRENT_STAGE: stage-3-review" in prompt_text
+
+
+def test_run_command_honors_explicit_run_id_for_prompt_and_write(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "CLAUDE.md").write_text("# Goal\n", encoding="utf-8")
+    old_dir = project / "outputs" / "run-old"
+    new_dir = project / "outputs" / "run-new"
+    old_dir.mkdir(parents=True)
+    new_dir.mkdir(parents=True)
+    old_state_path = old_dir / "_state.json"
+    new_state_path = new_dir / "_state.json"
+    old_state_path.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "run_id": "run-old",
+                "harness_name": "sample-task",
+                "status": "running",
+                "orchestration_class": "simple",
+                "current_stage": "stage-1-plan",
+                "last_completed_stage": "stage-0-interview",
+                "awaiting_input": False,
+                "awaiting_input_schema": None,
+                "interview_answers_path": "outputs/run-old/interview/answers.json",
+                "artifacts": {},
+                "intervention_points": [],
+                "capability_snapshot": {
+                    "delegation": True,
+                    "nested_delegation": False,
+                    "background_execution": True,
+                    "resume_persistence": True,
+                    "structured_artifact_validation": True,
+                },
+                "notes": [],
+                "updated_at": "2026-04-16T00:00:00+00:00",
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    new_state_path.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "run_id": "run-new",
+                "harness_name": "sample-task",
+                "status": "awaiting_input",
+                "orchestration_class": "simple",
+                "current_stage": "stage-3-review",
+                "last_completed_stage": "stage-2-execute",
+                "awaiting_input": True,
+                "awaiting_input_schema": None,
+                "interview_answers_path": "outputs/run-new/interview/answers.json",
+                "artifacts": {},
+                "intervention_points": [],
+                "capability_snapshot": {
+                    "delegation": True,
+                    "nested_delegation": False,
+                    "background_execution": True,
+                    "resume_persistence": True,
+                    "structured_artifact_validation": True,
+                },
+                "notes": [],
+                "updated_at": "2026-04-17T00:00:00+00:00",
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    runner = project / "runner.py"
+    prompt_capture = project / "prompt.txt"
+    runner.write_text(
+        "from pathlib import Path\n"
+        "import sys\n"
+        f"Path({str(prompt_capture)!r}).write_text(sys.stdin.read(), encoding='utf-8')\n"
+        "print('STATUS: blocked')\n"
+        "print('SUMMARY: old run needs input')\n",
+        encoding="utf-8",
+    )
+    (project / "harness.json").write_text(
+        json.dumps(
+            {
+                "rule_file": "CLAUDE.md",
+                "spec_file": "spec.json",
+                "runners": {
+                    "planning": ["python3", "runner.py"],
+                    "review": ["python3", "runner.py"],
+                    "dev": ["python3", "runner.py"],
+                },
+                "timeout_sec": {"default": 30},
+                "max_retries": {"planning": 0, "review": 0, "dev": 0},
+                "prompt": {
+                    "include_rule_file": True,
+                    "include_completed_summaries": True,
+                    "include_last_error": True,
+                },
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (project / "spec.json").write_text(
+        json.dumps(
+            {
+                "meta": {
+                    "id": "SPEC-1",
+                    "goal": "OAuth 로그인 추가",
+                    "created_at": "2026-04-16T00:00:00+00:00",
+                    "updated_at": "2026-04-16T00:00:00+00:00",
+                },
+                "tasks": [
+                    {
+                        "id": "T1",
+                        "role": "dev",
+                        "action": "callback 구현",
+                        "status": "pending",
+                        "summary": "",
+                        "last_error": "",
+                        "depends_on": [],
+                        "artifacts": [],
+                        "updated_at": "2026-04-16T00:00:00+00:00",
+                    }
+                ],
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        ["python3", str(CLI), "run", "--file", str(project / "spec.json"), "--next", "--run-id", "run-old"],
+        capture_output=True,
+        text=True,
+        env=ENV,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    prompt_text = prompt_capture.read_text(encoding="utf-8")
+    assert "RUN_ID: run-old" in prompt_text
+    updated_old = json.loads(old_state_path.read_text(encoding="utf-8"))
+    updated_new = json.loads(new_state_path.read_text(encoding="utf-8"))
+    assert updated_old["status"] == "awaiting_input"
+    assert any("T1 blocked: old run needs input" in note for note in updated_old["notes"])
+    assert updated_new["run_id"] == "run-new"
+    assert updated_new["current_stage"] == "stage-3-review"
 
 
 def test_run_command_updates_meta_harness_state_file(tmp_path: Path) -> None:

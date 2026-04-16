@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from meta_state import load_meta_harness_state, resolve_meta_harness_state_path
+
 
 def load_harness_config(project_dir: str | Path) -> dict[str, Any]:
     project_path = Path(project_dir)
@@ -50,17 +52,11 @@ def collect_dependency_summaries(spec: dict[str, Any], task: dict[str, Any]) -> 
     return items
 
 
-def load_latest_meta_harness_state(project_dir: str | Path) -> dict[str, Any] | None:
-    root = Path(project_dir) / "outputs"
-    if not root.exists():
-        return None
-    candidates = sorted(root.rglob("_state.json"), key=lambda path: path.stat().st_mtime, reverse=True)
-    for candidate in candidates:
-        try:
-            return json.loads(candidate.read_text(encoding="utf-8"))
-        except json.JSONDecodeError:
-            continue
-    return None
+def load_latest_meta_harness_state(
+    project_dir: str | Path,
+    run_id: str | None = None,
+) -> dict[str, Any] | None:
+    return load_meta_harness_state(project_dir, run_id=run_id)
 
 
 def _meta_state_prompt_lines(meta_state: dict[str, Any] | None) -> list[str]:
@@ -89,8 +85,9 @@ def write_meta_harness_state(
     result_status: str,
     summary: str | None = None,
     last_error: str | None = None,
+    run_id: str | None = None,
 ) -> dict[str, Any] | None:
-    state = load_latest_meta_harness_state(project_dir)
+    state = load_latest_meta_harness_state(project_dir, run_id=run_id)
     if not state:
         return None
 
@@ -126,11 +123,10 @@ def write_meta_harness_state(
     state["notes"] = notes[-10:]
     state["updated_at"] = datetime.now(timezone.utc).isoformat()
 
-    root = Path(project_dir) / "outputs"
-    candidates = sorted(root.rglob("_state.json"), key=lambda path: path.stat().st_mtime, reverse=True)
-    if not candidates:
+    state_path = resolve_meta_harness_state_path(project_dir, run_id=run_id)
+    if not state_path:
         return None
-    candidates[0].write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return state
 
 
@@ -220,6 +216,7 @@ def run_task(
     task: dict[str, Any],
     config: dict[str, Any],
     last_error: str | None = None,
+    run_id: str | None = None,
 ) -> dict[str, Any]:
     prompt_config = config.get("prompt", {})
     rule_text = (
@@ -232,7 +229,7 @@ def run_task(
     )
     dependency_summaries = collect_dependency_summaries(spec, task)
     prompt_last_error = last_error if prompt_config.get("include_last_error", True) else None
-    meta_state = load_latest_meta_harness_state(project_dir)
+    meta_state = load_latest_meta_harness_state(project_dir, run_id=run_id)
     prompt = build_prompt(
         spec,
         task,

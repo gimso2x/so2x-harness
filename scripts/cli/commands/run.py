@@ -104,6 +104,7 @@ def run_with_retries(
     spec: dict[str, Any],
     task: dict[str, Any],
     config: dict[str, Any],
+    run_id: str | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     current_spec = deepcopy(spec)
     max_retries = get_max_retries_for_task(task, config)
@@ -120,6 +121,7 @@ def run_with_retries(
             get_task(current_spec, task["id"]),
             config,
             last_error=last_error,
+            run_id=run_id,
         )
         parsed = parse_runner_output(run_result.get("stdout", ""), run_result.get("stderr", ""))
         classified = classify_result(task, run_result, parsed)
@@ -137,6 +139,7 @@ def run_with_retries(
             classified["status"] or "error",
             summary=classified.get("summary"),
             last_error=classified.get("last_error"),
+            run_id=run_id,
         )
         final_result = run_result
 
@@ -157,7 +160,14 @@ def cmd_run(args: argparse.Namespace) -> None:
         task_id=getattr(args, "task", None),
         use_next=getattr(args, "next", False),
     )
-    updated_spec, run_result = run_with_retries(project_dir, spec_path, spec, task, config)
+    updated_spec, run_result = run_with_retries(
+        project_dir,
+        spec_path,
+        spec,
+        task,
+        config,
+        run_id=getattr(args, "run_id", None),
+    )
     final_task = get_task(updated_spec, task["id"])
     print(f"task: {final_task['id']}")
     print(f"status: {final_task['status']}")

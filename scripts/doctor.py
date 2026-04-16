@@ -7,6 +7,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from meta_state import load_json_file, load_meta_harness_state
+
 CURRENT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(CURRENT_DIR))
 
@@ -18,12 +20,7 @@ def status_line(level: str, label: str, detail: str) -> str:
 
 
 def _load_json(path: Path) -> dict[str, Any] | None:
-    if not path.exists():
-        return None
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        return None
+    return load_json_file(path)
 
 
 def detect_core_files(project_dir: str | Path) -> dict[str, bool]:
@@ -39,16 +36,11 @@ def load_project_state(project_dir: str | Path) -> dict[str, Any] | None:
     return _load_json(Path(project_dir) / "spec.json")
 
 
-def load_latest_meta_harness_state(project_dir: str | Path) -> dict[str, Any] | None:
-    root = Path(project_dir) / "outputs"
-    if not root.exists():
-        return None
-    candidates = sorted(root.rglob("_state.json"), key=lambda path: path.stat().st_mtime, reverse=True)
-    for candidate in candidates:
-        state = _load_json(candidate)
-        if state:
-            return state
-    return None
+def load_latest_meta_harness_state(
+    project_dir: str | Path,
+    run_id: str | None = None,
+) -> dict[str, Any] | None:
+    return load_meta_harness_state(project_dir, run_id=run_id)
 
 
 def get_meta_harness_lines(state: dict[str, Any] | None) -> list[str]:
@@ -152,12 +144,13 @@ def render_doctor_lines(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Read-only thin harness doctor")
     parser.add_argument("--project", default=".")
+    parser.add_argument("--run-id")
     args = parser.parse_args()
 
     project_dir = Path(args.project).resolve()
     files_ok = detect_core_files(project_dir)
     spec = load_project_state(project_dir)
-    meta_state = load_latest_meta_harness_state(project_dir)
+    meta_state = load_latest_meta_harness_state(project_dir, run_id=args.run_id)
     for line in render_doctor_lines(project_dir, files_ok, spec, meta_state):
         print(line)
 

@@ -50,3 +50,5 @@ def test_minimal_template_includes_meta_harness_docs() -> None:
 def test_readme_mentions_meta_state_bootstrap_helper() -> None:
     assert "so2x init-state --project ." in README
     assert "`outputs/<run-id>/_state.json` 생성 helper" in README
+    assert "so2x doctor --project . --run-id run-42" in README
+    assert "so2x run --file spec.json --next --run-id run-42" in README

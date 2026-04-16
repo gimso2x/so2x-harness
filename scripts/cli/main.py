@@ -74,12 +74,14 @@ def build_parser(program_name: str | None = None) -> argparse.ArgumentParser:
 
     run_p = subparsers.add_parser("run", help="Run a task")
     run_p.add_argument("--file", default="spec.json", help="Spec file path")
+    run_p.add_argument("--run-id", help="Optional meta-harness run id")
     target = run_p.add_mutually_exclusive_group(required=True)
     target.add_argument("--task")
     target.add_argument("--next", action="store_true")
 
     doctor_p = subparsers.add_parser("doctor", help="Read-only project status surface")
     doctor_p.add_argument("--project", default=".", help="Project directory")
+    doctor_p.add_argument("--run-id", help="Optional meta-harness run id")
 
     init_state_p = subparsers.add_parser("init-state", help="Create outputs/<run-id>/_state.json")
     init_state_p.add_argument("--project", default=".", help="Project directory")
@@ -133,6 +135,8 @@ def main() -> None:
         from doctor import main as doctor_main
 
         sys.argv = [sys.argv[0], "--project", args.project]
+        if getattr(args, "run_id", None):
+            sys.argv.extend(["--run-id", args.run_id])
         doctor_main()
         return
     if args.command == "init-state":
