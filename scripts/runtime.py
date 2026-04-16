@@ -136,9 +136,7 @@ def run_task(
 ) -> dict[str, Any]:
     prompt_config = config.get("prompt", {})
     rule_text = (
-        read_rule_text(project_dir, config)
-        if prompt_config.get("include_rule_file", True)
-        else ""
+        read_rule_text(project_dir, config) if prompt_config.get("include_rule_file", True) else ""
     )
     summaries = (
         collect_recent_summaries(spec)
@@ -146,9 +144,7 @@ def run_task(
         else []
     )
     dependency_summaries = collect_dependency_summaries(spec, task)
-    prompt_last_error = (
-        last_error if prompt_config.get("include_last_error", True) else None
-    )
+    prompt_last_error = last_error if prompt_config.get("include_last_error", True) else None
     prompt = build_prompt(
         spec,
         task,
