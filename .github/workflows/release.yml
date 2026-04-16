@@ -19,7 +19,7 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: |
-          pip install build pytest ruff jsonschema pyyaml
+          pip install build pytest ruff jsonschema pyyaml tomli
       - name: Test
         run: make test
       - name: Lint

@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import tomllib
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - Python <3.11
+    import tomli as tomllib
 import yaml
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
@@ -22,6 +25,7 @@ def test_readme_matches_thin_identity() -> None:
     assert "core files = `CLAUDE.md` / `spec.json` / `harness.json`" in README
     assert "install/distribution kit가 기본 목표가 아님" in README
     assert "so2x run --file spec.json --next" in README
+    assert "공식 entrypoint는 `so2x` 하나만 둡니다." in README
 
 
 def test_repo_metadata_versions_are_aligned() -> None:

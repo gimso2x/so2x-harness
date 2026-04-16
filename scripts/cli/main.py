@@ -23,8 +23,27 @@ def get_version(root_dir: Path | None = None) -> str:
     return metadata.version(PACKAGE_NAME)
 
 
-def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog=PROGRAM_NAME, description="Thin per-project harness CLI")
+def get_program_name(argv0: str | None = None) -> str:
+    candidate = Path(argv0 or sys.argv[0]).name
+    cli_invocations = {
+        "main.py",
+        "__main__.py",
+        "python",
+        "python3",
+        "python3.10",
+        "python3.11",
+        "python3.12",
+    }
+    if candidate in cli_invocations:
+        return PROGRAM_NAME
+    return candidate or PROGRAM_NAME
+
+
+def build_parser(program_name: str | None = None) -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog=program_name or PROGRAM_NAME,
+        description="Thin per-project harness CLI",
+    )
     parser.add_argument("--version", action="store_true", help="Show version")
     subparsers = parser.add_subparsers(dest="command")
 
@@ -66,11 +85,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
-    parser = build_parser()
+    program_name = get_program_name()
+    parser = build_parser(program_name)
     args = parser.parse_args()
 
     if args.version:
-        print(f"{PROGRAM_NAME} {get_version()}")
+        print(f"{program_name} {get_version()}")
         return
 
     if args.command == "init":
