@@ -13,7 +13,12 @@ from cli.commands.spec import (
     save_spec,
     set_task_status,
 )
-from runtime import get_max_retries_for_task, load_harness_config, run_task
+from runtime import (
+    get_max_retries_for_task,
+    load_harness_config,
+    run_task,
+    write_meta_harness_state,
+)
 
 VALID_RESULT_STATUSES = {"done", "blocked", "error"}
 
@@ -126,6 +131,13 @@ def run_with_retries(
             last_error=classified.get("last_error"),
         )
         save_spec(spec_path, current_spec)
+        write_meta_harness_state(
+            project_dir,
+            task,
+            classified["status"] or "error",
+            summary=classified.get("summary"),
+            last_error=classified.get("last_error"),
+        )
         final_result = run_result
 
         if classified["status"] != "error" or attempt >= max_retries:

@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "so2x-harness meta state",
+  "description": "Run-local state schema for meta-harness resume and artifact handoff.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "run_id",
+    "harness_name",
+    "status",
+    "orchestration_class",
+    "current_stage",
+    "last_completed_stage",
+    "awaiting_input",
+    "awaiting_input_schema",
+    "interview_answers_path",
+    "artifacts",
+    "intervention_points",
+    "capability_snapshot",
+    "notes",
+    "updated_at"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "harness_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": ["running", "awaiting_input", "blocked", "failed", "completed"]
+    },
+    "orchestration_class": {
+      "type": "string",
+      "enum": ["simple", "complex"]
+    },
+    "current_stage": {
+      "type": "string",
+      "minLength": 1
+    },
+    "last_completed_stage": {
+      "anyOf": [
+        {"type": "string", "minLength": 1},
+        {"type": "null"}
+      ]
+    },
+    "awaiting_input": {
+      "type": "boolean"
+    },
+    "awaiting_input_schema": {
+      "anyOf": [
+        {"type": "object"},
+        {"type": "null"}
+      ]
+    },
+    "interview_answers_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": {
+        "anyOf": [
+          {"type": "string", "minLength": 1},
+          {"type": "null"}
+        ]
+      }
+    },
+    "intervention_points": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["stage", "kind", "status", "reason"],
+        "properties": {
+          "stage": {"type": "string", "minLength": 1},
+          "kind": {"type": "string", "minLength": 1},
+          "status": {"type": "string", "enum": ["pending", "resolved", "skipped"]},
+          "reason": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "capability_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "delegation",
+        "nested_delegation",
+        "background_execution",
+        "resume_persistence",
+        "structured_artifact_validation"
+      ],
+      "properties": {
+        "delegation": {"type": "boolean"},
+        "nested_delegation": {"type": "boolean"},
+        "background_execution": {"type": "boolean"},
+        "resume_persistence": {"type": "boolean"},
+        "structured_artifact_validation": {"type": "boolean"}
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

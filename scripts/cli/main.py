@@ -81,6 +81,12 @@ def build_parser(program_name: str | None = None) -> argparse.ArgumentParser:
     doctor_p = subparsers.add_parser("doctor", help="Read-only project status surface")
     doctor_p.add_argument("--project", default=".", help="Project directory")
 
+    init_state_p = subparsers.add_parser("init-state", help="Create outputs/<run-id>/_state.json")
+    init_state_p.add_argument("--project", default=".", help="Project directory")
+    init_state_p.add_argument("--run-id", help="Optional run id")
+    init_state_p.add_argument("--harness-name", help="Optional harness name")
+    init_state_p.add_argument("--force", action="store_true", help="Overwrite existing _state.json")
+
     return parser
 
 
@@ -128,6 +134,11 @@ def main() -> None:
 
         sys.argv = [sys.argv[0], "--project", args.project]
         doctor_main()
+        return
+    if args.command == "init-state":
+        from cli.commands.meta import cmd_init_state
+
+        cmd_init_state(args)
         return
 
     parser.print_help()

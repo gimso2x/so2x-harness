@@ -91,10 +91,73 @@ so2x doctor --project .
 
 ## Minimal bootstrap
 
-새 프로젝트에 아래 3개 파일을 복사하면 시작할 수 있습니다.
+새 프로젝트에 아래 파일들을 복사하면 시작할 수 있습니다.
 - `templates/minimal/spec.json`
 - `templates/minimal/harness.json`
 - `templates/minimal/CLAUDE.md`
+- `templates/minimal/docs/meta-harness/harness-spec.md`
+- `templates/minimal/docs/meta-harness/interview-schema.md`
+- `templates/minimal/docs/meta-harness/stage-contracts.md`
+- `templates/minimal/docs/meta-harness/_state.json`
+
+## Quickstart
+
+가장 빠른 시작 예시입니다.
+
+```bash
+cp templates/minimal/spec.json ./spec.json
+cp templates/minimal/harness.json ./harness.json
+cp templates/minimal/CLAUDE.md ./CLAUDE.md
+mkdir -p docs/meta-harness outputs/<run-id>
+cp templates/minimal/docs/meta-harness/harness-spec.md ./docs/meta-harness/harness-spec.md
+cp templates/minimal/docs/meta-harness/interview-schema.md ./docs/meta-harness/interview-schema.md
+cp templates/minimal/docs/meta-harness/stage-contracts.md ./docs/meta-harness/stage-contracts.md
+cp templates/minimal/docs/meta-harness/_state.json ./outputs/<run-id>/_state.json
+```
+
+그 다음 최소 확인 순서:
+
+```bash
+so2x init-state --project .
+so2x doctor --project .
+so2x validate --file spec.json
+so2x status --file spec.json
+so2x run --file spec.json --next
+```
+
+권장 초기 수정 포인트:
+- `spec.json`: goal / tasks / depends_on
+- `harness.json`: role별 runner command / timeout / retry
+- `CLAUDE.md`: 프로젝트 규칙 / verification / summary format
+- `outputs/<run-id>/_state.json`: 현재 run의 stage / artifact path / resume 상태
+
+추가 helper:
+- `so2x init-state --project .`: `outputs/<run-id>/_state.json` 생성 helper
+- `so2x init-state --project . --run-id run-42 --harness-name oauth-login`: run-id / harness-name 명시 초기화
+- 이미 같은 경로에 `_state.json`이 있으면 덮어쓰지 않음. 필요하면 `--force`
+
+## Meta-harness adoption guide
+
+meta-harness는 실행기 구현이 아니라 설계 규약 레이어입니다.
+so2x-harness에는 아래처럼 얹습니다.
+
+1. `harness-spec.md`에서 fixed criteria / per-run variables / intervention points를 먼저 고정
+2. `interview-schema.md`에서 deep-interview 질문만 분리
+3. `stage-contracts.md`에서 stage를 대화가 아니라 artifact chain으로 정의
+4. `outputs/<run-id>/_state.json`으로 중단/재개 상태를 파일로 관리
+5. `doctor`와 `run`은 최신 `_state.json`을 읽어 현재 stage와 resume context를 반영
+
+실무 해석:
+- 그대로 가져올 것은 코드보다 규약
+- 특히 가져갈 것은 암묵지 분류 체계 / stage artifact contract / resume state schema / deep-interview 선행 구조
+- 그대로 이식하면 안 되는 것은 Claude Code 전용 경로, 명명 규칙, subagent 전제
+
+현재 thin core 기준에서의 역할 분리:
+- `CLAUDE.md`: fixed criteria와 verification policy
+- `spec.json`: task surface와 dependency
+- `harness.json`: runner routing / timeout / retry
+- `docs/meta-harness/*.md`: 설계 계약
+- `outputs/<run-id>/_state.json`: resume truth source
 
 ## Scope
 

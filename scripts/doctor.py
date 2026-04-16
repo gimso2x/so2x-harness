@@ -39,6 +39,28 @@ def load_project_state(project_dir: str | Path) -> dict[str, Any] | None:
     return _load_json(Path(project_dir) / "spec.json")
 
 
+def load_latest_meta_harness_state(project_dir: str | Path) -> dict[str, Any] | None:
+    root = Path(project_dir) / "outputs"
+    if not root.exists():
+        return None
+    candidates = sorted(root.rglob("_state.json"), key=lambda path: path.stat().st_mtime, reverse=True)
+    for candidate in candidates:
+        state = _load_json(candidate)
+        if state:
+            return state
+    return None
+
+
+def get_meta_harness_lines(state: dict[str, Any] | None) -> list[str]:
+    if not state:
+        return [status_line("WARN", "meta_harness_status", "none")]
+    return [
+        status_line("OK", "meta_harness_status", str(state.get("status") or "unknown")),
+        status_line("OK", "meta_harness_stage", str(state.get("current_stage") or "unknown")),
+        status_line("OK", "meta_harness_run", str(state.get("run_id") or "unknown")),
+    ]
+
+
 def get_active_problem(spec: dict[str, Any] | None) -> str | None:
     if not spec:
         return None
@@ -60,6 +82,7 @@ def render_doctor_lines(
     project_dir: str | Path,
     files_ok: dict[str, bool],
     spec: dict[str, Any] | None,
+    meta_state: dict[str, Any] | None = None,
 ) -> list[str]:
     root = Path(project_dir).resolve()
     lines = [status_line("INFO", "project", str(root))]
@@ -71,6 +94,8 @@ def render_doctor_lines(
                 "present" if files_ok[name] else "missing",
             )
         )
+
+    lines.extend(get_meta_harness_lines(meta_state))
 
     if not spec:
         lines.append(status_line("WARN", "goal", "missing spec.json"))
@@ -132,7 +157,8 @@ def main() -> None:
     project_dir = Path(args.project).resolve()
     files_ok = detect_core_files(project_dir)
     spec = load_project_state(project_dir)
-    for line in render_doctor_lines(project_dir, files_ok, spec):
+    meta_state = load_latest_meta_harness_state(project_dir)
+    for line in render_doctor_lines(project_dir, files_ok, spec, meta_state):
         print(line)
 
 

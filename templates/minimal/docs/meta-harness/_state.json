@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "run_id": "2026-04-16T10-36-00Z-example",
+  "harness_name": "sample-task",
+  "status": "running",
+  "orchestration_class": "simple",
+  "current_stage": "stage-1-plan",
+  "last_completed_stage": "stage-0-interview",
+  "awaiting_input": false,
+  "awaiting_input_schema": null,
+  "interview_answers_path": "outputs/2026-04-16T10-36-00Z-example/interview/answers.json",
+  "artifacts": {
+    "interview_summary": "outputs/2026-04-16T10-36-00Z-example/interview/summary.md",
+    "plan": "outputs/2026-04-16T10-36-00Z-example/plan/plan.md",
+    "routing_decision": null,
+    "task_map": null,
+    "execution": null,
+    "review_verdict": null,
+    "final_summary": null
+  },
+  "intervention_points": [
+    {
+      "stage": "stage-3-review",
+      "kind": "user-approval",
+      "status": "pending",
+      "reason": "final verdict requires sign-off"
+    }
+  ],
+  "capability_snapshot": {
+    "delegation": true,
+    "nested_delegation": false,
+    "background_execution": true,
+    "resume_persistence": true,
+    "structured_artifact_validation": true
+  },
+  "notes": [
+    "resume는 _state.json과 artifact 존재 여부를 함께 본다"
+  ],
+  "updated_at": "2026-04-16T10:36:00Z"
+}

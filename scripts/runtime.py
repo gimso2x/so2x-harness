@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -49,6 +50,90 @@ def collect_dependency_summaries(spec: dict[str, Any], task: dict[str, Any]) -> 
     return items
 
 
+def load_latest_meta_harness_state(project_dir: str | Path) -> dict[str, Any] | None:
+    root = Path(project_dir) / "outputs"
+    if not root.exists():
+        return None
+    candidates = sorted(root.rglob("_state.json"), key=lambda path: path.stat().st_mtime, reverse=True)
+    for candidate in candidates:
+        try:
+            return json.loads(candidate.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            continue
+    return None
+
+
+def _meta_state_prompt_lines(meta_state: dict[str, Any] | None) -> list[str]:
+    if not meta_state:
+        return []
+    lines = [
+        "",
+        "Meta harness state:",
+        f"RUN_ID: {meta_state.get('run_id', 'unknown')}",
+        f"STATUS: {meta_state.get('status', 'unknown')}",
+        f"CURRENT_STAGE: {meta_state.get('current_stage', 'unknown')}",
+    ]
+    last_completed = meta_state.get("last_completed_stage")
+    if last_completed:
+        lines.append(f"LAST_COMPLETED_STAGE: {last_completed}")
+    notes = meta_state.get("notes") or []
+    if notes:
+        lines.append("NOTES:")
+        lines.extend(f"- {note}" for note in notes)
+    return lines
+
+
+def write_meta_harness_state(
+    project_dir: str | Path,
+    task: dict[str, Any],
+    result_status: str,
+    summary: str | None = None,
+    last_error: str | None = None,
+) -> dict[str, Any] | None:
+    state = load_latest_meta_harness_state(project_dir)
+    if not state:
+        return None
+
+    current_stage = state.get("current_stage")
+    next_stage_by_stage = {
+        "stage-0-interview": "stage-1-plan",
+        "stage-1-plan": "stage-2-execute",
+        "stage-2-execute": "stage-3-review",
+        "stage-3-review": "stage-4-finalize",
+        "stage-4-finalize": None,
+    }
+    if result_status == "done":
+        if current_stage:
+            state["last_completed_stage"] = current_stage
+        next_stage = next_stage_by_stage.get(str(current_stage))
+        if next_stage:
+            state["current_stage"] = next_stage
+            state["status"] = "running"
+        else:
+            state["status"] = "completed"
+        state["awaiting_input"] = False
+        state["awaiting_input_schema"] = None
+    elif result_status == "blocked":
+        state["status"] = "awaiting_input"
+        state["awaiting_input"] = True
+    elif result_status == "error":
+        state["status"] = "failed"
+        state["awaiting_input"] = False
+        state["awaiting_input_schema"] = None
+    notes = list(state.get("notes") or [])
+    detail = summary or last_error or "no detail"
+    notes.append(f"{task.get('id', 'task')} {result_status}: {detail}")
+    state["notes"] = notes[-10:]
+    state["updated_at"] = datetime.now(timezone.utc).isoformat()
+
+    root = Path(project_dir) / "outputs"
+    candidates = sorted(root.rglob("_state.json"), key=lambda path: path.stat().st_mtime, reverse=True)
+    if not candidates:
+        return None
+    candidates[0].write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return state
+
+
 def build_prompt(
     spec: dict[str, Any],
     task: dict[str, Any],
@@ -56,6 +141,7 @@ def build_prompt(
     summaries: list[str],
     dependency_summaries: list[str] | None = None,
     last_error: str | None = None,
+    meta_state: dict[str, Any] | None = None,
 ) -> str:
     goal = spec.get("meta", {}).get("goal", "")
     lines = [
@@ -74,6 +160,7 @@ def build_prompt(
         lines.extend(["", "Dependency summaries:", *[f"- {item}" for item in dependency_summaries]])
     if summaries:
         lines.extend(["", "Recent summaries:", *[f"- {item}" for item in summaries]])
+    lines.extend(_meta_state_prompt_lines(meta_state))
     if last_error:
         lines.extend(["", "Last error:", last_error])
     if rule_text:
@@ -145,6 +232,7 @@ def run_task(
     )
     dependency_summaries = collect_dependency_summaries(spec, task)
     prompt_last_error = last_error if prompt_config.get("include_last_error", True) else None
+    meta_state = load_latest_meta_harness_state(project_dir)
     prompt = build_prompt(
         spec,
         task,
@@ -152,6 +240,7 @@ def run_task(
         summaries,
         dependency_summaries=dependency_summaries,
         last_error=prompt_last_error,
+        meta_state=meta_state,
     )
     command = build_command(task, config)
     timeout_sec = get_timeout_for_task(task, config)
