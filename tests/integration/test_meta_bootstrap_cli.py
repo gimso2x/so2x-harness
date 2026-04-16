@@ -69,3 +69,31 @@ def test_init_state_command_refuses_to_overwrite_without_force(tmp_path: Path) -
     assert result.returncode == 1
     assert json.loads(state_path.read_text(encoding="utf-8"))["run_id"] == "existing"
     assert "already exists" in result.stderr
+
+
+def test_init_state_command_can_activate_run_in_harness_config(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "harness.json").write_text('{"version": 1}\n', encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            "python3",
+            str(CLI),
+            "init-state",
+            "--project",
+            str(project),
+            "--run-id",
+            "run-42",
+            "--activate",
+        ],
+        capture_output=True,
+        text=True,
+        env=ENV,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    harness = json.loads((project / "harness.json").read_text(encoding="utf-8"))
+    assert harness["active_run_id"] == "run-42"
+    assert "[meta-state] activated run-42" in result.stdout

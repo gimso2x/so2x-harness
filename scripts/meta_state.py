@@ -14,13 +14,34 @@ def load_json_file(path: Path) -> dict[str, Any] | None:
         return None
 
 
+def load_active_run_id(project_dir: str | Path) -> str | None:
+    harness_path = Path(project_dir) / "harness.json"
+    harness = load_json_file(harness_path)
+    if not harness:
+        return None
+    active_run_id = harness.get("active_run_id")
+    return str(active_run_id) if active_run_id else None
+
+
+def set_active_run_id(project_dir: str | Path, run_id: str) -> Path:
+    harness_path = Path(project_dir) / "harness.json"
+    harness = load_json_file(harness_path) or {}
+    harness["active_run_id"] = run_id
+    harness_path.write_text(json.dumps(harness, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return harness_path
+
+
 def resolve_meta_harness_state_path(project_dir: str | Path, run_id: str | None = None) -> Path | None:
     root = Path(project_dir) / "outputs"
     if not root.exists():
         return None
-    if run_id:
-        candidate = root / run_id / "_state.json"
-        return candidate if candidate.exists() else None
+    selected_run_id = run_id or load_active_run_id(project_dir)
+    if selected_run_id:
+        candidate = root / selected_run_id / "_state.json"
+        if candidate.exists():
+            return candidate
+        if run_id:
+            return None
     candidates = sorted(root.rglob("_state.json"), key=lambda path: path.stat().st_mtime, reverse=True)
     return candidates[0] if candidates else None
 

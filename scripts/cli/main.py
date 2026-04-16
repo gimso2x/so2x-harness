@@ -88,6 +88,7 @@ def build_parser(program_name: str | None = None) -> argparse.ArgumentParser:
     init_state_p.add_argument("--run-id", help="Optional run id")
     init_state_p.add_argument("--harness-name", help="Optional harness name")
     init_state_p.add_argument("--force", action="store_true", help="Overwrite existing _state.json")
+    init_state_p.add_argument("--activate", action="store_true", help="Set harness.json active_run_id")
 
     return parser
 

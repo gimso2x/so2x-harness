@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from meta_state import set_active_run_id
+
 ROOT_DIR = Path(__file__).resolve().parents[3]
 TEMPLATE_PATH = ROOT_DIR / "templates/minimal/docs/meta-harness/_state.json"
 
@@ -79,3 +81,6 @@ def cmd_init_state(args: argparse.Namespace) -> None:
     except SystemExit as exc:
         raise SystemExit(str(exc)) from exc
     print(f"[meta-state] created {state_path}")
+    if getattr(args, "activate", False):
+        set_active_run_id(project_dir, run_id)
+        print(f"[meta-state] activated {run_id}")

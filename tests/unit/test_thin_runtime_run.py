@@ -306,7 +306,7 @@ def test_run_command_includes_meta_harness_state_in_runner_prompt(tmp_path: Path
     assert "CURRENT_STAGE: stage-3-review" in prompt_text
 
 
-def test_run_command_honors_explicit_run_id_for_prompt_and_write(tmp_path: Path) -> None:
+def test_run_command_uses_active_run_id_from_harness_config_for_prompt_and_write(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()
     (project / "CLAUDE.md").write_text("# Goal\n", encoding="utf-8")
@@ -391,6 +391,7 @@ def test_run_command_honors_explicit_run_id_for_prompt_and_write(tmp_path: Path)
     (project / "harness.json").write_text(
         json.dumps(
             {
+                "active_run_id": "run-old",
                 "rule_file": "CLAUDE.md",
                 "spec_file": "spec.json",
                 "runners": {
@@ -443,7 +444,7 @@ def test_run_command_honors_explicit_run_id_for_prompt_and_write(tmp_path: Path)
     )
 
     result = subprocess.run(
-        ["python3", str(CLI), "run", "--file", str(project / "spec.json"), "--next", "--run-id", "run-old"],
+        ["python3", str(CLI), "run", "--file", str(project / "spec.json"), "--next"],
         capture_output=True,
         text=True,
         env=ENV,

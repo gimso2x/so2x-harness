@@ -134,8 +134,10 @@ so2x run --file spec.json --next
 추가 helper:
 - `so2x init-state --project .`: `outputs/<run-id>/_state.json` 생성 helper
 - `so2x init-state --project . --run-id run-42 --harness-name oauth-login`: run-id / harness-name 명시 초기화
+- `so2x init-state --project . --run-id run-42 --activate`: 생성 후 `harness.json.active_run_id`까지 갱신
 - `so2x doctor --project . --run-id run-42`: 특정 run 상태만 확인
 - `so2x run --file spec.json --next --run-id run-42`: 특정 run의 resume state만 읽고 갱신
+- `--run-id`를 생략하면 `harness.json.active_run_id`를 먼저 보고, 없으면 최신 `_state.json`을 사용
 - 이미 같은 경로에 `_state.json`이 있으면 덮어쓰지 않음. 필요하면 `--force`
 
 ## Meta-harness adoption guide
