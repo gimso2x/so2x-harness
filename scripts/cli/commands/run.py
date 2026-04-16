@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import argparse
 import json
-import subprocess
 import sys
+from copy import deepcopy
 from pathlib import Path
+from typing import Any
 
+from cli.commands.spec import dependencies_satisfied, get_task, get_next_task, load_spec, save_spec, set_task_status
 from cli.commands.learning_tools import (
     DEFAULT_EVENT_FILE,
     DEFAULT_HARNESS_DIR,
@@ -18,8 +21,8 @@ from cli.commands.learning_tools import (
     read_status,
     write_status,
 )
+from runtime import get_max_retries_for_task, load_harness_config, run_task
 
-AGENT_DIR = Path(__file__).resolve().parent.parent.parent.parent / "templates/claude/agents"
 _ALLOWED_SIMPLIFY_STOP_REASONS = {
     "converged_to_zero",
     "no_safe_gain",
@@ -29,382 +32,196 @@ _ALLOWED_SIMPLIFY_STOP_REASONS = {
 }
 
 
-def handle_run(args: object) -> None:
-    command = getattr(args, "run_command", None)
-    if command == "specify":
-        cmd_specify(args)
-    elif command == "execute":
-        cmd_execute(args)
+def handle_run(args: argparse.Namespace) -> None:
+    command = getattr(args, "run_command", None) or "task"
+    if command == "task":
+        cmd_run(args)
     elif command == "status":
         cmd_status(args)
     elif command == "safe-commit":
         cmd_safe_commit(args)
     elif command == "squash-check":
         cmd_squash_check(args)
+    elif command == "specify":
+        cmd_specify(args)
+    elif command == "execute":
+        cmd_execute(args)
     else:
-        print("Usage: so2x-cli run {specify|execute|status|safe-commit|squash-check}")
+        raise SystemExit("Usage: so2x-cli run {task|status|safe-commit|squash-check|specify|execute}")
 
 
-def cmd_specify(args: object) -> None:
-    goal = getattr(args, "goal", "")
-    spec_file = Path(getattr(args, "output", "spec.json"))
-    harness_dir = spec_file.parent / DEFAULT_HARNESS_DIR
-    learning_file = spec_file.parent / DEFAULT_LEARNING_FILE
-    promoted_rules_file = harness_dir / DEFAULT_PROMOTED_RULES_FILE.name
-
-    print(f"[run] specifying: {goal}")
-    relevant_learnings = format_relevant_learnings(
-        goal,
-        learning_file=learning_file,
-        promoted_rules_file=promoted_rules_file,
-    )
-    if relevant_learnings:
-        print(relevant_learnings)
-
-    subprocess.run(
-        ["so2x-cli", "spec", "init", goal, "--output", str(spec_file)],
-        check=True,
-    )
-
-    pipeline = [
-        ("L0 Goal", "interviewer", "l0_to_l1", _check_l0),
-        ("L1 Context", "code-explorer", "l1_to_l2", _check_l1),
-        ("L2 Decisions", "interviewer", "l2_to_l3", _check_l2),
-        ("L3 Requirements", "spec-writer", "l3_to_l4", _check_l3),
-        ("L4 Tasks", "planner", "l4_to_l5", _check_l4),
-        ("L5 Review", "reviewer", None, _check_l5),
-    ]
-
-    for label, agent, gate, checker in pipeline:
-        print(f"\n[run] === {label} ({agent}) ===")
-
-        agent_template = AGENT_DIR / f"{agent}.md"
-        if not agent_template.exists():
-            print(f"[run] WARN: agent template not found: {agent_template}")
-            continue
-
-        instruction = _build_instruction(agent_template, spec_file, label)
-        print(instruction)
-        print("[run] ↑ 위 지시를 Claude Code에 전달하세요")
-
-        if gate:
-            result = subprocess.run(
-                ["so2x-cli", "spec", "check", str(spec_file), "--gate", gate],
-                capture_output=True,
-                text=True,
-            )
-            if result.returncode != 0:
-                print(
-                    f"[run] GATE {gate} FAILED — "
-                    "위 에이전트 지시로 spec.json을 보완한 후 다시 실행하세요"
-                )
-                print(result.stdout)
-                sys.exit(1)
-            print(f"[run] GATE {gate} PASSED")
-
-    print(f"\n[run] specify complete: {spec_file}")
+def select_task_for_run(spec: dict[str, Any], task_id: str | None = None, use_next: bool = False) -> dict[str, Any]:
+    if task_id:
+        task = get_task(spec, task_id)
+        if task is None:
+            raise SystemExit(f"task not found: {task_id}")
+        if task.get("status") == "done":
+            raise SystemExit(f"task already done: {task_id}")
+        if not dependencies_satisfied(spec, task):
+            raise SystemExit(f"dependencies not satisfied: {task_id}")
+        return task
+    if use_next:
+        task = get_next_task(spec)
+        if task is None:
+            raise SystemExit("no runnable task")
+        return task
+    raise SystemExit("choose --task or --next")
 
 
-def cmd_execute(args: object) -> None:
-    spec_file = Path(getattr(args, "file", "spec.json"))
-    harness_dir = spec_file.parent / DEFAULT_HARNESS_DIR
-    learning_file = spec_file.parent / DEFAULT_LEARNING_FILE
-
-    if not spec_file.exists():
-        print(f"[run] spec not found: {spec_file}")
-        sys.exit(1)
-
-    spec = json.loads(spec_file.read_text(encoding="utf-8"))
-    tasks = spec.get("chain", {}).get("l4_tasks", [])
-    pending = [t for t in tasks if t.get("status") != "done"]
-
-    if not pending:
-        print("[run] no pending tasks")
-        persistence = persist_learning_bundle(
-            build_auto_learning_bundle(spec),
-            harness_dir=harness_dir,
-            learning_file=learning_file,
-        )
-        _print_persistence_summary(persistence, harness_dir)
-        return
-
-    print(f"[run] executing {len(pending)} tasks from {spec_file}")
-
-    for task in pending:
-        tid = task.get("id", "?")
-        action = task.get("action", "")
-        req_refs = task.get("requirement_refs", [])
-
-        print(f"\n[run] === {tid}: {action} ===")
-        print(f"[run] Requirements: {', '.join(req_refs)}")
-        print("[run] ↑ 이 태스크를 구현하고 관련 시나리오를 검증하세요")
-
-        _update_task_status(spec_file, tid, "in_progress")
-        print(f"[run] {tid} marked in_progress")
-
-    verifier_template = AGENT_DIR / "verifier.md"
-    if verifier_template.exists():
-        print("\n[run] === Verification ===")
-        instruction = _build_instruction(verifier_template, spec_file, "Verification")
-        print(instruction)
-        print("[run] ↑ 모든 시나리오를 독립적으로 검증하세요")
-
-    result = subprocess.run(
-        ["so2x-cli", "spec", "validate", str(spec_file)],
-        capture_output=True,
-        text=True,
-    )
-    print(result.stdout)
-
-    refreshed_spec = json.loads(spec_file.read_text(encoding="utf-8"))
-    persistence = persist_learning_bundle(
-        build_auto_learning_bundle(refreshed_spec),
-        harness_dir=harness_dir,
-        learning_file=learning_file,
-    )
-    _print_persistence_summary(persistence, harness_dir)
-
-    print(f"\n[run] execute complete: {spec_file}")
+def mark_task_in_progress(spec: dict[str, Any], task_id: str) -> dict[str, Any]:
+    return set_task_status(spec, task_id, "in_progress")
 
 
-def cmd_status(args: object) -> None:
-    harness_dir = (
-        Path(getattr(args, "dir", "")) if getattr(args, "dir", None) else DEFAULT_HARNESS_DIR
-    )
+def parse_runner_output(stdout: str, stderr: str) -> dict[str, str | None]:
+    parsed = {"status": None, "summary": None, "error": None}
+    for raw_line in stdout.splitlines():
+        line = raw_line.strip()
+        if line.startswith("STATUS:"):
+            parsed["status"] = line.split(":", 1)[1].strip()
+        elif line.startswith("SUMMARY:"):
+            parsed["summary"] = line.split(":", 1)[1].strip()
+        elif line.startswith("ERROR:"):
+            parsed["error"] = line.split(":", 1)[1].strip()
+    if parsed["error"] is None and stderr.strip():
+        parsed["error"] = stderr.strip().splitlines()[-1]
+    return parsed
+
+
+def classify_result(task: dict[str, Any], run_result: dict[str, Any], parsed_output: dict[str, str | None]) -> dict[str, str | None]:
+    status = parsed_output.get("status")
+    summary = parsed_output.get("summary")
+    error = parsed_output.get("error")
+    if status in {"done", "blocked", "error"}:
+        return {"status": status, "summary": summary, "last_error": error}
+    if run_result.get("exit_code") == 0:
+        return {"status": "done", "summary": summary or f"{task.get('id')} completed", "last_error": error}
+    return {"status": "error", "summary": summary or f"{task.get('id')} failed", "last_error": error or f"runner exited with code {run_result.get('exit_code')}"}
+
+
+def apply_run_result(spec: dict[str, Any], task_id: str, status: str, summary: str | None = None, last_error: str | None = None) -> dict[str, Any]:
+    return set_task_status(spec, task_id, status, summary=summary, last_error=last_error)
+
+
+def run_with_retries(project_dir: str | Path, spec_path: str | Path, spec: dict[str, Any], task: dict[str, Any], config: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+    current_spec = deepcopy(spec)
+    max_retries = get_max_retries_for_task(task, config)
+    last_error = task.get("last_error")
+    final_result: dict[str, Any] = {}
+    for attempt in range(max_retries + 1):
+        current_spec = mark_task_in_progress(current_spec, task["id"])
+        save_spec(spec_path, current_spec)
+        run_result = run_task(project_dir, current_spec, get_task(current_spec, task["id"]), config, last_error=last_error)
+        parsed = parse_runner_output(run_result.get("stdout", ""), run_result.get("stderr", ""))
+        classified = classify_result(task, run_result, parsed)
+        current_spec = apply_run_result(current_spec, task["id"], classified["status"] or "error", summary=classified.get("summary"), last_error=classified.get("last_error"))
+        save_spec(spec_path, current_spec)
+        final_result = run_result
+        if classified["status"] != "error" or attempt >= max_retries:
+            return current_spec, run_result
+        last_error = classified.get("last_error")
+    return current_spec, final_result
+
+
+def cmd_run(args: argparse.Namespace) -> None:
+    spec_path = Path(args.file)
+    project_dir = spec_path.parent
+    spec = load_spec(spec_path)
+    config = load_harness_config(project_dir)
+    task = select_task_for_run(spec, task_id=getattr(args, "task", None), use_next=getattr(args, "next", False))
+    updated_spec, run_result = run_with_retries(project_dir, spec_path, spec, task, config)
+    final_task = get_task(updated_spec, task["id"])
+    print(f"task: {final_task['id']}")
+    print(f"status: {final_task['status']}")
+    if final_task.get("summary"):
+        print(f"summary: {final_task['summary']}")
+    if final_task.get("last_error"):
+        print(f"last_error: {final_task['last_error']}")
+    print(f"exit_code: {run_result.get('exit_code')}")
+    if final_task["status"] == "error":
+        raise SystemExit(1)
+
+
+def cmd_status(args: argparse.Namespace) -> None:
+    harness_dir = Path(getattr(args, "dir", "") or DEFAULT_HARNESS_DIR)
     status_dir = harness_dir / DEFAULT_STATUS_DIR.name
     simplify = read_status("simplify-cycle", status_dir)
     safe_commit = read_status("safe-commit", status_dir)
     squash = read_status("squash-commit", status_dir)
-
     print(f"[run] status dir: {status_dir}")
-    if simplify:
-        remaining = simplify.get("remaining_count")
-        stop_reason = simplify.get("stop_reason")
-        print(f"  simplify-cycle: remaining={remaining} stop_reason={stop_reason}")
-    else:
-        print("  simplify-cycle: missing")
-    if safe_commit:
-        verdict = safe_commit.get("safety_verdict")
-        verification = safe_commit.get("verification_status")
-        print(f"  safe-commit: verdict={verdict} verification={verification}")
-    else:
-        print("  safe-commit: missing")
-    if squash:
-        print(f"  squash-commit: ready={squash.get('ready')} reason={squash.get('reason')}")
-    else:
-        print("  squash-commit: missing")
+    print(f"  simplify-cycle: remaining={simplify.get('remaining_count')} stop_reason={simplify.get('stop_reason')}" if simplify else "  simplify-cycle: missing")
+    print(f"  safe-commit: verdict={safe_commit.get('safety_verdict')} verification={safe_commit.get('verification_status')}" if safe_commit else "  safe-commit: missing")
+    print(f"  squash-commit: ready={squash.get('ready')} reason={squash.get('reason')}" if squash else "  squash-commit: missing")
 
 
-def cmd_safe_commit(args: object) -> None:
-    harness_dir = (
-        Path(getattr(args, "dir", "")) if getattr(args, "dir", None) else DEFAULT_HARNESS_DIR
-    )
+def cmd_safe_commit(args: argparse.Namespace) -> None:
+    harness_dir = Path(getattr(args, "dir", "") or DEFAULT_HARNESS_DIR)
     status_dir = harness_dir / DEFAULT_STATUS_DIR.name
     event_file = harness_dir / DEFAULT_EVENT_FILE.name
     simplify = read_status("simplify-cycle", status_dir)
     if not simplify:
-        verdict = {
-            "name": "safe-commit",
-            "safety_verdict": "UNSAFE",
-            "verification_status": "MISSING",
-            "reason": "missing_simplify_cycle",
-        }
+        verdict = {"name": "safe-commit", "safety_verdict": "UNSAFE", "verification_status": "MISSING", "reason": "missing_simplify_cycle"}
         write_status("safe-commit", verdict, status_dir)
-        append_event_entries(
-            [
-                {
-                    "type": "safe_commit_completed",
-                    "safety_verdict": "UNSAFE",
-                    "verification_status": "MISSING",
-                    "reason": "missing_simplify_cycle",
-                }
-            ],
-            event_file,
-        )
+        append_event_entries([{"type": "safe_commit_completed", **verdict}], event_file)
         print("[run] safe-commit FAIL: simplify-cycle status missing")
-        sys.exit(1)
-
+        raise SystemExit(1)
     remaining = int(simplify.get("remaining_count", 0) or 0)
     stop_reason = str(simplify.get("stop_reason", "")).strip()
     safe = remaining == 0 or stop_reason in _ALLOWED_SIMPLIFY_STOP_REASONS - {"converged_to_zero"}
-    verdict = {
-        "name": "safe-commit",
-        "safety_verdict": "SAFE" if safe else "UNSAFE",
-        "verification_status": simplify.get("verification_status", "UNKNOWN"),
-        "remaining_count": remaining,
-        "stop_reason": stop_reason,
-        "reason": "ready_for_commit" if safe else "simplify_not_converged",
-    }
+    verdict = {"name": "safe-commit", "safety_verdict": "SAFE" if safe else "UNSAFE", "verification_status": simplify.get("verification_status", "UNKNOWN"), "remaining_count": remaining, "stop_reason": stop_reason, "reason": "ready_for_commit" if safe else "simplify_not_converged"}
     write_status("safe-commit", verdict, status_dir)
-    append_event_entries(
-        [
-            {
-                "type": "safe_commit_completed",
-                "safety_verdict": verdict["safety_verdict"],
-                "verification_status": verdict["verification_status"],
-                "remaining_count": remaining,
-                "stop_reason": stop_reason,
-                "reason": verdict["reason"],
-            }
-        ],
-        event_file,
-    )
+    append_event_entries([{"type": "safe_commit_completed", **verdict}], event_file)
     if not safe:
         print(f"[run] safe-commit FAIL: remaining_count={remaining} stop_reason={stop_reason}")
-        sys.exit(1)
+        raise SystemExit(1)
     print(f"[run] safe-commit PASS: remaining_count={remaining} stop_reason={stop_reason}")
 
 
-def cmd_squash_check(args: object) -> None:
-    harness_dir = (
-        Path(getattr(args, "dir", "")) if getattr(args, "dir", None) else DEFAULT_HARNESS_DIR
-    )
+def cmd_squash_check(args: argparse.Namespace) -> None:
+    harness_dir = Path(getattr(args, "dir", "") or DEFAULT_HARNESS_DIR)
     status_dir = harness_dir / DEFAULT_STATUS_DIR.name
     event_file = harness_dir / DEFAULT_EVENT_FILE.name
     simplify = read_status("simplify-cycle", status_dir)
     safe_commit = read_status("safe-commit", status_dir)
-
-    if not simplify:
-        snapshot = {"name": "squash-commit", "ready": False, "reason": "missing_simplify_cycle"}
+    if not simplify or not safe_commit:
+        snapshot = {"name": "squash-commit", "ready": False, "reason": "preconditions_failed"}
         write_status("squash-commit", snapshot, status_dir)
-        append_event_entries(
-            [
-                {
-                    "type": "squash_check_completed",
-                    "ready": False,
-                    "reason": "missing_simplify_cycle",
-                }
-            ],
-            event_file,
-        )
-        print("[run] squash-check FAIL: simplify-cycle status missing")
-        sys.exit(1)
-    if not safe_commit:
-        snapshot = {"name": "squash-commit", "ready": False, "reason": "missing_safe_commit"}
-        write_status("squash-commit", snapshot, status_dir)
-        append_event_entries(
-            [{"type": "squash_check_completed", "ready": False, "reason": "missing_safe_commit"}],
-            event_file,
-        )
-        print("[run] squash-check FAIL: safe-commit status missing")
-        sys.exit(1)
-
+        append_event_entries([{"type": "squash_check_completed", **snapshot}], event_file)
+        print("[run] squash-check FAIL: preconditions missing")
+        raise SystemExit(1)
     remaining = int(simplify.get("remaining_count", 0) or 0)
     stop_reason = str(simplify.get("stop_reason", "")).strip()
     safe_verdict = str(safe_commit.get("safety_verdict", "")).strip()
-    ready = (
-        remaining == 0 or stop_reason in _ALLOWED_SIMPLIFY_STOP_REASONS - {"converged_to_zero"}
-    ) and safe_verdict == "SAFE"
-    reason = "ready" if ready else "preconditions_failed"
-    snapshot = {
-        "name": "squash-commit",
-        "ready": ready,
-        "reason": reason,
-        "remaining_count": remaining,
-        "stop_reason": stop_reason,
-        "safe_commit_verdict": safe_verdict,
-    }
+    ready = (remaining == 0 or stop_reason in _ALLOWED_SIMPLIFY_STOP_REASONS - {"converged_to_zero"}) and safe_verdict == "SAFE"
+    snapshot = {"name": "squash-commit", "ready": ready, "reason": "ready" if ready else "preconditions_failed", "remaining_count": remaining, "stop_reason": stop_reason, "safe_commit_verdict": safe_verdict}
     write_status("squash-commit", snapshot, status_dir)
-    append_event_entries(
-        [
-            {
-                "type": "squash_check_completed",
-                "ready": ready,
-                "reason": reason,
-                "remaining_count": remaining,
-                "stop_reason": stop_reason,
-                "safe_commit_verdict": safe_verdict,
-            }
-        ],
-        event_file,
-    )
+    append_event_entries([{"type": "squash_check_completed", **snapshot}], event_file)
     if not ready:
-        print(
-            "[run] squash-check FAIL: "
-            f"remaining_count={remaining} stop_reason={stop_reason} "
-            f"safe_commit={safe_verdict}"
-        )
-        sys.exit(1)
-    print(
-        "[run] squash-check PASS: "
-        f"safe_commit={safe_verdict} remaining_count={remaining} "
-        f"stop_reason={stop_reason}"
-    )
+        print(f"[run] squash-check FAIL: remaining_count={remaining} stop_reason={stop_reason} safe_commit={safe_verdict}")
+        raise SystemExit(1)
+    print(f"[run] squash-check PASS: safe_commit={safe_verdict} remaining_count={remaining} stop_reason={stop_reason}")
 
 
-def _print_persistence_summary(persistence: dict[str, object], harness_dir: Path) -> None:
-    added_learnings = persistence.get("learnings", [])
-    added_events = persistence.get("events", [])
-    promoted = persistence.get("promoted", [])
-    statuses = persistence.get("statuses", [])
-    print(f"[run] Auto-events captured: {len(added_events)} -> {harness_dir / 'events.jsonl'}")
-    learnings_path = harness_dir / "learnings.jsonl"
-    print(f"[run] Auto-learnings captured: {len(added_learnings)} -> {learnings_path}")
-    print(f"[run] Promoted rules: {len(promoted)} -> {harness_dir / 'promoted-rules.json'}")
-    if statuses:
-        print(f"[run] Status snapshots updated: {len(statuses)}")
+def cmd_specify(args: argparse.Namespace) -> None:
+    project_dir = Path.cwd()
+    harness_dir = project_dir / DEFAULT_HARNESS_DIR
+    learning_file = harness_dir / DEFAULT_LEARNING_FILE.name
+    promoted_rules_file = harness_dir / DEFAULT_PROMOTED_RULES_FILE.name
+    relevant = format_relevant_learnings(args.goal, learning_file=learning_file, promoted_rules_file=promoted_rules_file)
+    print(f"[run] specifying: {args.goal}")
+    if relevant:
+        print(relevant)
+    print("[run] thin core specify is bootstrap-only; create/edit spec.json directly.")
+    raise SystemExit(1)
 
 
-def _build_instruction(agent_template: Path, spec_file: Path, phase: str) -> str:
-    template = agent_template.read_text(encoding="utf-8")
-    parts = template.split("---", 2)
-    content = parts[2].strip() if len(parts) >= 3 else template
-
-    spec_summary = ""
-    if spec_file.exists():
-        spec = json.loads(spec_file.read_text(encoding="utf-8"))
-        meta_json = json.dumps(spec.get("meta", {}), ensure_ascii=False, indent=2)
-        spec_summary = f"\nCurrent spec.json status: {meta_json}"
-
-    return f"[{phase}] 에이전트 지시:\n{content}\n\nSpec file: {spec_file}{spec_summary}"
-
-
-def _update_task_status(
-    spec_file: Path, task_id: str, status: str, summary: str | None = None
-) -> None:
+def cmd_execute(args: argparse.Namespace) -> None:
+    spec_file = Path(getattr(args, "file", "spec.json"))
+    if not spec_file.exists():
+        raise SystemExit(f"[run] spec not found: {spec_file}")
     spec = json.loads(spec_file.read_text(encoding="utf-8"))
-    for task in spec.get("chain", {}).get("l4_tasks", []):
-        if task.get("id") == task_id:
-            task["status"] = status
-            if summary is not None:
-                task["summary"] = summary
-    spec["meta"]["updated_at"] = _now_iso()
-    spec_file.write_text(json.dumps(spec, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-
-
-def _check_l0(spec: dict) -> tuple[bool, list[str]]:
-    errors = []
-    if not spec.get("chain", {}).get("l0_goal"):
-        errors.append("Goal is empty")
-    return len(errors) == 0, errors
-
-
-def _check_l1(spec: dict) -> tuple[bool, list[str]]:
-    return bool(spec.get("chain", {}).get("l1_context")), []
-
-
-def _check_l2(spec: dict) -> tuple[bool, list[str]]:
-    decisions = spec.get("chain", {}).get("l2_decisions", [])
-    return len(decisions) > 0, [] if decisions else ["No decisions"]
-
-
-def _check_l3(spec: dict) -> tuple[bool, list[str]]:
-    reqs = spec.get("chain", {}).get("l3_requirements", [])
-    return len(reqs) > 0, [] if reqs else ["No requirements"]
-
-
-def _check_l4(spec: dict) -> tuple[bool, list[str]]:
-    tasks = spec.get("chain", {}).get("l4_tasks", [])
-    return len(tasks) > 0, [] if tasks else ["No tasks"]
-
-
-def _check_l5(spec: dict) -> tuple[bool, list[str]]:
-    review = spec.get("chain", {}).get("l5_review", {})
-    review_passed = review.get("status") == "pass"
-    return review_passed, [] if review_passed else ["Review not passed"]
-
-
-def _now_iso() -> str:
-    from datetime import datetime, timezone
-
-    return datetime.now(timezone.utc).isoformat()
+    harness_dir = spec_file.parent / DEFAULT_HARNESS_DIR
+    learning_file = harness_dir / DEFAULT_LEARNING_FILE.name
+    persistence = persist_learning_bundle(build_auto_learning_bundle(spec), harness_dir=harness_dir, learning_file=learning_file)
+    print(f"[run] Auto-events captured: {len(persistence.get('events', []))} -> {harness_dir / 'events.jsonl'}")
+    print(f"[run] Auto-learnings captured: {len(persistence.get('learnings', []))} -> {learning_file}")
+    print(f"[run] Promoted rules: {len(persistence.get('promoted', []))} -> {harness_dir / 'promoted-rules.json'}")

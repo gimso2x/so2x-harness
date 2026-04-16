@@ -3,330 +3,249 @@ from __future__ import annotations
 import argparse
 import json
 import re
+from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
-SCHEMA_PATH = ROOT_DIR / "schemas" / "spec.schema.json"
-
-
-def handle_spec(args: argparse.Namespace) -> None:
-    if args.spec_command == "init":
-        cmd_init(args)
-    elif args.spec_command == "check":
-        cmd_check(args)
-    elif args.spec_command == "validate":
-        cmd_validate(args)
-    elif args.spec_command == "status":
-        cmd_status(args)
-    elif args.spec_command == "set-task-status":
-        cmd_set_task_status(args)
-    elif args.spec_command == "guide":
-        cmd_guide(args)
-    else:
-        print("Usage: so2x-cli spec {init|check|validate|status|guide}")
+VALID_STATUSES = {"pending", "in_progress", "blocked", "error", "done"}
+VALID_ROLES = {"planning", "review", "dev"}
 
 
-def cmd_init(args: argparse.Namespace) -> None:
-    spec_id = args.id or _generate_id(args.goal)
-    now = datetime.now(timezone.utc).isoformat()
-
-    spec = {
-        "meta": {
-            "id": spec_id,
-            "goal": args.goal,
-            "status": "draft",
-            "mode": "standard",
-            "created_at": now,
-            "updated_at": now,
-        },
-        "chain": {"l0_goal": args.goal},
-        "gates": {
-            "l0_to_l1": {"status": "pending"},
-            "l1_to_l2": {"status": "pending"},
-            "l2_to_l3": {"status": "pending"},
-            "l3_to_l4": {"status": "pending"},
-            "l4_to_l5": {"status": "pending"},
-        },
-    }
-
-    output = Path(args.output)
-    output.write_text(json.dumps(spec, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(f"[so2x-cli] created {output} (id={spec_id})")
+def now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
-def cmd_check(args: argparse.Namespace) -> None:
-    spec = _load_spec(args.file)
-    gate = args.gate
-
-    if gate == "all" or gate is None:
-        gates = ["l0_to_l1", "l1_to_l2", "l2_to_l3", "l3_to_l4", "l4_to_l5"]
-    else:
-        gates = [gate]
-
-    any_fail = False
-    for g in gates:
-        passed, errors = check_gate(spec, g)
-        if passed:
-            print(f"[{g}] PASS")
-        else:
-            print(f"[{g}] FAIL")
-            for e in errors:
-                print(f"  - {e}")
-            any_fail = True
-
-    if any_fail:
-        raise SystemExit(1)
+def load_spec(path: str | Path) -> dict[str, Any]:
+    spec_path = Path(path)
+    if not spec_path.exists():
+        raise SystemExit(f"spec not found: {spec_path}")
+    return json.loads(spec_path.read_text(encoding="utf-8"))
 
 
-def cmd_validate(args: argparse.Namespace) -> None:
-    spec = _load_spec(args.file)
-    errors = validate_spec(spec)
-    if errors:
-        print("[validate] FAIL")
-        for e in errors:
-            print(f"  - {e}")
-        raise SystemExit(1)
-    print("[validate] PASS")
+def save_spec(path: str | Path, spec: dict[str, Any]) -> None:
+    Path(path).write_text(json.dumps(spec, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
-def cmd_status(args: argparse.Namespace) -> None:
-    spec = _load_spec(args.file)
-    meta = spec.get("meta", {})
-    chain = spec.get("chain", {})
-    gates = spec.get("gates", {})
-
-    print(f"ID:     {meta.get('id', '?')}")
-    print(f"Goal:   {meta.get('goal', '?')}")
-    print(f"Status: {meta.get('status', '?')}")
-    print()
-    print("Chain:")
-
-    layers = [
-        ("L0 Goal", "l0_goal", lambda v: "defined" if v else "empty"),
-        (
-            "L1 Context",
-            "l1_context",
-            lambda v: f"{len(v.get('assumptions', []))} assumptions" if v else "empty",
-        ),
-        (
-            "L2 Decisions",
-            "l2_decisions",
-            lambda v: f"{len(v)} decisions" if v else "empty",
-        ),
-        (
-            "L3 Requirements",
-            "l3_requirements",
-            lambda v: f"{len(v)} requirements" if v else "empty",
-        ),
-        ("L4 Tasks", "l4_tasks", lambda v: f"{len(v)} tasks" if v else "empty"),
-        (
-            "L5 Review",
-            "l5_review",
-            lambda v: v.get("status", "pending") if v else "empty",
-        ),
-    ]
-
-    for label, key, fmt in layers:
-        value = chain.get(key)
-        print(f"  {label}: {fmt(value)}")
-
-    print()
-    print("Gates:")
-    for g in ["l0_to_l1", "l1_to_l2", "l2_to_l3", "l3_to_l4", "l4_to_l5"]:
-        status = gates.get(g, {}).get("status", "pending")
-        print(f"  {g}: {status}")
-
-    tasks = chain.get("l4_tasks", [])
-    if tasks:
-        print()
-        print("Tasks:")
-        for task in tasks:
-            tid = task.get("id", "?")
-            status = task.get("status", "pending")
-            action = task.get("action", "")
-            print(f"  {tid}: {status} - {action}")
-            if task.get("summary"):
-                print(f"    summary: {task['summary']}")
-
-
-def cmd_set_task_status(args: argparse.Namespace) -> None:
-    spec = _load_spec(args.file)
-    updated = False
-
-    for task in spec.get("chain", {}).get("l4_tasks", []):
-        if task.get("id") == args.task_id:
-            task["status"] = args.status
-            if args.summary is not None:
-                task["summary"] = args.summary
-            updated = True
-            break
-
-    if not updated:
-        raise SystemExit(f"task not found: {args.task_id}")
-
-    spec.setdefault("meta", {})["updated_at"] = datetime.now(timezone.utc).isoformat()
-    spec_path = Path(args.file)
-    spec_path.write_text(
-        json.dumps(spec, indent=2, ensure_ascii=False) + "\n",
-        encoding="utf-8",
-    )
-    print(f"[spec] updated {args.task_id} -> {args.status}")
-
-
-def cmd_guide(args: argparse.Namespace) -> None:
-    guides = {
-        "l0_goal": "String. What to build, in one sentence.",
-        "l1_context": (
-            "Object with:\n"
-            "  research: string - codebase analysis findings\n"
-            "  assumptions: string[] - assumptions made\n"
-            "  constraints: string[] - known constraints\n"
-            "  patterns: string[] - detected patterns"
-        ),
-        "l2_decisions": (
-            "Array of objects:\n"
-            "  id: string (D1, D2, ...)\n"
-            "  decision: string - what was decided\n"
-            "  rationale: string - why\n"
-            "  alternatives: string[] - what was considered"
-        ),
-        "l3_requirements": (
-            "Array of objects:\n"
-            "  id: string (R1, R2, ...)\n"
-            "  behavior: string - what the system must do\n"
-            "  scenarios: array of {given, when, then, verified_by, verify?}"
-        ),
-        "l4_tasks": (
-            "Array of objects:\n"
-            "  id: string (T1, T2, ...)\n"
-            "  action: string - what to implement\n"
-            "  requirement_refs: string[] (R1, R2, ...) - traceability\n"
-            "  acceptance_criteria?: string\n"
-            "  summary?: string - latest task status summary\n"
-            "  status?: pending | in_progress | blocked | done"
-        ),
-        "l5_review": (
-            "Object:\n"
-            "  status: pending | pass | needs_changes\n"
-            "  reviewer: string\n"
-            "  findings: array of {severity, message, location}"
-        ),
-    }
-
-    layer = args.layer
-    if layer in guides:
-        print(f"[{layer}]")
-        print(guides[layer])
-    else:
-        print(f"Unknown layer: {layer}")
-        print(f"Available: {', '.join(guides.keys())}")
-
-
-def _load_spec(path: str) -> dict:
-    p = Path(path)
-    if not p.exists():
-        raise SystemExit(f"file not found: {path}")
-    return json.loads(p.read_text(encoding="utf-8"))
-
-
-def _generate_id(goal: str) -> str:
-    words = re.findall(r"[A-Za-z]+", goal)
-    prefix = "".join(w[:3].upper() for w in words[:2]) if len(words) >= 2 else "SPEC"
+def _generate_spec_id(goal: str) -> str:
+    words = re.findall(r"[A-Za-z0-9]+", goal.upper())
+    prefix = "-".join(words[:2]) if words else "THIN"
     return f"SPEC-{prefix}-001"
 
 
-def check_gate(spec: dict, gate: str) -> tuple[bool, list[str]]:
-    chain = spec.get("chain", {})
+def create_initial_spec(goal: str, spec_id: str | None = None) -> dict[str, Any]:
+    timestamp = now_iso()
+    return {
+        "meta": {
+            "id": spec_id or _generate_spec_id(goal),
+            "goal": goal,
+            "created_at": timestamp,
+            "updated_at": timestamp,
+        },
+        "tasks": [],
+    }
+
+
+def list_tasks(spec: dict[str, Any]) -> list[dict[str, Any]]:
+    tasks = spec.get("tasks")
+    if isinstance(tasks, list):
+        return tasks
+    legacy_tasks = spec.get("chain", {}).get("l4_tasks", [])
+    return legacy_tasks if isinstance(legacy_tasks, list) else []
+
+
+def get_task(spec: dict[str, Any], task_id: str) -> dict[str, Any] | None:
+    for task in list_tasks(spec):
+        if task.get("id") == task_id:
+            return task
+    return None
+
+
+def dependencies_satisfied(spec: dict[str, Any], task: dict[str, Any]) -> bool:
+    depends_on = task.get("depends_on")
+    if not isinstance(depends_on, list):
+        return True
+    for dependency_id in depends_on:
+        dependency = get_task(spec, dependency_id)
+        if not dependency or dependency.get("status") != "done":
+            return False
+    return True
+
+
+def get_next_task(spec: dict[str, Any]) -> dict[str, Any] | None:
+    for task in list_tasks(spec):
+        if task.get("status", "pending") == "pending" and dependencies_satisfied(spec, task):
+            return task
+    return None
+
+
+def set_task_status(
+    spec: dict[str, Any],
+    task_id: str,
+    status: str,
+    summary: str | None = None,
+    last_error: str | None = None,
+) -> dict[str, Any]:
+    if status not in VALID_STATUSES:
+        raise ValueError(f"invalid status: {status}")
+    updated = deepcopy(spec)
+    task = get_task(updated, task_id)
+    if task is None:
+        raise KeyError(task_id)
+    task["status"] = status
+    task["updated_at"] = now_iso()
+    if summary is not None:
+        task["summary"] = summary
+    if last_error is not None:
+        task["last_error"] = last_error
+    updated.setdefault("meta", {})["updated_at"] = now_iso()
+    return updated
+
+
+def validate_spec(spec: dict[str, Any]) -> list[str]:
+    if "tasks" not in spec and spec.get("chain", {}).get("l4_tasks") is not None:
+        return []
     errors: list[str] = []
-
-    if gate == "l0_to_l1":
-        if not chain.get("l0_goal"):
-            errors.append("L0: goal is empty")
-        if not chain.get("l1_context"):
-            errors.append("L1: context not derived yet")
-
-    elif gate == "l1_to_l2":
-        if not chain.get("l1_context"):
-            errors.append("L1: context is empty")
-        decisions = chain.get("l2_decisions", [])
-        if not decisions:
-            errors.append("L2: no decisions derived")
-        for i, d in enumerate(decisions):
-            if not d.get("rationale"):
-                errors.append(f"L2: D{i + 1} missing rationale")
-
-    elif gate == "l2_to_l3":
-        decisions = chain.get("l2_decisions", [])
-        if not decisions:
-            errors.append("L2: no decisions")
-        requirements = chain.get("l3_requirements", [])
-        if not requirements:
-            errors.append("L3: no requirements derived")
-        for r in requirements:
-            if not r.get("scenarios"):
-                errors.append(f"L3: {r.get('id', '?')} has no scenarios")
-
-    elif gate == "l3_to_l4":
-        requirements = chain.get("l3_requirements", [])
-        if not requirements:
-            errors.append("L3: no requirements")
-        tasks = chain.get("l4_tasks", [])
-        if not tasks:
-            errors.append("L4: no tasks derived")
-        req_ids = {r.get("id") for r in requirements}
-        covered = set()
-        for t in tasks:
-            for ref in t.get("requirement_refs", []):
-                covered.add(ref)
-        uncovered = req_ids - covered
-        if uncovered:
-            errors.append(f"L4: requirements not covered by tasks: {sorted(uncovered)}")
-
-    elif gate == "l4_to_l5":
-        tasks = chain.get("l4_tasks", [])
-        if not tasks:
-            errors.append("L4: no tasks")
-        review = chain.get("l5_review")
-        if not review or review.get("status") == "pending":
-            errors.append("L5: review not completed")
-
+    meta = spec.get("meta")
+    if not isinstance(meta, dict):
+        errors.append("meta must be an object")
     else:
-        errors.append(f"unknown gate: {gate}")
-
-    return len(errors) == 0, errors
-
-
-def validate_spec(spec: dict) -> list[str]:
-    errors: list[str] = []
-
-    if "meta" not in spec:
-        errors.append("missing 'meta' section")
-    else:
-        meta = spec["meta"]
-        for field in ["id", "goal", "status", "created_at"]:
-            if not meta.get(field):
-                errors.append(f"meta.{field} is required")
-
-    if "chain" not in spec:
-        errors.append("missing 'chain' section")
-    else:
-        if not spec["chain"].get("l0_goal"):
-            errors.append("chain.l0_goal is required")
-
-    if "gates" not in spec:
-        errors.append("missing 'gates' section")
-
-    # Validate requirements have scenarios
-    for r in spec.get("chain", {}).get("l3_requirements", []):
-        if not r.get("scenarios"):
-            errors.append(f"{r.get('id', '?')}: missing scenarios")
-
-    # Validate tasks trace to requirements
-    req_ids = {r.get("id") for r in spec.get("chain", {}).get("l3_requirements", [])}
-    for t in spec.get("chain", {}).get("l4_tasks", []):
-        for ref in t.get("requirement_refs", []):
-            if ref not in req_ids:
-                errors.append(f"{t.get('id', '?')}: references unknown requirement {ref}")
-
+        for key in ("id", "goal", "created_at", "updated_at"):
+            if not meta.get(key):
+                errors.append(f"meta.{key} is required")
+    tasks = spec.get("tasks")
+    if tasks is None:
+        errors.append("tasks is required")
+        return errors
+    if not isinstance(tasks, list):
+        errors.append("tasks must be an array")
+        return errors
+    task_ids: set[str] = set()
+    for index, task in enumerate(tasks, start=1):
+        label = task.get("id", f"tasks[{index}]") if isinstance(task, dict) else f"tasks[{index}]"
+        if not isinstance(task, dict):
+            errors.append(f"{label} must be an object")
+            continue
+        for key in ("id", "role", "action", "status", "summary", "last_error", "depends_on", "artifacts", "updated_at"):
+            if key not in task:
+                errors.append(f"{label}.{key} is required")
+        task_id = task.get("id")
+        if isinstance(task_id, str):
+            if task_id in task_ids:
+                errors.append(f"duplicate task id: {task_id}")
+            task_ids.add(task_id)
+        if task.get("role") not in VALID_ROLES:
+            errors.append(f"{label}.role must be one of {sorted(VALID_ROLES)}")
+        if task.get("status") not in VALID_STATUSES:
+            errors.append(f"{label}.status must be one of {sorted(VALID_STATUSES)}")
+        if not isinstance(task.get("depends_on", []), list):
+            errors.append(f"{label}.depends_on must be an array")
+        if not isinstance(task.get("artifacts", []), list):
+            errors.append(f"{label}.artifacts must be an array")
+    for task in tasks:
+        if not isinstance(task, dict):
+            continue
+        for dependency_id in task.get("depends_on", []):
+            if dependency_id not in task_ids:
+                errors.append(f"{task.get('id', '?')}.depends_on references unknown task {dependency_id}")
     return errors
+
+
+def summarize_spec(spec: dict[str, Any]) -> dict[str, Any]:
+    counts = {status: 0 for status in sorted(VALID_STATUSES)}
+    tasks = list_tasks(spec)
+    for task in tasks:
+        status = task.get("status", "pending")
+        if status in counts:
+            counts[status] += 1
+    next_task = get_next_task(spec)
+    blocked_task = next((task for task in tasks if task.get("status") == "blocked"), None)
+    error_task = next((task for task in tasks if task.get("status") == "error"), None)
+    latest_task = max(tasks, key=lambda task: str(task.get("updated_at", "")), default=None)
+    return {
+        "goal": spec.get("meta", {}).get("goal") or spec.get("chain", {}).get("l0_goal", ""),
+        "counts": counts,
+        "next_task": next_task,
+        "blocked_task": blocked_task,
+        "error_task": error_task,
+        "latest_summary": (latest_task or {}).get("summary", ""),
+        "total_tasks": len(tasks),
+    }
+
+
+def handle_spec(args: argparse.Namespace) -> None:
+    command = getattr(args, "spec_command", None)
+    if command == "init":
+        args.file = getattr(args, "output", "spec.json")
+        args.goal = getattr(args, "goal")
+        args.spec_id = getattr(args, "id", None)
+        cmd_init(args)
+    elif command == "status":
+        cmd_status(args)
+    elif command == "next":
+        cmd_next(args)
+    elif command == "set-task-status":
+        cmd_set_status(args)
+    elif command == "validate":
+        cmd_validate(args)
+    elif command == "check":
+        cmd_validate(args)
+    elif command == "guide":
+        print("lite spec: meta + tasks; each task has id/role/action/status/summary/last_error/depends_on/artifacts/updated_at")
+    else:
+        raise SystemExit("Usage: so2x-cli spec {init|status|next|set-task-status|validate}")
+
+
+def cmd_init(args: argparse.Namespace) -> None:
+    spec = create_initial_spec(goal=args.goal, spec_id=getattr(args, "spec_id", None))
+    save_spec(args.file, spec)
+    print(f"[spec] created {args.file}")
+
+
+def cmd_status(args: argparse.Namespace) -> None:
+    spec = load_spec(args.file)
+    summary = summarize_spec(spec)
+    tasks = list_tasks(spec)
+    print(f"goal: {summary['goal']}")
+    print("counts: " + " ".join(f"{status}={summary['counts'][status]}" for status in ("pending", "in_progress", "blocked", "error", "done")))
+    next_task = summary["next_task"]
+    if next_task:
+        role = next_task.get("role", "")
+        prefix = f" {role}" if role else ""
+        print(f"next_task: {next_task['id']}{prefix} {next_task.get('action', '')}".rstrip())
+    else:
+        print("next_task: none")
+    for task in tasks:
+        print(f"task: {task.get('id')} status={task.get('status', 'pending')} action={task.get('action', '')}")
+        if task.get("summary"):
+            print(f"summary: {task.get('summary')}")
+
+
+def cmd_next(args: argparse.Namespace) -> None:
+    spec = load_spec(args.file)
+    task = get_next_task(spec)
+    if task is None:
+        print("next_task: none")
+        return
+    print(json.dumps(task, ensure_ascii=False, indent=2))
+
+
+def cmd_set_status(args: argparse.Namespace) -> None:
+    spec = load_spec(args.file)
+    try:
+        updated = set_task_status(spec, args.task_id, args.status, summary=getattr(args, "summary", None), last_error=getattr(args, "last_error", None))
+    except KeyError as exc:
+        raise SystemExit(f"task not found: {exc.args[0]}") from exc
+    save_spec(args.file, updated)
+    print(f"[spec] updated {args.task_id} -> {args.status}")
+
+
+def cmd_validate(args: argparse.Namespace) -> None:
+    spec = load_spec(args.file)
+    errors = validate_spec(spec)
+    if errors:
+        print("[validate] FAIL")
+        for error in errors:
+            print(f"- {error}")
+        raise SystemExit(1)
+    print("[validate] PASS")

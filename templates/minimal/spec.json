@@ -1,0 +1,43 @@
+{
+  "meta": {
+    "id": "SPEC-OAUTH-001",
+    "goal": "OAuth 로그인 추가",
+    "created_at": "2026-04-16T00:00:00+00:00",
+    "updated_at": "2026-04-16T00:00:00+00:00"
+  },
+  "tasks": [
+    {
+      "id": "T1",
+      "role": "planning",
+      "action": "OAuth 로그인 흐름과 필요한 변경 지점을 정리",
+      "status": "pending",
+      "summary": "",
+      "last_error": "",
+      "depends_on": [],
+      "artifacts": ["docs/oauth-plan.md"],
+      "updated_at": "2026-04-16T00:00:00+00:00"
+    },
+    {
+      "id": "T2",
+      "role": "dev",
+      "action": "OAuth callback 처리 구현",
+      "status": "pending",
+      "summary": "",
+      "last_error": "",
+      "depends_on": ["T1"],
+      "artifacts": ["src/auth/callback.py", "tests/test_auth_callback.py"],
+      "updated_at": "2026-04-16T00:00:00+00:00"
+    },
+    {
+      "id": "T3",
+      "role": "review",
+      "action": "구현과 테스트 결과를 리뷰하고 남은 리스크를 정리",
+      "status": "pending",
+      "summary": "",
+      "last_error": "",
+      "depends_on": ["T2"],
+      "artifacts": ["docs/review-notes.md"],
+      "updated_at": "2026-04-16T00:00:00+00:00"
+    }
+  ]
+}

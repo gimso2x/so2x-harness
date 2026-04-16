@@ -1,29 +1,17 @@
 name: so2x-harness
 version: 0.6.2
-default_platforms:
-  - claude
-
-policies:
-  marker_tag: SO2X-HARNESS
-  default_overwrite_mode: overwrite
-
-default_rules:
-  - language-policy
-  - scope-control
-  - file-size-limit
-  - testing-policy
-  - verification-policy
-
-default_skills:
+mode: thin
+core_files:
+  - CLAUDE.md
+  - spec.json
+  - harness.json
+roles:
   - planning
-  - implementation
-  - debugging
   - review
-  - specify-lite
-  - check-harness
-  - spec-validate
-  - setup-context
-  - changelog
-  - safe-commit
-  - simplify-cycle
-  - squash-commit
+  - dev
+status_values:
+  - pending
+  - in_progress
+  - blocked
+  - error
+  - done

@@ -1,249 +1,54 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "so2x-harness spec",
-  "description": "Single source of truth for derived requirements and implementation plans",
+  "title": "so2x-harness thin spec",
+  "description": "Lite spec.json schema for the thin personal per-project harness.",
   "type": "object",
-  "required": ["meta", "chain", "gates"],
   "additionalProperties": false,
+  "required": ["meta", "tasks"],
   "properties": {
     "meta": {
       "type": "object",
-      "required": ["id", "goal", "status", "created_at"],
       "additionalProperties": false,
+      "required": ["id", "goal", "created_at", "updated_at"],
       "properties": {
-        "id": {
-          "type": "string",
-          "pattern": "^SPEC-[A-Z0-9]+-[0-9]{3}$",
-          "description": "Unique spec identifier, e.g. SPEC-AUTH-001"
-        },
-        "goal": {
-          "type": "string",
-          "minLength": 1,
-          "description": "What we are building or changing"
-        },
-        "status": {
-          "type": "string",
-          "enum": ["draft", "in_progress", "review", "approved", "shipped"],
-          "default": "draft"
-        },
-        "mode": {
-          "type": "string",
-          "enum": ["standard", "lite"],
-          "default": "standard",
-          "description": "Derivation depth: standard (all layers) or lite (goal + requirements + tasks)"
-        },
-        "created_at": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "updated_at": {
-          "type": "string",
-          "format": "date-time"
-        }
+        "id": {"type": "string", "minLength": 1},
+        "goal": {"type": "string", "minLength": 1},
+        "created_at": {"type": "string", "format": "date-time"},
+        "updated_at": {"type": "string", "format": "date-time"}
       }
     },
-    "chain": {
-      "type": "object",
-      "required": ["l0_goal"],
-      "additionalProperties": false,
-      "properties": {
-        "l0_goal": {
-          "type": "string",
-          "minLength": 1,
-          "description": "What to build, in one sentence"
-        },
-        "l1_context": {
-          "type": "object",
-          "description": "Current state analysis",
-          "additionalProperties": true,
-          "properties": {
-            "research": {
-              "type": "string",
-              "description": "Codebase analysis findings"
-            },
-            "assumptions": {
-              "type": "array",
-              "items": {"type": "string"}
-            },
-            "constraints": {
-              "type": "array",
-              "items": {"type": "string"}
-            },
-            "patterns": {
-              "type": "array",
-              "items": {"type": "string"}
-            }
-          }
-        },
-        "l2_decisions": {
-          "type": "array",
-          "description": "Key decisions made during derivation",
-          "items": {
-            "type": "object",
-            "required": ["id", "decision", "rationale"],
-            "additionalProperties": false,
-            "properties": {
-              "id": {
-                "type": "string",
-                "pattern": "^D[0-9]+$"
-              },
-              "decision": {
-                "type": "string",
-                "minLength": 1
-              },
-              "rationale": {
-                "type": "string",
-                "minLength": 1
-              },
-              "alternatives": {
-                "type": "array",
-                "items": {"type": "string"}
-              }
-            }
-          }
-        },
-        "l3_requirements": {
-          "type": "array",
-          "description": "Verifiable requirements with scenarios",
-          "items": {
-            "type": "object",
-            "required": ["id", "behavior", "scenarios"],
-            "additionalProperties": false,
-            "properties": {
-              "id": {
-                "type": "string",
-                "pattern": "^R[0-9]+$"
-              },
-              "behavior": {
-                "type": "string",
-                "minLength": 1,
-                "description": "What the system must do"
-              },
-              "scenarios": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "required": ["given", "when", "then", "verified_by"],
-                  "additionalProperties": false,
-                  "properties": {
-                    "given": {"type": "string"},
-                    "when": {"type": "string"},
-                    "then": {"type": "string"},
-                    "verified_by": {
-                      "type": "string",
-                      "enum": ["machine", "human"]
-                    },
-                    "verify": {
-                      "type": "object",
-                      "properties": {
-                        "type": {
-                          "type": "string",
-                          "enum": ["command", "manual", "agent"]
-                        },
-                        "run": {"type": "string"}
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "l4_tasks": {
-          "type": "array",
-          "description": "Implementation tasks derived from requirements",
-          "items": {
-            "type": "object",
-            "required": ["id", "action", "requirement_refs"],
-            "additionalProperties": false,
-            "properties": {
-              "id": {
-                "type": "string",
-                "pattern": "^T[0-9]+$"
-              },
-              "action": {
-                "type": "string",
-                "minLength": 1
-              },
-              "requirement_refs": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "pattern": "^R[0-9]+$"
-                },
-                "minItems": 1
-              },
-              "acceptance_criteria": {
-                "type": "string"
-              },
-              "summary": {
-                "type": "string"
-              },
-              "status": {
-                "type": "string",
-                "enum": ["pending", "in_progress", "blocked", "done"],
-                "default": "pending"
-              }
-            }
-          }
-        },
-        "l5_review": {
-          "type": "object",
-          "description": "Plan review findings",
-          "additionalProperties": false,
-          "properties": {
-            "status": {
-              "type": "string",
-              "enum": ["pending", "pass", "needs_changes"]
-            },
-            "reviewer": {"type": "string"},
-            "findings": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "severity": {
-                    "type": "string",
-                    "enum": ["info", "warning", "blocker"]
-                  },
-                  "message": {"type": "string"},
-                  "location": {"type": "string"}
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "gates": {
-      "type": "object",
-      "description": "Gate status between derivation layers",
-      "additionalProperties": false,
-      "properties": {
-        "l0_to_l1": {"$ref": "#/$defs/gate_status"},
-        "l1_to_l2": {"$ref": "#/$defs/gate_status"},
-        "l2_to_l3": {"$ref": "#/$defs/gate_status"},
-        "l3_to_l4": {"$ref": "#/$defs/gate_status"},
-        "l4_to_l5": {"$ref": "#/$defs/gate_status"}
-      }
-    }
-  },
-  "$defs": {
-    "gate_status": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "status": {
-          "type": "string",
-          "enum": ["pass", "pending", "blocked", "skipped"]
-        },
-        "checked_at": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "errors": {
-          "type": "array",
-          "items": {"type": "string"}
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "role",
+          "action",
+          "status",
+          "summary",
+          "last_error",
+          "depends_on",
+          "artifacts",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {"type": "string", "pattern": "^T[0-9]+$"},
+          "role": {"type": "string", "enum": ["planning", "review", "dev"]},
+          "action": {"type": "string", "minLength": 1},
+          "status": {"type": "string", "enum": ["pending", "in_progress", "blocked", "error", "done"]},
+          "summary": {"type": "string"},
+          "last_error": {"type": "string"},
+          "depends_on": {
+            "type": "array",
+            "items": {"type": "string", "pattern": "^T[0-9]+$"}
+          },
+          "artifacts": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "updated_at": {"type": "string", "format": "date-time"}
         }
       }
     }
