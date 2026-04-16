@@ -1,4 +1,4 @@
-.PHONY: test lint coverage doctor clean install check release-check
+.PHONY: test lint coverage doctor clean check release-check
 
 PYTHON ?= python3
 PROJECT ?= .
@@ -34,12 +34,9 @@ release-check:
 	pip install --upgrade pip build; \
 	python -m build; \
 	pip install dist/*.whl; \
-	test "$$(so2x-cli --version)" = "so2x-cli $$(cat VERSION)"
+	test "$$(so2x --version)" = "so2x $$(cat VERSION)"
 
 clean:
 	rm -rf htmlcov/ .pytest_cache/ tests/__pycache__/
 	find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
 	find . -name "*.pyc" -delete 2>/dev/null || true
-
-install:
-	$(PYTHON) scripts/apply.py --project $(PROJECT) --platform claude --preset general

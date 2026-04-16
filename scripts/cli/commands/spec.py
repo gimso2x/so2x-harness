@@ -48,10 +48,7 @@ def create_initial_spec(goal: str, spec_id: str | None = None) -> dict[str, Any]
 
 def list_tasks(spec: dict[str, Any]) -> list[dict[str, Any]]:
     tasks = spec.get("tasks")
-    if isinstance(tasks, list):
-        return tasks
-    legacy_tasks = spec.get("chain", {}).get("l4_tasks", [])
-    return legacy_tasks if isinstance(legacy_tasks, list) else []
+    return tasks if isinstance(tasks, list) else []
 
 
 def get_task(spec: dict[str, Any], task_id: str) -> dict[str, Any] | None:
@@ -64,7 +61,7 @@ def get_task(spec: dict[str, Any], task_id: str) -> dict[str, Any] | None:
 def dependencies_satisfied(spec: dict[str, Any], task: dict[str, Any]) -> bool:
     depends_on = task.get("depends_on")
     if not isinstance(depends_on, list):
-        return True
+        return False
     for dependency_id in depends_on:
         dependency = get_task(spec, dependency_id)
         if not dependency or dependency.get("status") != "done":
@@ -74,7 +71,7 @@ def dependencies_satisfied(spec: dict[str, Any], task: dict[str, Any]) -> bool:
 
 def get_next_task(spec: dict[str, Any]) -> dict[str, Any] | None:
     for task in list_tasks(spec):
-        if task.get("status", "pending") == "pending" and dependencies_satisfied(spec, task):
+        if task.get("status") == "pending" and dependencies_satisfied(spec, task):
             return task
     return None
 
@@ -103,8 +100,6 @@ def set_task_status(
 
 
 def validate_spec(spec: dict[str, Any]) -> list[str]:
-    if "tasks" not in spec and spec.get("chain", {}).get("l4_tasks") is not None:
-        return []
     errors: list[str] = []
     meta = spec.get("meta")
     if not isinstance(meta, dict):
@@ -113,20 +108,28 @@ def validate_spec(spec: dict[str, Any]) -> list[str]:
         for key in ("id", "goal", "created_at", "updated_at"):
             if not meta.get(key):
                 errors.append(f"meta.{key} is required")
+
     tasks = spec.get("tasks")
-    if tasks is None:
-        errors.append("tasks is required")
-        return errors
     if not isinstance(tasks, list):
-        errors.append("tasks must be an array")
-        return errors
+        return errors + ["tasks must be an array"]
+
     task_ids: set[str] = set()
     for index, task in enumerate(tasks, start=1):
-        label = task.get("id", f"tasks[{index}]") if isinstance(task, dict) else f"tasks[{index}]"
+        label = f"tasks[{index}]"
         if not isinstance(task, dict):
             errors.append(f"{label} must be an object")
             continue
-        for key in ("id", "role", "action", "status", "summary", "last_error", "depends_on", "artifacts", "updated_at"):
+        for key in (
+            "id",
+            "role",
+            "action",
+            "status",
+            "summary",
+            "last_error",
+            "depends_on",
+            "artifacts",
+            "updated_at",
+        ):
             if key not in task:
                 errors.append(f"{label}.{key} is required")
         task_id = task.get("id")
@@ -138,32 +141,39 @@ def validate_spec(spec: dict[str, Any]) -> list[str]:
             errors.append(f"{label}.role must be one of {sorted(VALID_ROLES)}")
         if task.get("status") not in VALID_STATUSES:
             errors.append(f"{label}.status must be one of {sorted(VALID_STATUSES)}")
-        if not isinstance(task.get("depends_on", []), list):
+        if not isinstance(task.get("summary"), str):
+            errors.append(f"{label}.summary must be a string")
+        if not isinstance(task.get("last_error"), str):
+            errors.append(f"{label}.last_error must be a string")
+        if not isinstance(task.get("depends_on"), list):
             errors.append(f"{label}.depends_on must be an array")
-        if not isinstance(task.get("artifacts", []), list):
+        if not isinstance(task.get("artifacts"), list):
             errors.append(f"{label}.artifacts must be an array")
+
     for task in tasks:
         if not isinstance(task, dict):
             continue
         for dependency_id in task.get("depends_on", []):
             if dependency_id not in task_ids:
-                errors.append(f"{task.get('id', '?')}.depends_on references unknown task {dependency_id}")
+                errors.append(
+                    f"{task.get('id', '?')}.depends_on references unknown task {dependency_id}"
+                )
     return errors
 
 
 def summarize_spec(spec: dict[str, Any]) -> dict[str, Any]:
-    counts = {status: 0 for status in sorted(VALID_STATUSES)}
+    counts = {status: 0 for status in ("pending", "in_progress", "blocked", "error", "done")}
     tasks = list_tasks(spec)
     for task in tasks:
-        status = task.get("status", "pending")
+        status = task.get("status")
         if status in counts:
             counts[status] += 1
     next_task = get_next_task(spec)
     blocked_task = next((task for task in tasks if task.get("status") == "blocked"), None)
     error_task = next((task for task in tasks if task.get("status") == "error"), None)
-    latest_task = max(tasks, key=lambda task: str(task.get("updated_at", "")), default=None)
+    latest_task = max(tasks, key=lambda item: str(item.get("updated_at", "")), default=None)
     return {
-        "goal": spec.get("meta", {}).get("goal") or spec.get("chain", {}).get("l0_goal", ""),
+        "goal": spec.get("meta", {}).get("goal", ""),
         "counts": counts,
         "next_task": next_task,
         "blocked_task": blocked_task,
@@ -171,29 +181,6 @@ def summarize_spec(spec: dict[str, Any]) -> dict[str, Any]:
         "latest_summary": (latest_task or {}).get("summary", ""),
         "total_tasks": len(tasks),
     }
-
-
-def handle_spec(args: argparse.Namespace) -> None:
-    command = getattr(args, "spec_command", None)
-    if command == "init":
-        args.file = getattr(args, "output", "spec.json")
-        args.goal = getattr(args, "goal")
-        args.spec_id = getattr(args, "id", None)
-        cmd_init(args)
-    elif command == "status":
-        cmd_status(args)
-    elif command == "next":
-        cmd_next(args)
-    elif command == "set-task-status":
-        cmd_set_status(args)
-    elif command == "validate":
-        cmd_validate(args)
-    elif command == "check":
-        cmd_validate(args)
-    elif command == "guide":
-        print("lite spec: meta + tasks; each task has id/role/action/status/summary/last_error/depends_on/artifacts/updated_at")
-    else:
-        raise SystemExit("Usage: so2x-cli spec {init|status|next|set-task-status|validate}")
 
 
 def cmd_init(args: argparse.Namespace) -> None:
@@ -205,20 +192,22 @@ def cmd_init(args: argparse.Namespace) -> None:
 def cmd_status(args: argparse.Namespace) -> None:
     spec = load_spec(args.file)
     summary = summarize_spec(spec)
-    tasks = list_tasks(spec)
     print(f"goal: {summary['goal']}")
-    print("counts: " + " ".join(f"{status}={summary['counts'][status]}" for status in ("pending", "in_progress", "blocked", "error", "done")))
+    print(
+        "counts: "
+        + " ".join(
+            f"{status}={summary['counts'][status]}"
+            for status in ("pending", "in_progress", "blocked", "error", "done")
+        )
+    )
     next_task = summary["next_task"]
     if next_task:
-        role = next_task.get("role", "")
-        prefix = f" {role}" if role else ""
-        print(f"next_task: {next_task['id']}{prefix} {next_task.get('action', '')}".rstrip())
+        print(
+            f"next_task: {next_task['id']} "
+            f"{next_task.get('role', '')} {next_task.get('action', '')}".strip()
+        )
     else:
         print("next_task: none")
-    for task in tasks:
-        print(f"task: {task.get('id')} status={task.get('status', 'pending')} action={task.get('action', '')}")
-        if task.get("summary"):
-            print(f"summary: {task.get('summary')}")
 
 
 def cmd_next(args: argparse.Namespace) -> None:
@@ -233,7 +222,13 @@ def cmd_next(args: argparse.Namespace) -> None:
 def cmd_set_status(args: argparse.Namespace) -> None:
     spec = load_spec(args.file)
     try:
-        updated = set_task_status(spec, args.task_id, args.status, summary=getattr(args, "summary", None), last_error=getattr(args, "last_error", None))
+        updated = set_task_status(
+            spec,
+            args.task_id,
+            args.status,
+            summary=getattr(args, "summary", None),
+            last_error=getattr(args, "last_error", None),
+        )
     except KeyError as exc:
         raise SystemExit(f"task not found: {exc.args[0]}") from exc
     save_spec(args.file, updated)

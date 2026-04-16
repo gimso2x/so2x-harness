@@ -48,13 +48,17 @@ def test_doctor_output_core_lines(tmp_path: Path) -> None:
             }
         ],
     }
-    lines = render_doctor_lines(project, {"CLAUDE.md": True, "spec.json": True, "harness.json": True}, spec)
+    lines = render_doctor_lines(
+        project,
+        {"CLAUDE.md": True, "spec.json": True, "harness.json": True},
+        spec,
+    )
     output = "\n".join(lines)
-    assert "project=" in output
+    assert "project:" in output
     assert "goal: OAuth 로그인 추가" in output
     assert "next_task: none" in output
     assert "execution_status: blocked on T1" in output
-    assert "latest summary: redirect URI 확인 필요" in output
+    assert "summary: redirect URI 확인 필요" in output
 
 
 def test_run_command_applies_done_status(tmp_path: Path) -> None:
@@ -81,11 +85,11 @@ def test_run_command_applies_done_status(tmp_path: Path) -> None:
                 },
                 "timeout_sec": {"default": 30},
                 "max_retries": {"planning": 1, "review": 1, "dev": 3},
-                    "prompt": {
-                        "include_rule_file": True,
-                        "include_completed_summaries": True,
-                        "include_last_error": True,
-                    },
+                "prompt": {
+                    "include_rule_file": True,
+                    "include_completed_summaries": True,
+                    "include_last_error": True,
+                },
             },
             ensure_ascii=False,
             indent=2,

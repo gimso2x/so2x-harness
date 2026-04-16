@@ -21,7 +21,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install build pytest pytest-cov ruff pyyaml
+          pip install build pytest pytest-cov ruff pyyaml jsonschema
       - name: Lint
         run: make lint
       - name: Test
@@ -44,4 +44,4 @@ jobs:
           . .ci-venv/bin/activate
           pip install --upgrade pip
           pip install dist/*.whl
-          test "$(so2x-cli --version)" = "so2x-cli $(cat VERSION)"
+          test "$(so2x --version)" = "so2x $(cat VERSION)"

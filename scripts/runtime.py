@@ -26,8 +26,16 @@ def read_rule_text(project_dir: str | Path, config: dict[str, Any]) -> str:
 
 
 def collect_recent_summaries(spec: dict[str, Any], limit: int = 5) -> list[str]:
-    tasks = sorted(spec.get("tasks", []), key=lambda task: str(task.get("updated_at", "")), reverse=True)
-    summaries = [str(task.get("summary", "")).strip() for task in tasks if str(task.get("summary", "")).strip()]
+    tasks = sorted(
+        spec.get("tasks", []),
+        key=lambda task: str(task.get("updated_at", "")),
+        reverse=True,
+    )
+    summaries = [
+        str(task.get("summary", "")).strip()
+        for task in tasks
+        if str(task.get("summary", "")).strip()
+    ]
     return summaries[:limit]
 
 
@@ -95,7 +103,12 @@ def get_max_retries_for_task(task: dict[str, Any], config: dict[str, Any]) -> in
     return int(retries or 0)
 
 
-def run_subprocess(command: list[str], prompt: str, cwd: str | Path, timeout_sec: int) -> dict[str, Any]:
+def run_subprocess(
+    command: list[str],
+    prompt: str,
+    cwd: str | Path,
+    timeout_sec: int,
+) -> dict[str, Any]:
     completed = subprocess.run(
         command,
         input=prompt,
@@ -121,10 +134,21 @@ def run_task(
     config: dict[str, Any],
     last_error: str | None = None,
 ) -> dict[str, Any]:
-    rule_text = read_rule_text(project_dir, config) if config.get("prompt", {}).get("include_rule_file", True) else ""
-    summaries = collect_recent_summaries(spec) if config.get("prompt", {}).get("include_completed_summaries", True) else []
+    prompt_config = config.get("prompt", {})
+    rule_text = (
+        read_rule_text(project_dir, config)
+        if prompt_config.get("include_rule_file", True)
+        else ""
+    )
+    summaries = (
+        collect_recent_summaries(spec)
+        if prompt_config.get("include_completed_summaries", True)
+        else []
+    )
     dependency_summaries = collect_dependency_summaries(spec, task)
-    prompt_last_error = last_error if config.get("prompt", {}).get("include_last_error", True) else None
+    prompt_last_error = (
+        last_error if prompt_config.get("include_last_error", True) else None
+    )
     prompt = build_prompt(
         spec,
         task,

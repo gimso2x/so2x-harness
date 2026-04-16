@@ -31,7 +31,7 @@ jobs:
           pip install --upgrade pip build
           python -m build
           pip install dist/*.whl
-          test "$(so2x-cli --version)" = "so2x-cli $(cat VERSION)"
+          test "$(so2x --version)" = "so2x $(cat VERSION)"
       - name: Get version
         id: version
         run: echo "version=$(cat VERSION)" >> $GITHUB_OUTPUT

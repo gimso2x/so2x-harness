@@ -28,4 +28,4 @@ def test_cli_version_matches_repo_version() -> None:
     )
 
     assert result.returncode == 0
-    assert result.stdout.strip() == f"so2x-cli {VERSION}"
+    assert result.stdout.strip() == f"so2x {VERSION}"

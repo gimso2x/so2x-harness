@@ -1,72 +1,30 @@
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
 
+import tomllib
+import yaml
+
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+VERSION = (ROOT_DIR / "VERSION").read_text(encoding="utf-8").strip()
+README = (ROOT_DIR / "README.md").read_text(encoding="utf-8")
+PYPROJECT = tomllib.loads((ROOT_DIR / "pyproject.toml").read_text(encoding="utf-8"))
+HARNESS = yaml.safe_load((ROOT_DIR / "harness.yaml").read_text(encoding="utf-8"))
 
 
 def test_license_file_exists() -> None:
     assert (ROOT_DIR / "LICENSE").exists()
 
 
-def test_readme_mentions_claude_code_scope() -> None:
-    readme = (ROOT_DIR / "README.md").read_text(encoding="utf-8")
-    assert "Claude Code 중심" in readme
+def test_readme_matches_thin_identity() -> None:
+    assert "personal per-project harness" in README
+    assert "lightweight orchestration scaffold" in README
+    assert "core files = `CLAUDE.md` / `spec.json` / `harness.json`" in README
+    assert "install/distribution kit가 기본 목표가 아님" in README
+    assert "so2x run --file spec.json --next" in README
 
 
-def test_readme_documents_blocked_task_and_doctor_examples() -> None:
-    readme = (ROOT_DIR / "README.md").read_text(encoding="utf-8")
-    assert "set-task-status" in readme
-    assert "blocked on task T1" in readme
-    assert "latest summary: Waiting for approval from product owner" in readme
-    assert "current_detected_profiles" in readme
-    assert "current_enabled_skills" in readme
-    assert "current_enabled_optional_skills" in readme
-    assert "current_recommended_skills" in readme
-
-
-def test_readme_documents_review_cycle_artifacts() -> None:
-    readme = (ROOT_DIR / "README.md").read_text(encoding="utf-8")
-    assert "/review-cycle" in readme
-    assert ".review-artifacts/" in readme
-    assert "workspace:bun" in readme
-    assert "package.json:workspaces" in readme
-    assert "go.work:workspace" in readme
-    assert "workspace:turborepo" in readme
-
-
-def test_architecture_documents_spec_and_doctor_status_surface() -> None:
-    architecture = (ROOT_DIR / "ARCHITECTURE.md").read_text(encoding="utf-8")
-    assert "spec.json이 canonical execution state" in architecture
-    assert "execution_status" in architecture
-    assert "blocked on task" in architecture
-    assert "current_detected_profiles" in architecture
-    assert "current_enabled_skills" in architecture
-    assert "current_enabled_optional_skills" in architecture
-    assert "current_recommended_skills" in architecture
-    assert "workspace:bun" in architecture
-    assert "package.json:workspaces" in architecture
-    assert "go.work:workspace" in architecture
-    assert "workspace:turborepo" in architecture
-
-
-def test_apply_unsupported_platform_message_lists_supported_platforms(tmp_path: Path) -> None:
-    project = tmp_path / "project"
-    result = subprocess.run(
-        [
-            "python3",
-            str(ROOT_DIR / "scripts/apply.py"),
-            "--project",
-            str(project),
-            "--platform",
-            "gemini",
-            "--preset",
-            "general",
-        ],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    assert result.returncode != 0
-    assert "invalid choice" in result.stderr
+def test_repo_metadata_versions_are_aligned() -> None:
+    assert PYPROJECT["project"]["name"] == "so2x-harness"
+    assert PYPROJECT["project"]["version"] == VERSION
+    assert HARNESS["version"] == VERSION
