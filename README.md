@@ -83,6 +83,13 @@ so2x run --file spec.json --next
 so2x doctor --project .
 ```
 
+## Migration note
+
+- 기존 `so2x-cli` 중심 흐름은 제거되었습니다.
+- 이제 공식 엔트리포인트는 `so2x`입니다.
+- legacy install/apply/update/manifest/preset/learning surface는 유지하지 않습니다.
+- 기존 프로젝트는 `CLAUDE.md`, `spec.json`, `harness.json` 3개 core file 기준으로 옮기면 됩니다.
+
 ## Minimal bootstrap
 
 새 프로젝트에 아래 3개 파일을 복사하면 시작할 수 있습니다.
