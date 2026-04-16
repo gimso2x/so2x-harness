@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "so2x-harness"
-version = "0.6.2"
+version = "0.7.0"
 description = "Thin personal per-project harness"
 requires-python = ">=3.10"
 dependencies = [

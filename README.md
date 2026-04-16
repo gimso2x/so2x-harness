@@ -1,6 +1,6 @@
 # so2x-harness
 
-[![Version](https://img.shields.io/badge/Version-0.6.2-green)](./VERSION)
+[![Version](https://img.shields.io/badge/Version-0.7.0-green)](./VERSION)
 
 so2x-harness는 personal per-project harness입니다.
 
